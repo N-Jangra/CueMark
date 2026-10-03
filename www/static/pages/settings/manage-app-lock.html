@@ -4,31 +4,38 @@
 <base href="../../../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CueMark - App Password</title>
+  <title>CueMark - App Lock</title>
   <link rel="manifest" href="manifest.json">
   <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
 </head>
-<body class="manage-screen">
+<body class="manage-screen app-lock-manage-screen">
   <div id="app-container">
     <header class="settings-ios-header">
       <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button>
-      <h1>App Password</h1>
+      <h1>App Lock</h1>
       <span class="settings-ios-header-spacer" aria-hidden="true"></span>
     </header>
     <main>
       <section class="tab-content active">
-        <p class="manage-intro">Locks the app behind a PIN, pattern, or password when it's opened. This deters casual snooping only — it does not encrypt your data.</p>
+        <div class="manage-intro-card app-lock-intro-card">
+          <span class="manage-intro-icon"><i data-lucide="shield-check"></i></span>
+          <div><strong>Protect your CueMark app</strong><p>PIN, pattern, password, or biometrics.</p></div>
+        </div>
+        <aside class="app-lock-privacy-note" role="note">
+          <i data-lucide="info"></i>
+          <p><strong>Privacy:</strong> App Lock does not encrypt your library data.</p>
+        </aside>
 
-        <ol class="wizard-steps" id="app-lock-stepper" aria-hidden="true">
-          <li data-step="method" class="active">Method</li>
-          <li data-step="setup">Set up</li>
-          <li data-step="questions">Security</li>
+        <ol class="wizard-steps app-lock-stepper" id="app-lock-stepper" aria-label="App Lock setup progress">
+          <li data-step="method" class="active"><span>Method</span></li>
+          <li data-step="setup"><span>Set up</span></li>
+          <li data-step="questions"><span>Recovery</span></li>
         </ol>
 
         <!-- Step 1: Lock method -->
         <div class="wizard-step active" id="app-lock-step-method" data-step="method">
-          <h4 class="settings-section-title">Lock method</h4>
+          <div class="app-lock-step-heading"><h2>Choose a lock method</h2></div>
           <div id="app-lock-method-picker" class="settings-section-inner"></div>
           <div class="wizard-actions">
             <button type="button" class="btn btn-primary" id="app-lock-method-continue">Continue</button>
@@ -47,8 +54,7 @@
 
         <!-- Step 3: Security questions (skippable, recommended) -->
         <div class="wizard-step" id="app-lock-step-questions" data-step="questions" style="display:none;">
-          <h4 class="settings-section-title">Security Questions</h4>
-          <p class="setting-desc">Recommended so you can reset your password if you forget it. You can skip this, but then a forgotten password can't be recovered.</p>
+          <div class="app-lock-step-heading"><h2>Set up recovery</h2><p>Add three security questions so you can reset your app lock if you forget it. You can skip this, but your secret cannot be recovered.</p></div>
           <div id="app-lock-questions-area"></div>
           <div class="wizard-actions">
             <button type="button" class="btn btn-secondary" id="app-lock-questions-back">Back</button>

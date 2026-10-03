@@ -4,11 +4,11 @@
 // renderPatternGrid(), serializePattern(), updateAppLockSettingsSummary().
 
 const APP_LOCK_METHOD_CHOICES = [
-  { value: "none", label: "None", desc: "No password — the app opens directly." },
-  { value: "pin", label: "PIN", desc: "A numeric code, 4 or more digits." },
-  { value: "pattern", label: "Pattern", desc: "Connect 2 or more dots in any order." },
-  { value: "alphanumeric", label: "Alphanumeric Password", desc: "Any combination of letters, numbers, symbols." },
-  { value: "biometric", label: "Biometric", desc: "Use fingerprint, face, or your Android device screen lock." }
+  { value: "none", label: "None", desc: "Open without an app lock.", icon: "lock-open" },
+  { value: "pin", label: "PIN", desc: "Numeric code, 4+ digits.", icon: "key-round" },
+  { value: "pattern", label: "Pattern", desc: "Connect 2+ dots in any order.", icon: "waypoints" },
+  { value: "alphanumeric", label: "Password", desc: "Letters, numbers, or symbols.", icon: "key-square" },
+  { value: "biometric", label: "Biometric", desc: "Use device biometrics or screen lock.", icon: "fingerprint" }
 ];
 
 const SETTINGS_URL = "static/pages/settings/settings.html";
@@ -33,6 +33,8 @@ function showAppLockStep(step) {
       const idx = APP_LOCK_STEPS.indexOf(li.dataset.step);
       li.classList.toggle("active", idx === order);
       li.classList.toggle("done", idx < order);
+      if (idx === order) li.setAttribute("aria-current", "step");
+      else li.removeAttribute("aria-current");
     });
   }
 }
@@ -43,32 +45,45 @@ function renderAppLockMethodPicker() {
   const container = document.getElementById("app-lock-method-picker");
   if (!container) return;
 
+  container.setAttribute("role", "radiogroup");
+  container.setAttribute("aria-label", "Choose how to lock CueMark");
   normalizeAppLock();
   if (!appLockDraftMethod) appLockDraftMethod = state.preferences.appLock.method;
 
   container.innerHTML = "";
   APP_LOCK_METHOD_CHOICES.forEach(choice => {
-    const row = document.createElement("div");
-    row.className = "setting-row";
+    const row = document.createElement("label");
+    row.className = "app-lock-method-card";
     row.innerHTML = `
-      <div class="setting-info">
-        <span class="setting-label">${choice.label}</span>
-        <span class="setting-desc">${choice.desc}</span>
-      </div>
-      <input type="radio" name="app-lock-method" value="${choice.value}" ${appLockDraftMethod === choice.value ? "checked" : ""}>
+      <span class="app-lock-method-icon"><i data-lucide="${choice.icon}" aria-hidden="true"></i></span>
+      <span class="app-lock-method-copy"><strong>${choice.label}</strong><small>${choice.desc}</small></span>
+      <input type="radio" name="app-lock-method" value="${choice.value}" aria-label="${choice.label}" ${appLockDraftMethod === choice.value ? "checked" : ""}>
     `;
     container.appendChild(row);
   });
+
+  if (window.lucide) lucide.createIcons(container);
 
   container.querySelectorAll('input[name="app-lock-method"]').forEach(radio => {
     radio.addEventListener("change", (e) => {
       appLockDraftMethod = e.target.value;
       appLockPendingSecret = null;
       appLockFirstSecret = null;
+      updateAppLockMethodAction();
     });
   });
 
+  updateAppLockMethodAction();
   showAppLockStep("method");
+}
+
+function updateAppLockMethodAction() {
+  const button = document.getElementById("app-lock-method-continue");
+  if (!button) return;
+  const currentMethod = state.preferences.appLock.method;
+  button.textContent = appLockDraftMethod === "none"
+    ? (currentMethod === "none" ? "Continue without lock" : "Turn Off App Lock")
+    : "Continue";
 }
 
 function handleMethodContinue() {
@@ -132,12 +147,12 @@ function renderAppLockSetupArea() {
   const extra = isPin ? 'inputmode="numeric" pattern="[0-9]*"' : "";
   setupArea.innerHTML = `
     <div class="form-group">
-      <label>${isPin ? "New PIN" : "New password"}</label>
-      <input type="${type}" ${extra} id="app-lock-secret-input" class="form-control" placeholder="${isPin ? "New PIN (4+ digits)" : "New password"}">
+      <label for="app-lock-secret-input">${isPin ? "New PIN" : "New password"}</label>
+      <input type="${type}" ${extra} id="app-lock-secret-input" class="form-control" autocomplete="new-password" placeholder="${isPin ? "New PIN (4+ digits)" : "New password"}">
     </div>
     <div class="form-group">
-      <label>${isPin ? "Confirm PIN" : "Confirm password"}</label>
-      <input type="${type}" ${extra} id="app-lock-secret-confirm" class="form-control" placeholder="Re-enter to confirm">
+      <label for="app-lock-secret-confirm">${isPin ? "Confirm PIN" : "Confirm password"}</label>
+      <input type="${type}" ${extra} id="app-lock-secret-confirm" class="form-control" autocomplete="new-password" placeholder="Re-enter to confirm">
     </div>
     <p class="app-lock-error" id="app-lock-setup-error" style="display:none;"></p>
   `;
@@ -237,11 +252,12 @@ function renderAppLockQuestionsArea() {
     const group = document.createElement("div");
     group.className = "form-group";
     group.innerHTML = `
-      <label>Question ${i + 1}</label>
-      <input type="text" class="form-control app-lock-question-input" data-index="${i}" placeholder="e.g. What was your first pet's name?" value="${existing[i]?.question || ""}">
-      <input type="text" class="form-control app-lock-answer-input" data-index="${i}" placeholder="Answer" style="margin-top:6px;">
+      <label for="app-lock-question-${i}">Question ${i + 1}</label>
+      <input type="text" id="app-lock-question-${i}" class="form-control app-lock-question-input" data-index="${i}" placeholder="e.g. What was your first pet's name?">
+      <input type="text" id="app-lock-answer-${i}" class="form-control app-lock-answer-input" data-index="${i}" aria-label="Answer to question ${i + 1}" placeholder="Answer" style="margin-top:8px;">
     `;
     questionsArea.appendChild(group);
+    group.querySelector(".app-lock-question-input").value = existing[i]?.question || "";
   }
 }
 

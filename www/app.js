@@ -1769,7 +1769,7 @@ function setupEventListeners() {
     const titleEl = document.getElementById("picker-modal-title");
     if (!modal || !list || !titleEl) return;
     titleEl.textContent = title;
-    list.innerHTML = `<p class="settings-row-note action-popup-message">Select a local device time.</p><input type="time" class="form-control notification-time-input" value="${state.preferences[key]}"><button type="button" class="btn btn-primary notification-time-save" data-save-notification-time>Save time</button>`;
+    list.innerHTML = `<p class="settings-row-note action-popup-message setting-popup-icon-message"><i data-lucide="clock-3"></i><span>Select a local device time.</span></p><input type="time" class="form-control notification-time-input" value="${state.preferences[key]}"><button type="button" class="btn btn-primary notification-time-save" data-save-notification-time>Save time</button>`;
     list.querySelector("[data-save-notification-time]").addEventListener("click", () => {
       const value = list.querySelector("input").value || state.preferences[key];
       state.preferences[key] = value;
@@ -1779,6 +1779,7 @@ function setupEventListeners() {
       closeSettingsPicker();
     });
     modal.classList.add("active");
+    if (window.lucide) lucide.createIcons(list);
   };
   document.getElementById("notification-reminder-time")?.addEventListener("click", () => timePicker("Custom Reminder Time", "notificationReminderTime", "notification-reminder-time-status"));
   const reminderTimeStatus = document.getElementById("notification-reminder-time-status");
@@ -1808,7 +1809,7 @@ function openNotificationQuietHoursPopup(updateStatus) {
   const title = document.getElementById("picker-modal-title");
   if (!modal || !list || !title) return;
   title.textContent = "Quiet Hours";
-  list.innerHTML = `<p class="settings-row-note action-popup-message">Reminders will be skipped during this time window.</p><label class="notification-time-label">Quiet hours <input type="checkbox" id="quiet-hours-enabled" ${state.preferences.notificationQuietHours ? "checked" : ""}></label><div class="notification-time-pair"><label>From<input type="time" id="quiet-hours-start" class="form-control" value="${state.preferences.notificationQuietStart}"></label><label>Until<input type="time" id="quiet-hours-end" class="form-control" value="${state.preferences.notificationQuietEnd}"></label></div><button type="button" class="btn btn-primary notification-time-save" id="quiet-hours-save">Save</button>`;
+  list.innerHTML = `<p class="settings-row-note action-popup-message setting-popup-icon-message"><i data-lucide="moon-star"></i><span>Reminders will be skipped during this time window.</span></p><label class="notification-time-label">Quiet hours <input type="checkbox" id="quiet-hours-enabled" ${state.preferences.notificationQuietHours ? "checked" : ""}></label><div class="notification-time-pair"><label>From<input type="time" id="quiet-hours-start" class="form-control" value="${state.preferences.notificationQuietStart}"></label><label>Until<input type="time" id="quiet-hours-end" class="form-control" value="${state.preferences.notificationQuietEnd}"></label></div><button type="button" class="btn btn-primary notification-time-save" id="quiet-hours-save">Save</button>`;
   list.querySelector("#quiet-hours-save").addEventListener("click", () => {
     state.preferences.notificationQuietHours = list.querySelector("#quiet-hours-enabled").checked;
     state.preferences.notificationQuietStart = list.querySelector("#quiet-hours-start").value || "22:00";
@@ -1818,6 +1819,7 @@ function openNotificationQuietHoursPopup(updateStatus) {
     closeSettingsPicker();
   });
   modal.classList.add("active");
+  if (window.lucide) lucide.createIcons(list);
 }
 
 function isNotificationQuietHours(date = new Date()) {
@@ -2271,12 +2273,17 @@ const SETTINGS_PICKERS = {
       { value: "serif", label: "Serif" },
       { value: "monospace", label: "Monospace" },
       { value: "rounded", label: "Rounded" },
-      { value: "poppins", label: "Poppins (online)" },
-      { value: "roboto", label: "Roboto (online)" },
-      { value: "nunito", label: "Nunito (online)" },
-      { value: "lato", label: "Lato (online)" },
-      { value: "merriweather", label: "Merriweather (online)" },
-      { value: "jetbrains-mono", label: "JetBrains Mono (online)" }
+      { value: "poppins", label: "Poppins" },
+      { value: "roboto", label: "Roboto" },
+      { value: "nunito", label: "Nunito" },
+      { value: "lato", label: "Lato" },
+      { value: "merriweather", label: "Merriweather" },
+      { value: "jetbrains-mono", label: "JetBrains Mono" },
+      { value: "open-sans", label: "Open Sans" }, { value: "montserrat", label: "Montserrat" },
+      { value: "oswald", label: "Oswald" }, { value: "raleway", label: "Raleway" },
+      { value: "ubuntu", label: "Ubuntu" }, { value: "playfair-display", label: "Playfair Display" },
+      { value: "fira-sans", label: "Fira Sans" }, { value: "rubik", label: "Rubik" },
+      { value: "quicksand", label: "Quicksand" }, { value: "caveat", label: "Caveat" }
     ]
   },
   bottomBarActiveStyle: {
@@ -2655,7 +2662,10 @@ const FONT_PREVIEW_FAMILIES = {
   system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", inter: "Inter, sans-serif",
   outfit: "Outfit, sans-serif", serif: "Georgia, 'Times New Roman', serif", monospace: "ui-monospace, monospace",
   rounded: "ui-rounded, 'Segoe UI Rounded', sans-serif", poppins: "Poppins, sans-serif", roboto: "Roboto, sans-serif",
-  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace"
+  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace",
+  "open-sans": "'Open Sans', sans-serif", montserrat: "Montserrat, sans-serif", oswald: "Oswald, sans-serif", raleway: "Raleway, sans-serif",
+  ubuntu: "Ubuntu, sans-serif", "playfair-display": "'Playfair Display', serif", "fira-sans": "'Fira Sans', sans-serif",
+  rubik: "Rubik, sans-serif", quicksand: "Quicksand, sans-serif", caveat: "Caveat, cursive"
 };
 
 function getSettingsPickerPresentation(pref, option) {
@@ -2718,10 +2728,10 @@ function getSettingsPickerPresentation(pref, option) {
       right: ["Keep controls within right-hand reach.", "hand", "Right"]
     },
     ratingFormat: {
-      "5-stars": ["Rate titles from one to five stars.", "star", "5 ★"],
-      "10-points": ["Use a whole-number score out of ten.", "star", "10 / 10"],
-      "10-decimal": ["Use a decimal score out of ten.", "star", "8.5 / 10"],
-      "100-points": ["Use a score out of one hundred.", "star", "85 / 100"]
+      "5-stars": ["Rate titles from one to five stars.", "star", "★"],
+      "10-points": ["Use a whole-number score out of ten.", "star", "9"],
+      "10-decimal": ["Use a decimal score out of ten.", "star", "9.9"],
+      "100-points": ["Use a score out of one hundred.", "star", "100"]
     },
     dashboardRowActions: {
       menu: ["Open actions from the row menu.", "ellipsis", "Menu"],
@@ -2732,8 +2742,46 @@ function getSettingsPickerPresentation(pref, option) {
   const dashboardSetting = dashboardPresentations[pref]?.[String(option.value)];
   if (dashboardSetting) {
     if (pref === "dashboardView") return { kind: "dashboard-layout", description: dashboardSetting[0], layout: dashboardSetting[1] };
-    return { kind: "dashboard-choice", description: dashboardSetting[0], icon: dashboardSetting[1], sample: dashboardSetting[2], value: String(option.value), setting: pref };
+    return { kind: "dashboard-choice", description: dashboardSetting[0], icon: dashboardSetting[1], sample: pref === "ratingFormat" ? dashboardSetting[2] : undefined, value: String(option.value), setting: pref };
   }
+  const settingIcons = {
+    automaticCompletion: { automatic: "check", ask: "circle-help", manual: "hand" },
+    defaultEntryStatus: { watchlist: "bookmark", "in-progress": "play", "on-hold": "pause", dropped: "circle-x", completed: "check" },
+    progressIncrement: "plus",
+    notesTemplate: { none: "file", review: "clipboard-list", journal: "book-open" },
+    language: { system: "monitor", en: "globe" },
+    dateFormat: { system: "calendar", short: "calendar-days", long: "calendar-range", iso: "calendar-clock" },
+    backupSchedule: { off: "calendar-x", daily: "calendar", weekly: "calendar-days" },
+    backupRetention: "archive",
+    folderSyncDelay: "timer",
+    backupMaxSizeMb: "hard-drive",
+    importDefaultCategory: { anime: "clapperboard", movie: "film", series: "tv", manga: "book-open", novel: "book", game: "gamepad-2" },
+    importDuplicatePolicy: { skip: "circle-minus", update: "refresh-cw", create: "copy-plus" },
+    exportDefaultFormat: { csv: "file-spreadsheet", tsv: "table", txt: "file-text" },
+    metadataMode: { online: "cloud", offline: "cloud-off" },
+    metadataRefreshInterval: "refresh-cw",
+    metadataRetryLimit: "rotate-cw",
+    offlineFallback: { cached: "database", manual: "pencil", strict: "shield-x" },
+    metadataSyncFrequency: "timer",
+    metadataImportConcurrency: "users-round",
+    thumbnailCleanup: { never: "image", daily: "calendar", weekly: "calendar-days" },
+    thumbnailSize: "image",
+    thumbnailQuality: "sparkles",
+    storageWarningLimitMb: "triangle-alert",
+    backupStorageLimitMb: "hard-drive-download",
+    reminderDays: "bell-ring",
+    notificationGrouping: { grouped: "layers-2", separate: "list" },
+    notificationSnoozeMinutes: "clock-3",
+    externalLinks: { ask: "message-circle-question", always: "external-link", never: "link-2-off" },
+    networkTimeout: "timer",
+    apiRateLimitDelay: "hourglass",
+    autoLockTimeout: { never: "lock-open", "5-minutes": "lock-keyhole", "15-minutes": "lock-keyhole", "1-hour": "lock-keyhole" },
+    biometricFallback: { pin: "key-round", password: "key", none: "shield-off" },
+    imageCacheMaxEntries: "images"
+  };
+  const iconDefinition = settingIcons[pref];
+  const icon = typeof iconDefinition === "string" ? iconDefinition : iconDefinition?.[String(option.value)];
+  if (icon) return { kind: "setting-icon", icon };
   if (pref === "accessibleTextSize") {
     const choices = {
       normal: ["Default text size throughout the app.", "15px"],
@@ -2766,7 +2814,11 @@ function getSettingsPickerPresentation(pref, option) {
       serif: "Traditional letterforms for a bookish feel.", monospace: "Even-width characters with a technical feel.", rounded: "Soft, friendly rounded letterforms.",
       poppins: "Geometric sans serif with a warm feel.", roboto: "Compact, familiar Android-style lettering.", nunito: "Soft shapes with highly readable text.",
       lato: "Open, balanced letterforms for longer reading.", merriweather: "Serif lettering tuned for comfortable reading.",
-      "jetbrains-mono": "Clear monospaced lettering for detail."
+      "jetbrains-mono": "Clear monospaced lettering for detail.", "open-sans": "Open, friendly lettering for everyday reading.",
+      montserrat: "Bold geometric lettering with a modern feel.", oswald: "Tall, condensed lettering for strong headings.",
+      raleway: "Elegant, light geometric sans serif lettering.", ubuntu: "Warm, humanist lettering with a distinct character.",
+      "playfair-display": "High-contrast serif lettering for a refined feel.", "fira-sans": "Readable humanist lettering designed for screens.",
+      rubik: "Rounded, clean lettering with a modern shape.", quicksand: "Rounded, light lettering with a relaxed feel.", caveat: "Casual handwritten lettering with a personal feel."
     };
     return { kind: "font", description: description[option.value], family: FONT_PREVIEW_FAMILIES[option.value] };
   }
@@ -2784,7 +2836,12 @@ function createSettingsPickerPreview(presentation) {
   const { kind } = presentation;
   const preview = document.createElement("span");
   preview.className = `setting-picker-preview picker-preview-${kind}`;
-  if (kind === "theme") {
+  if (kind === "setting-icon") {
+    preview.classList.add("simple-picker-icon");
+    const icon = document.createElement("i");
+    icon.dataset.lucide = presentation.icon;
+    preview.appendChild(icon);
+  } else if (kind === "theme") {
     preview.classList.add("theme-picker-preview");
     preview.style.setProperty("--theme-preview-bg", presentation.colors[0]);
     preview.style.setProperty("--theme-preview-accent", presentation.colors[1]);
@@ -2848,12 +2905,15 @@ function createSettingsPickerPreview(presentation) {
         row.className = "picker-dashboard-density-row";
         preview.appendChild(row);
       }
+    } else if (presentation.setting === "ratingFormat" && presentation.value !== "5-stars") {
+      const score = document.createElement("span");
+      score.className = "picker-rating-sample";
+      score.textContent = presentation.sample;
+      preview.appendChild(score);
     } else {
       const icon = document.createElement("i");
       icon.dataset.lucide = presentation.icon;
-      const sample = document.createElement("small");
-      sample.textContent = presentation.sample;
-      preview.append(icon, sample);
+      preview.appendChild(icon);
     }
   }
   return preview;
@@ -2967,11 +3027,17 @@ function openSettingsPicker(pref, title) {
     const presentation = getSettingsPickerPresentation(pref, opt);
     if (presentation) {
       btn.classList.add("rich-picker-option");
+      if (pref === "uiFont" && presentation.family) {
+        // Preview the complete choice in its own typeface, not only the Aa tile.
+        btn.style.fontFamily = presentation.family;
+      }
       if (pref === "uiTheme") {
         btn.classList.add("theme-picker-option");
         btn.dataset.themeOption = opt.value;
       } else if (pref.startsWith("dashboard") || pref === "recentlyAddedLimit" || pref === "ratingFormat" || pref === "oneHandedMode") {
         btn.classList.add("dashboard-picker-option");
+      } else if (presentation.kind === "setting-icon") {
+        btn.classList.add("simple-picker-option");
       }
       const radio = document.createElement("span");
       radio.className = "choice-radio";
@@ -2981,9 +3047,25 @@ function openSettingsPicker(pref, title) {
       copy.className = "picker-option-copy";
       const name = document.createElement("strong");
       name.textContent = opt.label;
-      const description = document.createElement("small");
-      description.textContent = presentation.description;
-      copy.append(name, description);
+      copy.appendChild(name);
+      if (presentation.description) {
+        const description = document.createElement("small");
+        description.textContent = presentation.description;
+        copy.appendChild(description);
+      }
+      if (pref === "uiFont" && presentation.family) {
+        [btn, preview, copy, name, ...copy.querySelectorAll("small")].forEach(element => {
+          element.style.setProperty("font-family", presentation.family, "important");
+        });
+        const fontChoice = typeof FONT_CHOICES !== "undefined" ? FONT_CHOICES[opt.value] : null;
+        if (fontChoice?.kind === "google" && typeof ensureGoogleFontLoaded === "function") {
+          ensureGoogleFontLoaded(opt.value, fontChoice).then(() => {
+            [btn, preview, copy, name, ...copy.querySelectorAll("small")].forEach(element => {
+              element.style.setProperty("font-family", presentation.family, "important");
+            });
+          }).catch(() => {});
+        }
+      }
       btn.append(radio, preview, copy);
     } else {
       btn.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${opt.label}</span>`;
@@ -3056,14 +3138,25 @@ function openActionPopup(title, message, actionLabel, action) {
   list.innerHTML = "";
 
   const description = document.createElement("p");
-  description.className = "settings-row-note action-popup-message";
-  description.textContent = message;
+  const actionIcon = ({
+    "Clear All Temporary Cache": "trash-2",
+    "Clear Image Cache": "image-off",
+    "Clear Metadata Cache": "database-zap"
+  })[title];
+  description.className = `settings-row-note action-popup-message${actionIcon ? " setting-popup-icon-message" : ""}`;
+  if (actionIcon) {
+    const icon = document.createElement("i");
+    icon.dataset.lucide = actionIcon;
+    const copy = document.createElement("span");
+    copy.textContent = message;
+    description.append(icon, copy);
+  } else description.textContent = message;
   list.appendChild(description);
 
   const actionButton = document.createElement("button");
   actionButton.type = "button";
   actionButton.className = "picker-option active";
-  actionButton.innerHTML = `<i data-lucide="check" class="picker-option-check"></i><span>${actionLabel}</span>`;
+  actionButton.innerHTML = `<i data-lucide="${actionIcon || "check"}" class="picker-option-check"></i><span>${actionLabel}</span>`;
   actionButton.addEventListener("click", async () => {
     actionButton.disabled = true;
     try {
@@ -3162,8 +3255,27 @@ function openChoicePopup(title, message, options, currentValue, onSelect) {
   options.forEach(option => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `picker-option${String(option.value) === String(currentValue) ? " active" : ""}`;
-    button.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${option.label}</span>`;
+    const active = String(option.value) === String(currentValue);
+    button.className = `picker-option${active ? " active" : ""}`;
+    const snoozeIcons = { 0: "bell-off", 60: "clock-3", 180: "clock-4", 1440: "sun", 10080: "calendar-days" };
+    const icon = title === "Limit Image Cache" ? "images"
+      : title === "Remind me later" ? snoozeIcons[String(option.value)] || "clock-3" : "";
+    if (icon) {
+      button.classList.add("simple-choice-option");
+      const radio = document.createElement("span");
+      radio.className = "choice-radio";
+      radio.setAttribute("aria-hidden", "true");
+      const iconTile = document.createElement("span");
+      iconTile.className = "simple-choice-icon";
+      const iconElement = document.createElement("i");
+      iconElement.dataset.lucide = icon;
+      iconTile.appendChild(iconElement);
+      const label = document.createElement("span");
+      label.textContent = option.label;
+      button.append(radio, iconTile, label);
+    } else {
+      button.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${option.label}</span>`;
+    }
     button.addEventListener("click", async () => {
       list.querySelectorAll(".picker-option").forEach(row => row.classList.remove("active"));
       button.classList.add("active");
