@@ -10,21 +10,22 @@
   <script defer src="core/logcat.js"></script>
   <script defer src="lucide.min.js"></script>
 </head>
-<body>
+<body class="info-screen">
   <div id="app-container">
+    <header class="settings-ios-header">
+      <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button>
+      <h1>Logcat</h1>
+      <button type="button" class="settings-ios-back logcat-clear-action" id="logcat-clear-btn" aria-label="Clear logs" title="Clear logs"><i data-lucide="trash-2"></i></button>
+    </header>
     <main>
-      <section class="tab-content active">
-        <div class="show-detail-topbar">
-          <button class="page-back-btn show-detail-topbar-link show-detail-topbar-back" type="button" data-back-fallback="settings.html"><i data-lucide="chevron-left"></i>Back</button>
-          <span class="show-detail-topbar-category">Logcat</span>
-          <button type="button" class="show-detail-topbar-delete" id="logcat-clear-btn" title="Clear logs"><i data-lucide="trash-2"></i></button>
-        </div>
+      <section class="tab-content active info-logcat-page">
+        <p class="info-intro">Recent app events to help diagnose issues.</p>
 
-        <div class="chips-container" id="logcat-filter-chips">
-          <div class="chip active" data-level="all">All</div>
-          <div class="chip" data-level="info">Info</div>
-          <div class="chip" data-level="warn">Warnings</div>
-          <div class="chip" data-level="error">Errors</div>
+        <div class="chips-container" id="logcat-filter-chips" role="group" aria-label="Filter logs">
+          <button type="button" class="chip active" data-level="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-level="info" aria-pressed="false">Info</button>
+          <button type="button" class="chip" data-level="warn" aria-pressed="false">Warnings</button>
+          <button type="button" class="chip" data-level="error" aria-pressed="false">Errors</button>
         </div>
 
         <div id="logcat-list" class="logcat-list"></div>
@@ -38,9 +39,6 @@
           <a class="btn btn-secondary" href="static/pages/info/logcat-history.html"><i data-lucide="archive"></i> View older logs</a>
         </div>
 
-        <div class="page-back-actions">
-          <button class="page-back-btn" type="button" data-back-fallback="settings.html"><i data-lucide="arrow-left"></i> Back to Settings</button>
-        </div>
       </section>
     </main>
   </div>
@@ -107,7 +105,11 @@
       document.querySelectorAll("#logcat-filter-chips .chip").forEach(chip => {
         chip.addEventListener("click", () => {
           logcatFilter = chip.dataset.level;
-          document.querySelectorAll("#logcat-filter-chips .chip").forEach(c => c.classList.toggle("active", c === chip));
+          document.querySelectorAll("#logcat-filter-chips .chip").forEach(c => {
+            const active = c === chip;
+            c.classList.toggle("active", active);
+            c.setAttribute("aria-pressed", String(active));
+          });
           renderLogcat();
         });
       });
@@ -122,7 +124,11 @@
         clearBtn.addEventListener("click", () => {
           if (window.squashdbLogcat) window.squashdbLogcat.clear();
           logcatFilter = "all";
-          document.querySelectorAll("#logcat-filter-chips .chip").forEach(c => c.classList.toggle("active", c.dataset.level === "all"));
+          document.querySelectorAll("#logcat-filter-chips .chip").forEach(c => {
+            const active = c.dataset.level === "all";
+            c.classList.toggle("active", active);
+            c.setAttribute("aria-pressed", String(active));
+          });
           renderLogcat();
         });
       }

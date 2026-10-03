@@ -3145,8 +3145,10 @@ function calculateProgress(item) {
     }
   }
 
-  // Games / Movies with no numerical steps
-  if (!result && (status === "Playing" || status === "In Progress" || status === "Reading")) result = 50;
+  // A status-only estimate is useful for games and movies, but episodic
+  // titles have exact watched/total counts and must remain at 0% until watched.
+  const episodicCategory = category === "series" || category === "kdrama" || category === "cdrama" || category === "anime";
+  if (!result && !episodicCategory && (status === "Playing" || status === "In Progress" || status === "Reading")) result = 50;
   progressCache.set(item, { signature, value: result });
   return result;
 }

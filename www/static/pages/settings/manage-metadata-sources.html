@@ -19,6 +19,12 @@
     <main>
       <section class="tab-content active">
         <h4 class="settings-section-title">Built-in sources</h4>
+        <p class="metadata-sources-hint">Choose which catalogs to search. Drag to change their order.</p>
+        <div class="metadata-source-filters" role="group" aria-label="Filter metadata sources">
+          <button type="button" class="metadata-source-filter active" data-source-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="metadata-source-filter" data-source-filter="enabled" aria-pressed="false">Enabled</button>
+          <button type="button" class="metadata-source-filter" data-source-filter="disabled" aria-pressed="false">Disabled</button>
+        </div>
         <div class="settings-section">
           <div id="builtin-metadata-sources-list" class="settings-section-inner"></div>
         </div>

@@ -176,10 +176,14 @@ function navigateBackWithinApp(fallback = "static/pages/settings/settings.html")
 }
 
 function animatePredictiveBack(callback) {
-  // Respect reduced-motion: navigate immediately, no exit animation.
-  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Full page reloads can flash black in mobile WebViews while composited
+  // transforms are active. Keep mobile and reduced-motion back navigation direct.
+  const reduce = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    || document.body.classList.contains("reduced-motion")
+    || document.documentElement.classList.contains("reduced-motion");
+  const mobile = window.matchMedia && window.matchMedia("(max-width: 560px)").matches;
   const container = document.getElementById("app-container");
-  if (reduce || !container) {
+  if (reduce || mobile || !container) {
     callback();
     return;
   }
@@ -212,8 +216,11 @@ function setupPageEnterAnimation() {
     cameFromBack = sessionStorage.getItem("app-back-enter") === "1";
     if (cameFromBack) sessionStorage.removeItem("app-back-enter");
   } catch (e) {}
-  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!cameFromBack || reduce) return;
+  const reduce = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    || document.body.classList.contains("reduced-motion")
+    || document.documentElement.classList.contains("reduced-motion");
+  const mobile = window.matchMedia && window.matchMedia("(max-width: 560px)").matches;
+  if (!cameFromBack || reduce || mobile) return;
   const container = document.getElementById("app-container");
   if (!container) return;
   document.body.classList.add("app-page-enter");
