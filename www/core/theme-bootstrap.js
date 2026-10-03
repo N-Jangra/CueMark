@@ -12,7 +12,7 @@
     root.setAttribute("data-text-size", preferences.accessibleTextSize || "normal");
     root.classList.toggle("reduced-motion", Boolean(preferences.reducedMotion));
     root.style.setProperty("--anim-speed", speed[preferences.animationSpeed] ?? 1);
-    root.style.colorScheme = ["light", "flashbang"].includes(theme) ? "light" : "dark";
+    root.style.colorScheme = ["light", "flashbang", "sand", "mint"].includes(theme) ? "light" : "dark";
   } catch (_) {
     root.setAttribute("data-theme", "dark");
     root.setAttribute("data-accent", "normal");

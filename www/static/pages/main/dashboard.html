@@ -12,23 +12,21 @@
 </head>
 <body class="dashboard-screen">
   <div id="app-container">
-    <header class="dashboard-header">
-      <div class="dashboard-heading-row">
-        <div>
-          <h1>My collection</h1>
-        </div>
-        <button type="button" id="dashboard-filter-btn" class="dashboard-refine-btn" title="Sort and filter your library" aria-label="Sort and filter your library"><i data-lucide="list-filter"></i><span>Refine</span><b id="dashboard-filter-count" hidden>0</b></button>
-      </div>
-      <div id="category-chips" class="chips-container" aria-label="Library categories"></div>
-      <div id="search-container" class="search-container">
-        <i data-lucide="search"></i>
-        <input type="text" id="global-search" class="search-input" placeholder="Search your collection" autocomplete="off">
-        <button type="button" id="dashboard-search-clear" class="dashboard-search-clear" title="Clear search" aria-label="Clear search" hidden><i data-lucide="x"></i></button>
-      </div>
-    </header>
-    <div id="dashboard-search-history" class="dashboard-search-history" style="display:none;"></div>
     <main>
       <section id="tab-dashboard" class="tab-content active">
+        <header class="dashboard-header">
+          <div class="dashboard-heading-row">
+            <div><h1>My collection</h1></div>
+            <button type="button" id="dashboard-filter-btn" class="dashboard-refine-btn" title="Sort and filter your library" aria-label="Sort and filter your library"><i data-lucide="list-filter"></i><span>Refine</span><b id="dashboard-filter-count" hidden>0</b></button>
+          </div>
+          <div id="category-chips" class="chips-container" aria-label="Library categories"></div>
+          <div id="search-container" class="search-container">
+            <i data-lucide="search"></i>
+            <input type="text" id="global-search" class="search-input" placeholder="Search your collection" autocomplete="off">
+            <button type="button" id="dashboard-search-clear" class="dashboard-search-clear" title="Clear search" aria-label="Clear search" hidden><i data-lucide="x"></i></button>
+          </div>
+        </header>
+        <div id="dashboard-search-history" class="dashboard-search-history" style="display:none;"></div>
         <div id="dashboard-filter-chips" class="dashboard-filter-chips" aria-label="Active library filters"></div>
         <div id="dashboard-refresh-status" class="dashboard-refresh-status" aria-live="polite"></div>
         <div id="dashboard-insights" class="dashboard-insights"></div>

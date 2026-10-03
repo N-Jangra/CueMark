@@ -211,14 +211,14 @@ function renderMetadataSourcesSettings() {
 // HTML5 drag events are not consistently emitted by Android WebView. Keep
 // those events for desktop browsers, but also support pointer dragging from
 // the grip handle so source ordering works with touch and mouse input.
-function bindMetadataSourceSorting(list, getKey, onSave) {
+function bindMetadataSourceSorting(list, getKey, onSave, normalizeOrder = order => order) {
   const items = () => Array.from(list.querySelectorAll(".sortable-item"));
   let dragged = null;
   let pointerId = null;
   let captureTarget = null;
   let moved = false;
 
-  const saveOrder = () => onSave(metadataSourcesWithKeyProvidersLast(items().map(item => getKey(item))));
+  const saveOrder = () => onSave(normalizeOrder(items().map(item => getKey(item))));
   const isKeyProvider = item => item?.dataset.requiresApiKey === "true";
   const finishPointerDrag = event => {
     if (!dragged || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
@@ -356,7 +356,8 @@ function renderBuiltinMetadataSourcesList() {
     newOrder => {
       state.preferences.metadataSources.builtinOrder = metadataSourcesWithKeyProvidersLast(newOrder);
       saveData();
-    }
+    },
+    metadataSourcesWithKeyProvidersLast
   );
   applyBuiltinMetadataSourceFilter();
 

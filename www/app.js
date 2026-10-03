@@ -376,6 +376,7 @@ let state = {
     },
     bottomBarTransparency: 100,
     bottomBarActiveStyle: "box",
+    bottomBarSurface: "translucent",
     appLook: "default",
     appLock: {
       method: "none",           // "none" | "pin" | "pattern" | "alphanumeric" | "biometric"
@@ -772,9 +773,8 @@ async function loadData() {
     settings: state.preferences.navIcons.settings || "settings"
   };
 
-  // Bottom bar arrangement: which tabs show and in what order. Explore stands
-  // in for Timeline/Sources/Statistics by default (it links to all of them);
-  // Settings can never be hidden so the config page always stays reachable.
+  // Bottom bar arrangement: every destination can be enabled independently.
+  // Dashboard and Settings can never be hidden.
   const navBarDefaults = { dashboard: true, timeline: false, discover: true, sources: false, explore: true, stats: false, settings: true };
   if (!state.preferences.navBar || typeof state.preferences.navBar !== "object") {
     state.preferences.navBar = { order: [...NAV_BAR_KEYS], visible: { ...navBarDefaults } };
@@ -792,17 +792,8 @@ async function loadData() {
       state.preferences.navBar.visible[key] = navBarDefaults[key];
     }
   });
+  state.preferences.navBar.visible.dashboard = true;
   state.preferences.navBar.visible.settings = true;
-  // Explore replaces Timeline/Sources/Statistics in the bar when enabled
-  // (its page links to all three); otherwise Timeline and Statistics still
-  // share a single slot between themselves.
-  if (state.preferences.navBar.visible.explore) {
-    state.preferences.navBar.visible.timeline = false;
-    state.preferences.navBar.visible.sources = false;
-    state.preferences.navBar.visible.stats = false;
-  } else if (state.preferences.navBar.visible.timeline && state.preferences.navBar.visible.stats) {
-    state.preferences.navBar.visible.stats = false;
-  }
 
   const savedTheme = localStorage.getItem("squashdb_theme");
   if (savedTheme) {
@@ -1143,6 +1134,7 @@ function applyPreferenceAttributes() {
   const bottomBarTransparency = Math.max(0, Math.min(100, Number(state.preferences.bottomBarTransparency ?? 100)));
   document.documentElement.style.setProperty("--bottom-bar-alpha", String(bottomBarTransparency / 100));
   document.body.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
+  document.body.setAttribute("data-bottom-bar-surface", state.preferences.bottomBarSurface || "translucent");
   document.documentElement.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
   document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
   document.body.setAttribute("data-date-format", state.preferences.dateFormat || "system");
@@ -1152,7 +1144,7 @@ function applyPreferenceAttributes() {
   root.setAttribute("data-contrast", state.preferences.highContrast ? "high" : "normal");
   root.setAttribute("data-text-size", state.preferences.accessibleTextSize || "normal");
   root.classList.toggle("reduced-motion", Boolean(state.preferences.reducedMotion));
-  root.style.colorScheme = ["light", "flashbang"].includes(theme) ? "light" : "dark";
+  root.style.colorScheme = ["light", "flashbang", "sand", "mint"].includes(theme) ? "light" : "dark";
   const appShell = document.getElementById("app-container");
   if (appShell && window.matchMedia("(max-width: 560px)").matches) {
     const hand = state.preferences.oneHandedMode || "off";
@@ -1985,15 +1977,17 @@ function renderNavBarSettings() {
     row.className = "sortable-item metadata-source-row";
     row.draggable = true;
     row.dataset.navKey = key;
-    const locked = key === "settings";
+    const locked = key === "dashboard" || key === "settings";
+    const visible = state.preferences.navBar.visible[key] !== false;
+    const iconName = state.preferences.navIcons[key] || "circle";
     row.innerHTML = `
       <span class="drag-handle" aria-hidden="true">⋮⋮</span>
       <span class="sortable-label">
-        ${NAV_BAR_LABELS[key]}
-        ${locked ? `<span class="setting-desc">Always shown</span>` : ""}
+        <span class="manage-nav-row-icon"><i data-lucide="${iconName}"></i></span>
+        <span class="manage-nav-row-copy"><strong>${NAV_BAR_LABELS[key]}</strong><small>${locked ? "Always shown" : visible ? "Shown in bottom bar" : "Hidden from bottom bar"}</small></span>
       </span>
       <label class="switch">
-        <input type="checkbox" data-nav-visible="${key}" ${state.preferences.navBar.visible[key] ? "checked" : ""} ${locked ? "disabled" : ""}>
+        <input type="checkbox" data-nav-visible="${key}" aria-label="Show ${NAV_BAR_LABELS[key]} in bottom bar" ${visible ? "checked" : ""} ${locked ? "disabled" : ""}>
         <span class="slider"></span>
       </label>
     `;
@@ -2015,28 +2009,12 @@ function renderNavBarSettings() {
       const key = e.target.dataset.navVisible;
       const vis = state.preferences.navBar.visible;
       vis[key] = e.target.checked;
-      if (e.target.checked) {
-        // Explore stands in for Timeline/Sources/Statistics; outside of it,
-        // Timeline and Statistics still share a single slot.
-        if (key === "explore") {
-          vis.timeline = false;
-          vis.sources = false;
-          vis.stats = false;
-        } else if (key === "timeline") {
-          vis.stats = false;
-          vis.explore = false;
-        } else if (key === "stats") {
-          vis.timeline = false;
-          vis.explore = false;
-        } else if (key === "sources") {
-          vis.explore = false;
-        }
-      }
       saveData();
       renderNavBarSettings();
       applyNavBarConfig();
     });
   });
+  if (window.lucide) lucide.createIcons(list);
 }
 
 const NAV_ICON_CHOICES = {
@@ -2057,11 +2035,28 @@ function renderNavIconPickers() {
 
     grid.innerHTML = "";
     const current = state.preferences.navIcons[navKey];
+    const section = grid.closest(".settings-section");
+    const heading = section?.querySelector(".settings-section-title");
+    if (heading) {
+      let selectedLabel = heading.querySelector(".nav-icon-current-label");
+      if (!selectedLabel) {
+        selectedLabel = document.createElement("span");
+        selectedLabel.className = "nav-icon-current-label";
+        heading.appendChild(selectedLabel);
+      }
+      const readableCurrent = (current || "circle").replace(/-/g, " ");
+      selectedLabel.textContent = `Selected · ${readableCurrent}`;
+      selectedLabel.setAttribute("aria-label", `Selected icon: ${readableCurrent}`);
+    }
 
     NAV_ICON_CHOICES[navKey].forEach(iconName => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = `icon-picker-option${iconName === current ? " active" : ""}`;
+      const selected = iconName === current;
+      btn.className = `icon-picker-option${selected ? " active" : ""}`;
+      btn.setAttribute("aria-label", `Use ${iconName.replace(/-/g, " ")} icon for ${NAV_BAR_LABELS[navKey]}`);
+      btn.setAttribute("aria-pressed", String(selected));
+      btn.title = iconName.replace(/-/g, " ");
       btn.innerHTML = `<i data-lucide="${iconName}"></i>`;
       needsIcons = true;
       btn.addEventListener("click", () => {
@@ -2087,10 +2082,10 @@ function renderNavIconPickers() {
 // Each look bakes in both an icon and a matching name as a single pre-declared
 // alias (see AndroidManifest.xml: Look_<key>), so there's one flat list to pick from.
 const APP_LOOK_CHOICES = [
-  { value: "default", label: "SquashDB", preview: "icons/previews/ic_launcher.png" },
-  { value: "fire", label: "SquashDB", preview: "icons/previews/ic_launcher_fire.png" },
-  { value: "pinklogo", label: "SquashDB", preview: "icons/previews/ic_launcher_pinklogo.png" },
-  { value: "purple", label: "SquashDB", preview: "icons/previews/ic_launcher_purple.png" },
+  { value: "default", label: "SquashDB", style: "Classic", preview: "icons/previews/ic_launcher.png" },
+  { value: "fire", label: "SquashDB", style: "Flame", preview: "icons/previews/ic_launcher_fire.png" },
+  { value: "pinklogo", label: "SquashDB", style: "Rose", preview: "icons/previews/ic_launcher_pinklogo.png" },
+  { value: "purple", label: "SquashDB", style: "Violet", preview: "icons/previews/ic_launcher_purple.png" },
   { value: "capacitor", label: "Capacitor", preview: "icons/previews/ic_launcher_capacitor.png" },
   { value: "calculator", label: "Calculator", preview: "icons/previews/ic_launcher_calculator.png" },
   { value: "freeotp", label: "FreeOTP", preview: "icons/previews/ic_launcher_freeotp.png" },
@@ -2148,10 +2143,14 @@ async function renderAppIconPicker() {
   APP_LOOK_CHOICES.forEach(choice => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `app-icon-option${choice.value === current ? " active" : ""}`;
+    const selected = choice.value === current;
+    btn.className = `app-icon-option${selected ? " active" : ""}`;
+    btn.setAttribute("aria-pressed", String(selected));
+    btn.setAttribute("aria-label", `${choice.label}${choice.style ? `, ${choice.style}` : ""}${selected ? ", selected" : ""}`);
     btn.innerHTML = `
-      <img src="${choice.preview}" alt="${choice.label} icon">
-      <span>${choice.label}</span>
+      <img src="${choice.preview}" alt="">
+      <span class="app-icon-name">${choice.label}</span>
+      ${choice.style ? `<small class="app-icon-style">${choice.style}</small>` : ""}
     `;
     btn.addEventListener("click", () => selectAppLook(choice.value));
     grid.appendChild(btn);
@@ -2201,12 +2200,20 @@ const SETTINGS_PICKERS = {
   uiTheme: {
     default: "dark",
     options: [
-      { value: "light", label: "Light" },
-      { value: "dark", label: "Dark" },
-      { value: "grey", label: "Grey" },
-      { value: "amoled", label: "Amoled" },
-      { value: "flashbang", label: "Flashbang" },
-      { value: "material-you", label: "Material You" }
+      { value: "light", label: "Light", description: "Clean white surfaces with indigo accents.", colors: ["#f8fafc", "#4f46e5", "#0f172a"] },
+      { value: "dark", label: "Dark", description: "Deep navy surfaces with violet accents.", colors: ["#0b0f19", "#6366f1", "#f8fafc"] },
+      { value: "grey", label: "Grey", description: "Soft graphite surfaces with slate accents.", colors: ["#111827", "#64748b", "#f9fafb"] },
+      { value: "amoled", label: "AMOLED", description: "True black surfaces with vivid violet accents.", colors: ["#000000", "#8b5cf6", "#f8fafc"] },
+      { value: "flashbang", label: "Flashbang", description: "Bright white surfaces with bold charcoal accents.", colors: ["#f8fafc", "#111827", "#0f172a"] },
+      { value: "material-you", label: "Material You", description: "Layered charcoal surfaces with purple accents.", colors: ["#10131d", "#8b5cf6", "#f8fafc"] },
+      { value: "ocean", label: "Ocean", description: "Midnight blue surfaces with clear aqua accents.", colors: ["#081b2b", "#38bdf8", "#e0f2fe"] },
+      { value: "forest", label: "Forest", description: "Deep evergreen surfaces with fresh mint accents.", colors: ["#10221b", "#4ade80", "#ecfdf5"] },
+      { value: "sunset", label: "Sunset", description: "Warm espresso surfaces with golden orange accents.", colors: ["#261714", "#fb923c", "#fff7ed"] },
+      { value: "rose", label: "Rose", description: "Dark plum surfaces with soft rose accents.", colors: ["#251722", "#fb7185", "#fff1f2"] },
+      { value: "lavender", label: "Lavender", description: "Smoky violet surfaces with lilac accents.", colors: ["#211d35", "#c4b5fd", "#f5f3ff"] },
+      { value: "nord", label: "Nord", description: "Cool blue-grey surfaces with icy blue accents.", colors: ["#242d3b", "#88c0d0", "#eceff4"] },
+      { value: "sand", label: "Sand", description: "Warm paper surfaces with terracotta accents.", colors: ["#faf4e8", "#c2410c", "#29231d"] },
+      { value: "mint", label: "Mint", description: "Pale green surfaces with deep teal accents.", colors: ["#effaf5", "#0f766e", "#12352d"] }
     ]
   },
   uiFont: {
@@ -2229,6 +2236,10 @@ const SETTINGS_PICKERS = {
   bottomBarActiveStyle: {
     default: "box",
     options: [{ value: "box", label: "Selected box" }, { value: "icon", label: "Icon color" }]
+  },
+  bottomBarSurface: {
+    default: "translucent",
+    options: [{ value: "translucent", label: "Translucent" }, { value: "solid", label: "Solid" }]
   },
   mainColor: {
     default: "normal",
@@ -2382,11 +2393,14 @@ const SETTINGS_PICKERS = {
     default: "alphabetical-asc",
     stateKey: "currentSort",
     options: [
-      { value: "alphabetical-asc", label: "Alphabetical" },
-      { value: "updated-desc", label: "Last updated" },
-      { value: "progress-desc", label: "Progress" },
-      { value: "rating-desc", label: "Rating" },
-      { value: "release-desc", label: "Release date" }
+      { value: "updated-desc", label: "Recently updated" },
+      { value: "created-desc", label: "Recently added" },
+      { value: "progress-desc", label: "Most progress" },
+      { value: "progress-asc", label: "Least progress" },
+      { value: "rating-desc", label: "Highest rated" },
+      { value: "release-desc", label: "Newest release" },
+      { value: "alphabetical-asc", label: "Title A–Z" },
+      { value: "alphabetical-desc", label: "Title Z–A" }
     ]
   },
   oneHandedMode: {
@@ -2684,7 +2698,30 @@ function openSettingsPicker(pref, title) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `picker-option${opt.value === current ? " active" : ""}`;
-    btn.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${opt.label}</span>`;
+    btn.setAttribute("aria-pressed", String(opt.value === current));
+    if (pref === "uiTheme") {
+      btn.classList.add("theme-picker-option");
+      btn.dataset.themeOption = opt.value;
+      const radio = document.createElement("span");
+      radio.className = "choice-radio";
+      radio.setAttribute("aria-hidden", "true");
+      const preview = document.createElement("span");
+      preview.className = "theme-picker-preview";
+      preview.style.setProperty("--theme-preview-bg", opt.colors[0]);
+      preview.style.setProperty("--theme-preview-accent", opt.colors[1]);
+      preview.style.setProperty("--theme-preview-text", opt.colors[2]);
+      preview.innerHTML = '<span class="theme-picker-preview-accent"></span><span class="theme-picker-preview-lines"><i></i><i></i></span>';
+      const copy = document.createElement("span");
+      copy.className = "theme-picker-copy";
+      const name = document.createElement("strong");
+      name.textContent = opt.label;
+      const description = document.createElement("small");
+      description.textContent = opt.description;
+      copy.append(name, description);
+      btn.append(radio, preview, copy);
+    } else {
+      btn.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${opt.label}</span>`;
+    }
     btn.addEventListener("click", () => {
       setPickerValue(pref, opt.value);
       if (pref === "accessibilityPreset") {
@@ -3456,7 +3493,10 @@ function compareDashboardGroups(a, b, groupBy) {
 function compareDashboardItemsBySort(a, b) {
   if (state.currentSort === "alphabetical-asc") return a.title.localeCompare(b.title);
   if (state.currentSort === "alphabetical-desc") return b.title.localeCompare(a.title);
-  if (state.currentSort === "created-desc" || state.currentSort === "updated-desc") {
+  if (state.currentSort === "created-desc") {
+    return (Number(b.created) || 0) - (Number(a.created) || 0);
+  }
+  if (state.currentSort === "updated-desc") {
     return (Number(b.updated || b.lastUpdated || b.created) || 0) - (Number(a.updated || a.lastUpdated || a.created) || 0);
   }
   if (state.currentSort === "created-asc") return (Number(a.created) || 0) - (Number(b.created) || 0);
@@ -3499,8 +3539,10 @@ function openDashboardRefineSheet(openSection = "") {
   const close = document.getElementById("picker-modal-close");
   if (close) close.innerHTML = '<i data-lucide="x"></i>';
   const sortOptions = [
-    ["updated-desc", "Recently updated"], ["progress-desc", "Most progress"],
-    ["rating-desc", "Highest rated"], ["release-desc", "Newest release"], ["alphabetical-asc", "Title A–Z"]
+    ["updated-desc", "Recently updated"], ["created-desc", "Recently added"],
+    ["progress-desc", "Most progress"], ["progress-asc", "Least progress"],
+    ["rating-desc", "Highest rated"], ["release-desc", "Newest release"],
+    ["alphabetical-asc", "Title A–Z"], ["alphabetical-desc", "Title Z–A"]
   ];
   const sortSection = document.createElement("div");
   sortSection.className = "picker-section-label";
@@ -3586,9 +3628,9 @@ function openDashboardRefineSheet(openSection = "") {
   const viewDescriptions = {
     list: "Cover, title and progress", "compact-list": "Short rows with the essentials",
     grid: "Browse your collection by poster", "detailed-grid": "Poster, full title and item details",
-    "compact-grid": "More posters in each row", table: "Compare status, rating and progress",
-    "minimal-list": "A clean, text-first list", "large-grid": "Bigger artwork with more detail",
-    kanban: "Move between status columns", timeline: "Browse by release date"
+    "compact-grid": "Fit more labeled posters on screen", table: "Compare titles, status and progress",
+    "minimal-list": "A clean, text-first list", "large-grid": "Larger posters with readable titles",
+    kanban: "Status lanes stack on phones", timeline: "Browse by release date"
   };
   const viewIcons = {
     list: "list", "compact-list": "list-filter", grid: "layout-grid",
@@ -3646,7 +3688,10 @@ function openDashboardRefineSheet(openSection = "") {
   viewDetails.appendChild(viewBody);
   list.appendChild(viewDetails);
 
-  const themeLabels = { light: "Light", dark: "Dark", grey: "Grey", amoled: "AMOLED", flashbang: "Flashbang", "material-you": "Material You" };
+  const themeLabels = {
+    light: "Light", dark: "Dark", grey: "Grey", amoled: "AMOLED", flashbang: "Flashbang", "material-you": "Material You",
+    ocean: "Ocean", forest: "Forest", sunset: "Sunset", rose: "Rose", lavender: "Lavender", nord: "Nord", sand: "Sand", mint: "Mint"
+  };
   const appearanceDetails = document.createElement("details");
   appearanceDetails.className = "dashboard-refine-group";
   appearanceDetails.open = openSection === "appearance";
@@ -4216,6 +4261,12 @@ function buildGridCard(item) {
       <div class="grid-card-select-check"><i data-lucide="check"></i></div>
     </div>
   `;
+  const title = document.createElement("strong");
+  title.className = "grid-card-title";
+  title.textContent = item.title || "Untitled";
+  card.setAttribute("aria-label", item.title || "Untitled");
+  card.title = item.title || "Untitled";
+  card.appendChild(title);
   return card;
 }
 

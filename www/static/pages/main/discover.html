@@ -3,18 +3,18 @@
 <head>
 <base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Discover</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
 <body class="discover-screen"><div id="app-container">
-<div class="chips-container" id="discover-category-chips"></div>
-<div class="discover-search-row">
-<div id="discover-search-container" class="search-container" style="display:flex;">
-  <i data-lucide="search"></i>
-  <input type="text" id="discover-search-input" class="search-input" placeholder="Search...">
-</div>
-<button type="button" class="discover-filter-btn" id="discover-filter-btn" title="Filter sources" style="display:none;">
-  <i data-lucide="sliders-horizontal"></i>
-</button>
-</div>
 <main>
   <section id="tab-discover" class="tab-content active">
+    <div class="chips-container" id="discover-category-chips"></div>
+    <div class="discover-search-row">
+      <div id="discover-search-container" class="search-container" style="display:flex;">
+        <i data-lucide="search"></i>
+        <input type="text" id="discover-search-input" class="search-input" placeholder="Search...">
+      </div>
+      <button type="button" class="discover-filter-btn" id="discover-filter-btn" title="Filter sources" style="display:none;">
+        <i data-lucide="sliders-horizontal"></i>
+      </button>
+    </div>
     <p class="settings-row-note" id="discover-offline-notice" style="display:none;">Discover needs an internet connection. Reconnect to search online metadata sources.</p>
     <div id="discover-no-category" class="empty-state" style="display:none;">
       <i data-lucide="list-plus"></i>
