@@ -374,6 +374,8 @@ let state = {
       order: ["dashboard", "timeline", "discover", "sources", "explore", "stats", "settings"],
       visible: { dashboard: true, timeline: false, discover: true, sources: false, explore: true, stats: false, settings: true }
     },
+    bottomBarTransparency: 100,
+    bottomBarActiveStyle: "box",
     appLook: "default",
     appLock: {
       method: "none",           // "none" | "pin" | "pattern" | "alphanumeric" | "biometric"
@@ -1138,6 +1140,10 @@ function applyPreferenceAttributes() {
   document.body.setAttribute("data-thumbnail-quality", state.preferences.thumbnailQuality || "balanced");
   document.body.setAttribute("data-text-size", state.preferences.accessibleTextSize || "normal");
   document.body.setAttribute("data-dashboard-corners", state.preferences.dashboardCardCorners || "rounded");
+  const bottomBarTransparency = Math.max(0, Math.min(100, Number(state.preferences.bottomBarTransparency ?? 100)));
+  document.documentElement.style.setProperty("--bottom-bar-alpha", String(bottomBarTransparency / 100));
+  document.body.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
+  document.documentElement.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
   document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
   document.body.setAttribute("data-date-format", state.preferences.dateFormat || "system");
   const root = document.documentElement;
@@ -1170,6 +1176,22 @@ function applyAnimationSpeed() {
     : (ANIMATION_SPEED_MULTIPLIERS[speed] ?? 1);
   document.documentElement.style.setProperty("--anim-speed", multiplier);
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("bottom-bar-transparency");
+  const value = document.getElementById("bottom-bar-transparency-value");
+  if (!input) return;
+  const update = () => {
+    const next = Number(input.value);
+    if (value) value.textContent = `${next}%`;
+    state.preferences.bottomBarTransparency = next;
+    applyPreferenceAttributes();
+    saveData();
+  };
+  input.value = String(state.preferences.bottomBarTransparency ?? 100);
+  if (value) value.textContent = `${input.value}%`;
+  input.addEventListener("input", update);
+});
 
 function formatRatingValue(rating) {
   const value = Number(rating) || 0;
@@ -2203,6 +2225,10 @@ const SETTINGS_PICKERS = {
       { value: "merriweather", label: "Merriweather (online)" },
       { value: "jetbrains-mono", label: "JetBrains Mono (online)" }
     ]
+  },
+  bottomBarActiveStyle: {
+    default: "box",
+    options: [{ value: "box", label: "Selected box" }, { value: "icon", label: "Icon color" }]
   },
   mainColor: {
     default: "normal",

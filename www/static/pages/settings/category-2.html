@@ -70,6 +70,10 @@
       <div class="settings-row-body"><label>App Icons and Names</label><span>Change icon and name on home screen.</span></div>
       <i data-lucide="chevron-right" class="settings-row-chevron"></i>
     </a>
+<button type="button" class="settings-row settings-row-picker" data-pref="bottomBarActiveStyle" id="setting-bottomBarActiveStyle"><div class="settings-row-icon"><i data-lucide="badge-check"></i></div><div class="settings-row-body"><label>Bottom Bar Active Style</label><span>Show a selected box or color the icon.</span></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button>
+<button type="button" class="settings-row settings-row-picker settings-range-row" id="setting-bottomBarTransparency">
+      <div class="settings-row-icon"><i data-lucide="panel-bottom"></i></div><div class="settings-row-body"><label>Bottom Bar Transparency</label><span>Adjust the bottom navigation background.</span><input id="bottom-bar-transparency" type="range" min="0" max="100" step="5" value="100" aria-label="Bottom Bar Transparency"></div><div class="settings-row-value"><span id="bottom-bar-transparency-value">100%</span></div>
+    </button>
 <a class="settings-row settings-row-link" href="static/pages/settings/manage-nav-bar.html" id="setting-link-manage-nav-bar">
       <div class="settings-row-icon"><i data-lucide="layout-panel-left"></i></div>
       <div class="settings-row-body"><label>Bottom Bar Layout</label></div>

@@ -2942,7 +2942,7 @@ body[data-dashboard-corners="square"] .grid-card { border-radius: 2px; }
   width: 100vw;
   max-width: 100vw;
   height: calc(70px + env(safe-area-inset-bottom));
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) calc(var(--bottom-bar-alpha, 1) * 100%), transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--card-border);
@@ -2952,6 +2952,31 @@ body[data-dashboard-corners="square"] .grid-card { border-radius: 2px; }
   padding: 0 10px env(safe-area-inset-bottom);
   z-index: 40;
   box-sizing: border-box;
+}
+[data-bottom-bar-active-style="box"] .bottom-nav .nav-item.active {
+  background: var(--primary-glow);
+  border-radius: 14px;
+}
+[data-bottom-bar-active-style="icon"] .bottom-nav .nav-item.active {
+  background: transparent;
+}
+[data-bottom-bar-active-style="icon"] .bottom-nav .nav-item.active svg {
+  color: var(--primary);
+  stroke-width: 2.5;
+}
+body.dashboard-screen[data-bottom-bar-active-style="box"] .bottom-nav .nav-item.active {
+  background: var(--primary-glow) !important;
+  border-radius: 14px;
+}
+body.dashboard-screen[data-bottom-bar-active-style="icon"] .bottom-nav .nav-item.active {
+  background: transparent !important;
+}
+body.dashboard-screen[data-bottom-bar-active-style="icon"] .bottom-nav .nav-item.active svg {
+  color: var(--primary) !important;
+  stroke-width: 2.5;
+}
+body.dashboard-screen .bottom-nav {
+  background: color-mix(in srgb, var(--card-bg) calc(var(--bottom-bar-alpha, 1) * 100%), transparent) !important;
 }
 
 @media (max-width: 560px) {
