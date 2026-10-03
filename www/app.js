@@ -642,6 +642,9 @@ async function loadData() {
   if (!state.preferences.defaultStartPage) {
     state.preferences.defaultStartPage = "remember-last";
   }
+  if (!["default", "fire", "pinklogo", "purple", "capacitor", "calculator", "freeotp", "termux", "controller", "gear"].includes(state.preferences.appLook)) {
+    state.preferences.appLook = "default";
+  }
   if (state.preferences.dashboardDefaultCategory !== "remember-last"
     && !CATEGORIES[state.preferences.dashboardDefaultCategory]) state.preferences.dashboardDefaultCategory = "remember-last";
   if (![5, 10, 20, 50].includes(Number(state.preferences.recentlyAddedLimit))) state.preferences.recentlyAddedLimit = 10;
@@ -2046,21 +2049,6 @@ const APP_LOOK_CHOICES = [
   { value: "fire", label: "SquashDB", preview: "icons/previews/ic_launcher_fire.png" },
   { value: "pinklogo", label: "SquashDB", preview: "icons/previews/ic_launcher_pinklogo.png" },
   { value: "purple", label: "SquashDB", preview: "icons/previews/ic_launcher_purple.png" },
-  { value: "backlog", label: "Backlog", preview: "icons/previews/ic_launcher_backlog.png" },
-  { value: "bingelog", label: "Binge Log", preview: "icons/previews/ic_launcher_bingelog.png" },
-  { value: "checklist", label: "Checklist", preview: "icons/previews/ic_launcher_checklist.png" },
-  { value: "listkeeper", label: "ListKeeper", preview: "icons/previews/ic_launcher_listkeeper.png" },
-  { value: "myfiles", label: "My Files", preview: "icons/previews/ic_launcher_myfiles.png" },
-  { value: "mylists", label: "My Lists", preview: "icons/previews/ic_launcher_mylists.png" },
-  { value: "mywatchlist", label: "My Watchlist", preview: "icons/previews/ic_launcher_mywatchlist.png" },
-  { value: "notes", label: "Notes", preview: "icons/previews/ic_launcher_notes.png" },
-  { value: "reminders", label: "Reminders", preview: "icons/previews/ic_launcher_reminders.png" },
-  { value: "splash", label: "Splash", preview: "icons/previews/ic_launcher_splash.png" },
-  { value: "squid", label: "Squid", preview: "icons/previews/ic_launcher_squid.png" },
-  { value: "towatch", label: "ToWatch", preview: "icons/previews/ic_launcher_towatch.png" },
-  { value: "tracker", label: "Tracker", preview: "icons/previews/ic_launcher_tracker.png" },
-  { value: "vault", label: "Vault", preview: "icons/previews/ic_launcher_vault.png" },
-  { value: "watchlist", label: "Watchlist", preview: "icons/previews/ic_launcher_watchlist.png" },
   { value: "capacitor", label: "Capacitor", preview: "icons/previews/ic_launcher_capacitor.png" },
   { value: "calculator", label: "Calculator", preview: "icons/previews/ic_launcher_calculator.png" },
   { value: "freeotp", label: "FreeOTP", preview: "icons/previews/ic_launcher_freeotp.png" },
