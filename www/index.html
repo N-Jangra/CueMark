@@ -14,12 +14,29 @@
   </style>
 </head>
 <body>
-  <main aria-label="Loading CueMark"><section class="boot"><img src="cuemark-logo.svg" alt=""><h1>CueMark</h1><p>Loading your dashboard</p><div class="dots">•••</div></section></main>
+  <main aria-label="Loading application"><section class="boot"><img id="boot-icon" src="cuemark-logo.svg" alt=""><h1 id="boot-name">CueMark</h1><p>Loading your dashboard</p><div class="dots">•••</div></section></main>
   <script>
     let multiplier = 1;
     try {
       const prefs = JSON.parse(localStorage.getItem("cuemark_prefs") || "{}");
       multiplier = { off: .001, fast: .5, normal: 1, slow: 1.75 }[prefs.animationSpeed] || 1;
+      const looks = {
+        default: { name: "CueMark", icon: "cuemark-logo.svg" },
+        fire: { name: "CueMark", icon: "icons/previews/ic_launcher_fire.png" },
+        pinklogo: { name: "CueMark", icon: "icons/previews/ic_launcher_pinklogo.png" },
+        purple: { name: "CueMark", icon: "icons/previews/ic_launcher_purple.png" },
+        capacitor: { name: "Capacitor", icon: "icons/previews/ic_launcher_capacitor.png" },
+        calculator: { name: "Calculator", icon: "icons/previews/ic_launcher_calculator.png" },
+        freeotp: { name: "FreeOTP", icon: "icons/previews/ic_launcher_freeotp.png" },
+        termux: { name: "Termux", icon: "icons/previews/ic_launcher_termux.png" },
+        controller: { name: "Controller", icon: "icons/controller.svg" },
+        gear: { name: "Gear", icon: "icons/gear.svg" }
+      };
+      const look = looks[prefs.appLook] || looks.default;
+      document.getElementById("boot-icon").src = look.icon;
+      document.getElementById("boot-icon").alt = look.name;
+      document.getElementById("boot-name").textContent = "CueMark";
+      document.querySelector("main").setAttribute("aria-label", "Loading CueMark");
     } catch (e) {}
     setTimeout(() => location.replace("static/pages/main/dashboard.html"), 1500 * multiplier);
   </script>

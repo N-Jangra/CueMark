@@ -128,6 +128,7 @@ npx cap sync android
 cd android
 ./gradlew assembleDebug
 ./gradlew installDebug
+cd ..
 ```
 
 `installDebug` builds the APK and installs it on the authorized device. The APK is also written to:
