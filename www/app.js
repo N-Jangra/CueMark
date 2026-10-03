@@ -2858,7 +2858,24 @@ function renderCategoryOrderSettings() {
   });
 
   let dragged = null;
+  let pointerId = null;
+  let captureTarget = null;
+  let moved = false;
+  const saveOrder = () => saveCategoryOrder(Array.from(list.querySelectorAll(".sortable-item")).map(el => el.dataset.category));
+  const finishPointerDrag = (event) => {
+    if (!dragged || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
+    dragged.classList.remove("dragging");
+    if (moved) saveOrder();
+    if (pointerId !== null && captureTarget?.hasPointerCapture?.(pointerId)) captureTarget.releasePointerCapture(pointerId);
+    dragged = null;
+    pointerId = null;
+    captureTarget = null;
+    moved = false;
+  };
+  document.addEventListener("pointerup", finishPointerDrag, true);
+  document.addEventListener("pointercancel", finishPointerDrag, true);
   list.querySelectorAll(".sortable-item").forEach(item => {
+    item.draggable = !window.matchMedia("(pointer: coarse)").matches;
     item.addEventListener("dragstart", () => {
       dragged = item;
       item.classList.add("dragging");
@@ -2876,6 +2893,28 @@ function renderCategoryOrderSettings() {
       const after = e.clientY > rect.top + rect.height / 2;
       list.insertBefore(dragged, after ? item.nextSibling : item);
     });
+    const handle = item.querySelector(".drag-handle");
+    handle?.addEventListener("pointerdown", (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      dragged = item;
+      pointerId = event.pointerId;
+      captureTarget = handle;
+      moved = false;
+      item.classList.add("dragging");
+      handle.setPointerCapture?.(pointerId);
+      event.preventDefault();
+    });
+    handle?.addEventListener("pointermove", (event) => {
+      if (!dragged || event.pointerId !== pointerId) return;
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".sortable-item");
+      if (!target || target.parentElement !== list || target === dragged) return;
+      moved = true;
+      const rect = target.getBoundingClientRect();
+      list.insertBefore(dragged, event.clientY > rect.top + rect.height / 2 ? target.nextSibling : target);
+      event.preventDefault();
+    });
+    handle?.addEventListener("pointerup", finishPointerDrag);
+    handle?.addEventListener("pointercancel", finishPointerDrag);
   });
 
 }

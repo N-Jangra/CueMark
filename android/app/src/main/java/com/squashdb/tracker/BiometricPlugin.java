@@ -15,10 +15,12 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "Biometric")
 public class BiometricPlugin extends Plugin {
-    // Android 11+ supports one prompt for either biometrics or device PIN.
+    // Use BIOMETRIC_WEAK so Android face unlock implementations that are not
+    // classed as strong biometrics can authenticate alongside fingerprints.
+    // Android 11+ supports one prompt for either biometric or device PIN.
     // Android 9/10 reject that authenticator combination while building it.
     private int getSupportedAuthenticators() {
-        int biometric = BiometricManager.Authenticators.BIOMETRIC_STRONG;
+        int biometric = BiometricManager.Authenticators.BIOMETRIC_WEAK;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return biometric | BiometricManager.Authenticators.DEVICE_CREDENTIAL;
         }
