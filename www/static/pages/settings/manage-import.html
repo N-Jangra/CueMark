@@ -11,25 +11,25 @@
   <div id="app-container">
     <header class="settings-ios-header"><button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button><h1>Import List</h1><span class="settings-ios-header-spacer" aria-hidden="true"></span></header>
     <main><section class="tab-content active" id="settings-import-page">
-      <p class="manage-intro">Import titles from CSV, TSV, or TXT files. Items are added immediately, then metadata is synced in the background.</p>
-      <div class="settings-section">
-        <div class="btn-group-vertical">
-          <button type="button" class="btn btn-secondary" id="settings-import-btn"><i data-lucide="file-up"></i> Choose Import File</button>
-          <input type="file" id="settings-import-file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
+      <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="file-up"></i></span><div><strong>Bring your list into SquashDB</strong><p>Select a CSV, TSV, or text file. You can review it before adding anything.</p></div></div>
+      <div class="settings-section import-file-card">
+        <button type="button" class="import-file-action" id="settings-import-btn"><span class="manage-action-icon"><i data-lucide="folder-open"></i></span><span><strong>Choose an import file</strong><small>CSV, TSV, or TXT</small></span><i data-lucide="chevron-right"></i></button>
+        <input type="file" id="settings-import-file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
+        <p class="manage-field-hint">CSV uses <code>title,status</code>. Text files can use <code>Title - Completed</code>.</p>
+      </div>
+      <details class="import-options-disclosure">
+        <summary><span><strong>Import options</strong><small>Category, defaults, duplicates, and metadata</small></span><i data-lucide="chevron-down"></i></summary>
+        <div class="import-page-options">
+          <div class="form-group"><label for="import-category">Category</label><select id="import-category" class="form-control"></select></div>
+          <div class="form-group"><label for="import-default-status">Default status</label><select id="import-default-status" class="form-control"></select></div>
+          <div class="form-group"><label for="import-duplicates">When a title already exists</label><select id="import-duplicates" class="form-control"><option value="skip">Skip existing titles</option><option value="update">Update existing status</option><option value="create">Create another copy</option></select></div>
+          <div class="form-group"><label for="import-metadata-source">Metadata source</label><select id="import-metadata-source" class="form-control"></select></div>
+          <div class="form-group import-worker-setting"><label for="import-concurrency">Metadata sync workers <span class="beta-label">Beta</span></label><input id="import-concurrency" class="form-control" type="number" min="1" max="10" step="1"><span class="setting-desc">How many titles can sync at once. Default: 5.</span></div>
+          <label class="form-check"><input type="checkbox" id="import-fetch-metadata" checked> Sync metadata in the background</label>
+          <label class="form-check"><input type="checkbox" id="import-download-thumbnails" checked> Download thumbnails when available</label>
         </div>
-        <p class="settings-row-note">CSV: <code>title,status</code> · TXT: <code>Title - Completed</code></p>
-      </div>
-      <div class="settings-section import-page-options">
-        <div class="form-group"><label for="import-concurrency">Metadata sync workers <span class="beta-label">Beta</span></label><input id="import-concurrency" class="form-control" type="number" min="1" max="10" step="1"><span class="setting-desc">How many titles can sync at the same time. Default: 5.</span></div>
-        <div class="form-group"><label for="import-category">Category</label><select id="import-category" class="form-control"></select></div>
-        <div class="form-group"><label for="import-default-status">Default status</label><select id="import-default-status" class="form-control"></select></div>
-        <div class="form-group"><label for="import-duplicates">Duplicates</label><select id="import-duplicates" class="form-control"><option value="skip">Skip existing titles</option><option value="update">Update existing status</option><option value="create">Create another copy</option></select></div>
-        <div class="form-group"><label for="import-metadata-source">Metadata source</label><select id="import-metadata-source" class="form-control"></select></div>
-        <label class="form-check"><input type="checkbox" id="import-fetch-metadata" checked> Start background metadata syncing</label>
-        <label class="form-check"><input type="checkbox" id="import-download-thumbnails" checked> Download thumbnails when available</label>
-      </div>
-      <div id="import-list-summary" class="settings-row-note import-list-summary">Choose a file to preview it.</div>
-      <div id="import-list-preview" class="import-list-preview" hidden></div>
+      </details>
+      <div class="import-review-card"><div id="import-list-summary" class="import-list-summary" aria-live="polite">Choose a file to preview it.</div><div id="import-list-preview" class="import-list-preview" hidden></div></div>
       <div class="form-actions import-page-actions"><button type="button" class="btn btn-primary" id="import-list-confirm" disabled><i data-lucide="file-up"></i> Import List</button></div>
     </section></main>
   </div>

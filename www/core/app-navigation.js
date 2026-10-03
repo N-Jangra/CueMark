@@ -260,22 +260,38 @@ function setupSwipeBackGesture() {
   }, { passive: true });
 }
 
+function closeOpenPopup() {
+  // Bottom sheets and dialogs share the modal-overlay/active convention across
+  // the settings, metadata, dashboard, and detail pages. Close only the top
+  // visible popup so Android Back behaves like the popup's close button.
+  const popups = [...document.querySelectorAll(".modal-overlay.active, .modal.active")]
+    .filter(popup => getComputedStyle(popup).display !== "none" && getComputedStyle(popup).visibility !== "hidden");
+  const popup = popups[popups.length - 1];
+  if (!popup) return false;
+
+  const closeButton = popup.querySelector(".modal-close, .modal-close-btn, [data-modal-close]");
+  if (closeButton) closeButton.click();
+  else popup.classList.remove("active");
+  return true;
+}
+
 function setupHardwareBackButton() {
   const handler = (e) => {
     if (e) e.preventDefault();
+    if (closeOpenPopup()) return;
     navigateBackWithinApp("static/pages/main/dashboard.html");
   };
 
   if (!document.body || document.body.dataset.boundHardwareBack) return;
   document.body.dataset.boundHardwareBack = "true";
-  document.addEventListener("backbutton", handler, false);
-  // Browser history already performs the correct back navigation after a
-  // normal swipe/back action. Do not also pop the app stack here, otherwise
-  // one gesture can skip the previous page and land on Dashboard.
-
   const capApp = window.Capacitor?.Plugins?.App;
+  // Capacitor Android emits App.backButton. Register the legacy document event
+  // only for non-Capacitor hosts; registering both makes one press navigate
+  // twice and can incorrectly fall through to Dashboard.
+  if (!capApp?.addListener) document.addEventListener("backbutton", handler, false);
   if (capApp?.addListener) {
     capApp.addListener("backButton", () => {
+    if (closeOpenPopup()) return;
     const current = getCurrentPagePath();
     const stack = getAppPageStack();
       const atRoot = current === "static/pages/main/dashboard.html" && stack.length <= 1;

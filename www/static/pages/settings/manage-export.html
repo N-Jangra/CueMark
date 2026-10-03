@@ -11,15 +11,16 @@
   <div id="app-container">
     <header class="settings-ios-header"><button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button><h1>Export List</h1><span class="settings-ios-header-spacer" aria-hidden="true"></span></header>
     <main><section class="tab-content active">
-      <p class="manage-intro">Download your tracked titles in a format you can edit, share, or import again later.</p>
-      <div class="settings-section">
-        <div class="form-group"><label for="export-category">Category</label><select id="export-category" class="form-control"></select></div>
-        <div class="btn-group-vertical">
-          <button type="button" class="btn btn-secondary" data-export-format="csv"><i data-lucide="file-text"></i> Export CSV</button>
-          <button type="button" class="btn btn-secondary" data-export-format="tsv"><i data-lucide="table-2"></i> Export TSV</button>
-          <button type="button" class="btn btn-secondary" data-export-format="txt"><i data-lucide="file"></i> Export TXT</button>
+      <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="download"></i></span><div><strong>Take your library with you</strong><p>Choose a category and save a copy you can edit or import into another app.</p></div></div>
+      <div class="settings-section export-options-card">
+        <div class="form-group"><label for="export-category">Export category</label><select id="export-category" class="form-control"></select><small class="manage-field-hint">Only titles in this category will be included.</small></div>
+        <h2 class="manage-subheading">Choose a file format</h2>
+        <div class="export-format-list">
+          <button type="button" class="export-format-action" data-export-format="csv"><span class="manage-action-icon"><i data-lucide="file-spreadsheet"></i></span><span><strong>CSV spreadsheet</strong><small>Best for spreadsheets and most tracking apps.</small></span><i data-lucide="chevron-right"></i></button>
+          <button type="button" class="export-format-action" data-export-format="tsv"><span class="manage-action-icon"><i data-lucide="table-2"></i></span><span><strong>TSV table</strong><small>Tab-separated values for clean copy and paste.</small></span><i data-lucide="chevron-right"></i></button>
+          <button type="button" class="export-format-action" data-export-format="txt"><span class="manage-action-icon"><i data-lucide="file-text"></i></span><span><strong>Plain text</strong><small>A simple, readable list of titles and statuses.</small></span><i data-lucide="chevron-right"></i></button>
         </div>
-        <p id="export-list-status" class="settings-row-note" aria-live="polite"></p>
+        <p id="export-list-status" class="manage-action-status" aria-live="polite"></p>
       </div>
     </section></main>
   </div>

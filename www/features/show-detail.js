@@ -861,6 +861,45 @@ function stripHtml(html) {
   return div.textContent || div.innerText || "";
 }
 
+function applyThumbnailBackdrop(header, thumbnail) {
+  if (!header || !thumbnail) return;
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 24;
+      canvas.height = 24;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let r = 0; let g = 0; let b = 0; let weightTotal = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const alpha = pixels[index + 3];
+        if (alpha < 100) continue;
+        const red = pixels[index] / 255;
+        const green = pixels[index + 1] / 255;
+        const blue = pixels[index + 2] / 255;
+        const max = Math.max(red, green, blue);
+        const min = Math.min(red, green, blue);
+        const saturation = max === 0 ? 0 : (max - min) / max;
+        const weight = 0.35 + saturation * 2.4;
+        r += pixels[index] * weight;
+        g += pixels[index + 1] * weight;
+        b += pixels[index + 2] * weight;
+        weightTotal += weight;
+      }
+      if (!weightTotal) return;
+      const color = `rgb(${Math.round(r / weightTotal)}, ${Math.round(g / weightTotal)}, ${Math.round(b / weightTotal)})`;
+      header.style.setProperty("--detail-thumb-color", color);
+      header.classList.add("has-thumbnail-backdrop");
+    } catch (error) {
+      // Cross-origin artwork may not be readable; keep the normal theme card.
+    }
+  };
+  image.src = thumbnail;
+}
+
 function renderShowDetailHeader(show) {
   const localItem = state.items.find(item => item.id === showDetailState.itemId) || {};
   const runtimeMinutes = show.episodeRuntime || show.playtime || localItem.episodeRuntime || localItem.playtime || 0;
@@ -876,6 +915,9 @@ function renderShowDetailHeader(show) {
   if (categoryEl) categoryEl.textContent = CATEGORIES[showDetailState.category]?.label || "";
 
   const thumbWrap = document.getElementById("show-detail-thumb-wrap");
+  const detailHeader = document.querySelector(".show-detail-header");
+  detailHeader?.classList.remove("has-thumbnail-backdrop");
+  applyThumbnailBackdrop(detailHeader, show.thumbnail);
   thumbWrap.innerHTML = thumbnailOrPlaceholder(show.thumbnail, "show-detail-thumb");
   if (show.thumbnail) {
     thumbWrap.classList.add("show-detail-poster-clickable");
@@ -1691,7 +1733,12 @@ function ensureLocalItem(extraFields) {
     tvmazeShowId: show.tvmazeShowId || null,
     episodeRuntime: show.episodeRuntime || "",
     playtime: show.playtime || "",
-    episodesCache: showDetailState.pendingEpisodesCache || [],
+    // The active detail state contains the complete season/episode list after
+    // metadata loading. The pending cache is only a fallback for older flows;
+    // using it first could save a partial Season 1-only payload.
+    episodesCache: showDetailState.episodes.length
+      ? showDetailState.episodes
+      : (showDetailState.pendingEpisodesCache || []),
     ...extraFields
   };
   if (newItem.status === "Completed" && typeof markItemAsCompleted === "function") markItemAsCompleted(newItem);

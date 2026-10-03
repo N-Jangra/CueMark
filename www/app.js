@@ -377,6 +377,7 @@ let state = {
     bottomBarTransparency: 100,
     bottomBarActiveStyle: "box",
     bottomBarSurface: "translucent",
+    showScrollbars: false,
     appLook: "default",
     appLock: {
       method: "none",           // "none" | "pin" | "pattern" | "alphanumeric" | "biometric"
@@ -940,7 +941,8 @@ function initializePage() {
 
   if (pageTab) {
     state.currentTab = pageTab;
-    renderCategoryChips();
+    if (pageTab === "tab-stats") renderStatsCategoryChips();
+    else renderCategoryChips();
     renderCategorySelectOptions();
     switchTab(pageTab);
     if (pageTab === "tab-dashboard") {
@@ -1135,6 +1137,7 @@ function applyPreferenceAttributes() {
   document.documentElement.style.setProperty("--bottom-bar-alpha", String(bottomBarTransparency / 100));
   document.body.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
   document.body.setAttribute("data-bottom-bar-surface", state.preferences.bottomBarSurface || "translucent");
+  document.documentElement.setAttribute("data-show-scrollbars", state.preferences.showScrollbars === true ? "true" : "false");
   document.documentElement.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
   document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
   document.body.setAttribute("data-date-format", state.preferences.dateFormat || "system");
@@ -1456,11 +1459,15 @@ function setupEventListeners() {
 
   // Change Backup Folder
   const chooseFolderBtn = document.getElementById("backup-choose-folder");
+  const folderActions = document.getElementById("backup-folder-actions");
+  const folderCapabilityNote = document.getElementById("backup-folder-capability-note");
   if (chooseFolderBtn) {
     if (backupFolderPluginAvailable()) {
       chooseFolderBtn.addEventListener("click", chooseBackupFolder);
     } else {
       chooseFolderBtn.style.display = "none";
+      if (folderActions) folderActions.style.display = "none";
+      if (folderCapabilityNote) folderCapabilityNote.hidden = false;
     }
   }
 
@@ -2241,6 +2248,10 @@ const SETTINGS_PICKERS = {
     default: "translucent",
     options: [{ value: "translucent", label: "Translucent" }, { value: "solid", label: "Solid" }]
   },
+  showScrollbars: {
+    default: false,
+    options: [{ value: "false", label: "Hidden" }, { value: "true", label: "Shown" }]
+  },
   mainColor: {
     default: "normal",
     options: [
@@ -2594,6 +2605,119 @@ const SETTINGS_PICKERS = {
 // Multiplier applied to every CSS transition/animation duration via --anim-speed.
 const ANIMATION_SPEED_MULTIPLIERS = { off: 0.001, fast: 0.5, normal: 1, slow: 1.75 };
 
+const MAIN_COLOR_PREVIEWS = {
+  normal: "#6366f1", "carnation-pink": "#f472b6", "dark-green": "#16a34a", maroon: "#b91c1c",
+  "navy-blue": "#2563eb", grey: "#64748b", white: "#e2e8f0", brown: "#a16207", cool: "#06b6d4",
+  fire: "#f97316", burple: "#7c3aed", gren: "#22c55e", apple: "#65a30d", banan: "#eab308",
+  party: "#f43f5e", "pink-pain": "#fb7185", "material-you": "#8b5cf6"
+};
+
+const FONT_PREVIEW_FAMILIES = {
+  system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", inter: "Inter, sans-serif",
+  outfit: "Outfit, sans-serif", serif: "Georgia, 'Times New Roman', serif", monospace: "ui-monospace, monospace",
+  rounded: "ui-rounded, 'Segoe UI Rounded', sans-serif", poppins: "Poppins, sans-serif", roboto: "Roboto, sans-serif",
+  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace"
+};
+
+function getSettingsPickerPresentation(pref, option) {
+  if (pref === "uiTheme") return { kind: "theme", description: option.description, colors: option.colors };
+  if (pref === "accessibleTextSize") {
+    const choices = {
+      normal: ["Default text size throughout the app.", "15px"],
+      large: ["Larger labels and reading text.", "19px"],
+      largest: ["Maximum text size for easier reading.", "23px"]
+    };
+    return { kind: "text-size", description: choices[option.value][0], sampleSize: choices[option.value][1] };
+  }
+  if (pref === "accessibilityPreset") {
+    const choices = {
+      standard: ["Default contrast, motion, and text size.", []],
+      "high-contrast": ["Increase contrast and text clarity.", ["contrast"]],
+      "reduced-motion": ["Minimize transitions and movement.", ["motion"]],
+      maximum: ["High contrast, reduced motion, and largest text.", ["contrast", "motion", "text"]]
+    };
+    return { kind: "accessibility", description: choices[option.value][0], enabled: choices[option.value][1] };
+  }
+  if (pref === "animationSpeed") {
+    const choices = {
+      off: ["Transitions happen instantly.", "Instant", 12],
+      fast: ["Short, responsive transitions.", "0.5×", 22],
+      normal: ["Balanced transition timing.", "1×", 32],
+      slow: ["Relaxed, slower transitions.", "1.75×", 43]
+    };
+    return { kind: "speed", description: choices[option.value][0], pace: choices[option.value][1], width: choices[option.value][2] };
+  }
+  if (pref === "uiFont") {
+    const description = {
+      system: "Uses the font built into your device.", inter: "Clean, neutral, and easy to scan.", outfit: "Rounded geometric headings and labels.",
+      serif: "Traditional letterforms for a bookish feel.", monospace: "Even-width characters with a technical feel.", rounded: "Soft, friendly rounded letterforms.",
+      poppins: "Geometric sans serif with a warm feel.", roboto: "Compact, familiar Android-style lettering.", nunito: "Soft shapes with highly readable text.",
+      lato: "Open, balanced letterforms for longer reading.", merriweather: "Serif lettering tuned for comfortable reading.",
+      "jetbrains-mono": "Clear monospaced lettering for detail."
+    };
+    return { kind: "font", description: description[option.value], family: FONT_PREVIEW_FAMILIES[option.value] };
+  }
+  if (pref === "mainColor") return { kind: "accent", description: `Use ${option.label.toLowerCase()} for buttons and highlights.`, color: MAIN_COLOR_PREVIEWS[option.value] || MAIN_COLOR_PREVIEWS.normal };
+  if (pref === "bottomBarActiveStyle") {
+    return { kind: "nav-active", description: option.value === "box" ? "Highlight the selected destination with a soft tile." : "Color the selected icon without a tile.", mode: option.value };
+  }
+  if (pref === "bottomBarSurface") {
+    return { kind: "nav-surface", description: option.value === "translucent" ? "Let the page softly show through the navigation." : "Keep the navigation background opaque.", mode: option.value };
+  }
+  return null;
+}
+
+function createSettingsPickerPreview(presentation) {
+  const { kind } = presentation;
+  const preview = document.createElement("span");
+  preview.className = `setting-picker-preview picker-preview-${kind}`;
+  if (kind === "theme") {
+    preview.classList.add("theme-picker-preview");
+    preview.style.setProperty("--theme-preview-bg", presentation.colors[0]);
+    preview.style.setProperty("--theme-preview-accent", presentation.colors[1]);
+    preview.style.setProperty("--theme-preview-text", presentation.colors[2]);
+    preview.innerHTML = '<span class="theme-picker-preview-accent"></span><span class="theme-picker-preview-lines"><i></i><i></i></span>';
+  } else if (kind === "text-size") {
+    const sample = document.createElement("strong");
+    sample.className = "picker-preview-aa";
+    sample.textContent = "Aa";
+    sample.style.fontSize = presentation.sampleSize;
+    preview.appendChild(sample);
+  } else if (kind === "accessibility") {
+    ["contrast", "motion", "text"].forEach(feature => {
+      const mark = document.createElement("span");
+      mark.className = `picker-accessibility-mark${presentation.enabled.includes(feature) ? " enabled" : ""}`;
+      const icon = document.createElement("i");
+      icon.dataset.lucide = feature === "contrast" ? "contrast" : feature === "motion" ? "move-horizontal" : "type";
+      mark.appendChild(icon);
+      preview.appendChild(mark);
+    });
+  } else if (kind === "speed") {
+    const line = document.createElement("span");
+    line.className = "picker-speed-line";
+    line.style.width = `${presentation.width}px`;
+    const label = document.createElement("small");
+    label.textContent = presentation.pace;
+    preview.append(line, label);
+  } else if (kind === "font") {
+    const sample = document.createElement("strong");
+    sample.className = "picker-preview-aa";
+    sample.textContent = "Aa";
+    sample.style.fontFamily = presentation.family;
+    preview.appendChild(sample);
+  } else if (kind === "accent") {
+    preview.style.setProperty("--picker-accent-color", presentation.color);
+    preview.innerHTML = '<span class="picker-accent-dot"></span><span class="picker-accent-line"></span><span class="picker-accent-button"></span>';
+  } else if (kind === "nav-active") {
+    preview.classList.add(`picker-nav-mode-${presentation.mode}`);
+    preview.innerHTML = '<span><i data-lucide="layout-grid"></i></span><span><i data-lucide="search"></i></span><span><i data-lucide="settings"></i></span>';
+  } else if (kind === "nav-surface") {
+    preview.classList.add(`picker-surface-mode-${presentation.mode}`);
+    preview.innerHTML = '<span class="picker-surface-line"></span><span class="picker-surface-line short"></span><span class="picker-surface-nav"><i></i><i></i><i></i></span>';
+  }
+  return preview;
+}
+
 function getPickerValue(pref) {
   const picker = SETTINGS_PICKERS[pref];
   const source = picker.stateKey ? state : state.preferences;
@@ -2699,24 +2823,23 @@ function openSettingsPicker(pref, title) {
     btn.type = "button";
     btn.className = `picker-option${opt.value === current ? " active" : ""}`;
     btn.setAttribute("aria-pressed", String(opt.value === current));
-    if (pref === "uiTheme") {
-      btn.classList.add("theme-picker-option");
-      btn.dataset.themeOption = opt.value;
+    const presentation = getSettingsPickerPresentation(pref, opt);
+    if (presentation) {
+      btn.classList.add("rich-picker-option");
+      if (pref === "uiTheme") {
+        btn.classList.add("theme-picker-option");
+        btn.dataset.themeOption = opt.value;
+      }
       const radio = document.createElement("span");
       radio.className = "choice-radio";
       radio.setAttribute("aria-hidden", "true");
-      const preview = document.createElement("span");
-      preview.className = "theme-picker-preview";
-      preview.style.setProperty("--theme-preview-bg", opt.colors[0]);
-      preview.style.setProperty("--theme-preview-accent", opt.colors[1]);
-      preview.style.setProperty("--theme-preview-text", opt.colors[2]);
-      preview.innerHTML = '<span class="theme-picker-preview-accent"></span><span class="theme-picker-preview-lines"><i></i><i></i></span>';
+      const preview = createSettingsPickerPreview(presentation);
       const copy = document.createElement("span");
       copy.className = "theme-picker-copy";
       const name = document.createElement("strong");
       name.textContent = opt.label;
       const description = document.createElement("small");
-      description.textContent = opt.description;
+      description.textContent = presentation.description;
       copy.append(name, description);
       btn.append(radio, preview, copy);
     } else {
@@ -3181,6 +3304,36 @@ function renderCategoryChips() {
   });
 
   lucide.createIcons();
+}
+
+function renderStatsCategoryChips() {
+  const container = document.getElementById("category-chips");
+  if (!container) return;
+  container.replaceChildren();
+  const enabledCategories = getEnabledOrderedCategories();
+  let selected = localStorage.getItem("squashdb_stats_category") || "all";
+  if (selected !== "all" && !enabledCategories.includes(selected)) {
+    selected = "all";
+    localStorage.setItem("squashdb_stats_category", selected);
+  }
+  const choices = [{ key: "all", label: "All categories", icon: "layers-3" },
+    ...enabledCategories.map(key => ({ key, label: CATEGORIES[key].label, icon: CATEGORIES[key].icon }))];
+  choices.forEach(choice => {
+    const button = document.createElement("button");
+    const active = selected === choice.key;
+    button.type = "button";
+    button.className = `chip${active ? " active" : ""}`;
+    button.dataset.statsCategory = choice.key;
+    button.setAttribute("aria-pressed", String(active));
+    button.innerHTML = `<i data-lucide="${choice.icon}" aria-hidden="true"></i><span>${choice.label}</span>`;
+    button.addEventListener("click", () => {
+      localStorage.setItem("squashdb_stats_category", choice.key);
+      renderStatsCategoryChips();
+      renderStats();
+    });
+    container.appendChild(button);
+  });
+  lucide.createIcons(container);
 }
 
 // Update UI active styles for selected category chip
@@ -3944,17 +4097,31 @@ function setupDashboardPullToRefresh() {
     dashboard.classList.remove("dashboard-pulling");
     dashboard.style.removeProperty("--dashboard-pull-distance");
     if (distance < 64) return;
-    if (status) status.textContent = "Refreshing metadata and images…";
+    if (status) {
+      status.classList.add("is-refreshing");
+      status.innerHTML = '<span class="dashboard-refresh-spinner" aria-hidden="true"></span><span>Refreshing metadata and images…</span>';
+    }
     try {
       // Keep metadata and image caches during normal refresh. Cache clearing is
       // an explicit Settings action so pull-to-refresh remains fast and does
       // not force every thumbnail to download and decode again.
       renderDashboard();
-      if (status) status.textContent = "Dashboard refreshed";
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "Dashboard refreshed";
+      }
     } catch (err) {
-      if (status) status.textContent = "Refresh failed — your saved data is safe";
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "Refresh failed — your saved data is safe";
+      }
     }
-    setTimeout(() => { if (status) status.textContent = ""; }, 1800);
+    setTimeout(() => {
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "";
+      }
+    }, 1800);
   }, { passive: true });
 }
 
@@ -4071,7 +4238,7 @@ function renderDashboard() {
     container.classList.toggle("notes-large-grid-view", state.preferences.dashboardView === "large-grid");
     container.classList.toggle("notes-table-view", state.preferences.dashboardView === "table");
     container.classList.toggle("notes-minimal-view", state.preferences.dashboardView === "minimal-list");
-    container.classList.remove("dashboard-special-view");
+    container.classList.remove("dashboard-special-view", "dashboard-kanban-view", "dashboard-timeline-view");
     container.classList.toggle("dashboard-density-compact", state.preferences.dashboardDensity === "compact");
     container.dataset.rowActions = state.preferences.dashboardRowActions || "menu";
     if (!isGrid && dashboardSelectedIds.size > 0) {
@@ -4180,6 +4347,7 @@ function buildDashboardCardForCurrentView(item) {
 
 function setupDashboardGroupedView(container, filtered) {
   teardownDashboardLazyLoad();
+  container.classList.remove("dashboard-special-view", "dashboard-kanban-view", "dashboard-timeline-view");
   container.innerHTML = "";
   const groupBy = state.preferences.dashboardGroupBy;
   const groups = new Map();
@@ -4279,18 +4447,31 @@ function buildDetailedGridCard(item) {
   const rating = Number(item.rating) > 0 ? formatRatingValue(item.rating) : "Unrated";
   card.className = `grid-card detailed-grid-card${isCompleted ? " completed" : ""}`;
   card.dataset.id = item.id;
-  card.innerHTML = `
-    ${dashboardThumbnail(item, "detailed-grid-thumb")}
-    <div class="detailed-grid-body">
-      <strong>${item.title}</strong>
-      <small>${subtitle}</small>
-      <span class="detailed-grid-meta">${isStatusOnly ? (state.preferences.dashboardShowRatings ? `Rating: ${rating}` : item.status || "") : (state.preferences.dashboardShowProgress ? `${progress}% complete` : "")}</span>
-    </div>
-    ${isStatusOnly ? `<span class="dashboard-status-pill">${item.status || "Unrated"}</span>` : (state.preferences.dashboardShowProgress ? progressRingHTML(progress) : "")}
-    <div class="grid-card-select-overlay">
-      <div class="grid-card-select-check"><i data-lucide="check"></i></div>
-    </div>
-  `;
+  const thumbnail = document.createElement("template");
+  thumbnail.innerHTML = dashboardThumbnail(item, "detailed-grid-thumb");
+  card.appendChild(thumbnail.content.firstElementChild);
+  const body = document.createElement("div");
+  body.className = "detailed-grid-body";
+  const title = document.createElement("strong");
+  title.textContent = item.title || "Untitled";
+  const detail = document.createElement("small");
+  detail.textContent = subtitle;
+  const meta = document.createElement("span");
+  meta.className = "detailed-grid-meta";
+  meta.textContent = isStatusOnly
+    ? (state.preferences.dashboardShowRatings ? `Rating: ${rating}` : item.status || "")
+    : (state.preferences.dashboardShowProgress ? `${progress}% complete` : "");
+  body.append(title, detail, meta);
+  card.appendChild(body);
+  if (isStatusOnly) {
+    const status = document.createElement("span");
+    status.className = "dashboard-status-pill";
+    status.textContent = item.status || "Unrated";
+    card.appendChild(status);
+  } else if (state.preferences.dashboardShowProgress) {
+    card.insertAdjacentHTML("beforeend", progressRingHTML(progress));
+  }
+  card.insertAdjacentHTML("beforeend", '<div class="grid-card-select-overlay"><div class="grid-card-select-check"><i data-lucide="check"></i></div></div>');
   return card;
 }
 
@@ -4755,14 +4936,11 @@ function renderStats() {
 
   if (!totalEl) return;
 
-  const activeCategory = state.activeCategoryChip || localStorage.getItem("squashdb_category_chip") || getOrderedCategories().find(key => state.preferences[key]);
-  if (activeCategory && !state.activeCategoryChip) {
-    state.activeCategoryChip = activeCategory;
-    saveData();
-  }
+  renderStatsCategoryChips();
+  const activeCategory = localStorage.getItem("squashdb_stats_category") || "all";
 
   // Filter items in enabled categories and selected category
-  const activeItems = state.items.filter(item => state.preferences[item.category] && (!activeCategory || item.category === activeCategory));
+  const activeItems = state.items.filter(item => state.preferences[item.category] && (activeCategory === "all" || item.category === activeCategory));
   const completedItems = activeItems.filter(item => item.status === "Completed");
   const inProgressItems = activeItems.filter(item => item.status === "Playing" || item.status === "In Progress" || item.status === "Reading");
   const queuedStatuses = new Set(["Watchlist", "Playlist", "Backlog", "Plan to Read", "Plan to Watch", "Want to Play"]);
@@ -4775,6 +4953,7 @@ function renderStats() {
   const activeCount = inProgressItems.length;
   const queuedCount = queuedItems.length;
   const rate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const otherCount = Math.max(0, totalCount - completedCount - activeCount - queuedCount - onHoldItems.length - droppedItems.length);
 
   totalEl.textContent = totalCount;
   completedEl.textContent = completedCount;
@@ -4785,6 +4964,45 @@ function renderStats() {
   if (onHoldEl) onHoldEl.textContent = onHoldItems.length;
   if (droppedEl) droppedEl.textContent = droppedItems.length;
   rateEl.textContent = `${rate}%`;
+  const totalCaption = document.getElementById("stats-total-caption");
+  if (totalCaption) totalCaption.textContent = totalCount;
+  const statusLegend = {
+    "stats-legend-completed": completedCount,
+    "stats-legend-active": activeCount,
+    "stats-legend-queued": queuedCount,
+    "stats-legend-other": otherCount
+  };
+  Object.entries(statusLegend).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  });
+  const rateRing = document.getElementById("stats-rate-ring");
+  if (rateRing) {
+    rateRing.style.setProperty("--completion-progress", `${rate}%`);
+    rateRing.setAttribute("aria-valuenow", String(rate));
+    const ringLabel = rateRing.querySelector("span");
+    if (ringLabel) ringLabel.textContent = `${rate}%`;
+  }
+  const statusBar = document.getElementById("stats-status-bar");
+  if (statusBar) {
+    const segments = [
+      ["completed", "Completed", completedCount], ["active", "In progress", activeCount],
+      ["queued", "In queue", queuedCount], ["hold", "On hold", onHoldItems.length],
+      ["dropped", "Dropped", droppedItems.length], ["other", "Other", otherCount]
+    ].filter(([, , count]) => count > 0);
+    statusBar.replaceChildren();
+    statusBar.setAttribute("aria-label", totalCount
+      ? `${totalCount} items: ${segments.map(([, label, count]) => `${count} ${label.toLowerCase()}`).join(", ")}`
+      : "No items in this category yet");
+    segments.forEach(([key, label, count]) => {
+      const segment = document.createElement("span");
+      segment.className = `stats-status-segment status-segment-${key}`;
+      segment.style.width = `${(count / totalCount) * 100}%`;
+      segment.title = `${label}: ${count}`;
+      segment.setAttribute("aria-hidden", "true");
+      statusBar.appendChild(segment);
+    });
+  }
 
   // Time-to-complete aggregates: only shown when at least one item in the
   // active view has enough data (runtime/reading speed) to estimate from.
@@ -4926,6 +5144,16 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
       derived: true
     }));
   const hasActivity = log.length > 0;
+  const weeklyTimeCaption = document.getElementById("stats-weekly-time-caption");
+  if (weeklyTimeCaption) weeklyTimeCaption.textContent = watchLog.length
+    ? "Recorded watch time, day by day"
+    : "Estimated from recent item updates";
+  const monthlyTitle = document.getElementById("stats-monthly-episodes-title");
+  if (monthlyTitle) monthlyTitle.textContent = watchLog.length ? "Episodes this month" : "Item activity this month";
+  const monthlyCaption = document.getElementById("stats-monthly-episodes-caption");
+  if (monthlyCaption) monthlyCaption.textContent = watchLog.length
+    ? "Weekly totals for selected month"
+    : "Estimated from library update dates";
 
   const dayTotals = {}; // "itemId|YYYY-MM-DD" -> { title, count }
   const now = new Date();
@@ -4973,6 +5201,9 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
       <span class="column-chart-label">${day.date.toLocaleDateString(undefined, { weekday: "short" })}</span>
     </div>
   `).join("");
+  timeChart.setAttribute("aria-label", watchLog.length
+    ? "Recorded watch time for each day this week"
+    : "Estimated activity by day from recent item updates this week");
 
   // Monthly graph: selectable month, grouped into week-of-month bars.
   const monthKeys = [...new Set([
@@ -5021,6 +5252,9 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
       <span class="column-chart-label">Week ${bucket.week}</span>
     </div>
   `).join("");
+  epChart.setAttribute("aria-label", watchLog.length
+    ? "Episodes recorded each week in the selected month"
+    : "Estimated item activity each week in the selected month");
 
   const marathons = Object.values(dayTotals).sort((a, b) => b.count - a.count).slice(0, 5);
   if (!watchLog.length || marathons.length === 0) {
@@ -5544,10 +5778,11 @@ async function scanBarcodeOrQr() {
   if (!titleInput) return;
   const scanner = nativePlugin("BarcodeScanner") || nativePlugin("BarcodeReader");
   try {
-    const result = scanner?.scan ? await scanner.scan() : scanner?.startScan ? await scanner.startScan() : null;
+    let result = scanner?.scan ? await scanner.scan() : scanner?.startScan ? await scanner.startScan() : null;
+    if (!scanner) result = await scanWithWebCamera();
     const value = String(result?.content || result?.text || result?.barcode?.rawValue || "").trim();
     if (!value) {
-      if (!scanner) alert("Barcode scanning needs the Android Barcode Scanner plugin. You can still enter an ISBN or game code manually.");
+      if (!scanner) alert("Barcode scanning is not available on this device. You can still enter an ISBN or game code manually.");
       return;
     }
     titleInput.value = value;
@@ -5575,6 +5810,50 @@ async function scanBarcodeOrQr() {
     }
   } catch (err) {
     console.warn("Barcode/QR scan failed", err);
+  }
+}
+
+async function scanWithWebCamera() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.BarcodeDetector) return null;
+  const formats = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code", "data_matrix", "itf"];
+  const detector = new BarcodeDetector({ formats: BarcodeDetector.getSupportedFormats ? (await BarcodeDetector.getSupportedFormats()).filter(format => formats.includes(format)) : formats });
+  if (!detector) return null;
+
+  const overlay = document.createElement("div");
+  overlay.className = "barcode-camera-overlay";
+  overlay.innerHTML = '<div class="barcode-camera-sheet"><button type="button" class="barcode-camera-close" aria-label="Close scanner">×</button><video autoplay playsinline muted></video><p>Point the camera at a barcode or QR code.</p></div>';
+  document.body.appendChild(overlay);
+  const video = overlay.querySelector("video");
+  const close = overlay.querySelector(".barcode-camera-close");
+  let stream = null;
+  let stopped = false;
+  const finish = value => {
+    stopped = true;
+    stream?.getTracks().forEach(track => track.stop());
+    overlay.remove();
+    return value;
+  };
+  close.addEventListener("click", () => finish(null));
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    return await new Promise(resolve => {
+      const scan = async () => {
+        if (stopped) return resolve(null);
+        try {
+          const results = await detector.detect(video);
+          if (results[0]?.rawValue) return resolve(finish({ content: results[0].rawValue }));
+        } catch (error) {
+          console.warn("Camera barcode detection failed", error);
+        }
+        requestAnimationFrame(scan);
+      };
+      requestAnimationFrame(scan);
+    });
+  } catch (error) {
+    finish(null);
+    throw error;
   }
 }
 
