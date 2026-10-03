@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Settings</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<body class="settings-screen settings-category-screen"><div id="app-container">
+<header class="settings-ios-header">
+  <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Settings</button>
+  <h1>Backup &amp; Sync</h1>
+  <span class="settings-ios-header-spacer" aria-hidden="true"></span>
+</header>
+<main><section id="tab-settings" class="tab-content active settings-category-page"><div class="settings-page-header settings-category-title"><p class="settings-breadcrumb"><a href="static/pages/settings/settings.html">Settings</a> / Backup &amp; Sync</p><h2>Backup &amp; Sync</h2></div>
+<div class="settings-search settings-page-search"><i data-lucide="search"></i><input data-settings-search-input type="search" placeholder="Search all settings" aria-label="Search all settings"><button type="button" class="settings-search-clear" data-settings-search-clear aria-label="Clear search" hidden><i data-lucide="x"></i></button></div>
+<div class="settings-search-history" data-settings-search-history hidden></div>
+<div class="settings-search-results" data-settings-search-results hidden aria-live="polite"></div>
+
+<div class="settings-section"><div class="settings-list"><a class="settings-row settings-row-link" href="static/pages/settings/manage-backups.html" id="setting-link-manage-backups">
+      <div class="settings-row-icon"><i data-lucide="database-backup"></i></div>
+      <div class="settings-row-body">
+        <label>Backups &amp; Restore</label>
+      </div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-export.html" id="setting-link-manage-export">
+      <div class="settings-row-icon"><i data-lucide="file-down"></i></div>
+      <div class="settings-row-body"><label>Export List</label><span>Export your list as CSV, TSV, or TXT.</span></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a>
+<button type="button" class="settings-row settings-row-picker" data-pref="backupSchedule" id="setting-backupSchedule">
+      <div class="settings-row-icon"><i data-lucide="calendar-clock"></i></div>
+      <div class="settings-row-body"><label>Backup Schedule</label><span>Choose how often encrypted backups run.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" data-pref="backupRetention" id="setting-backupRetention">
+      <div class="settings-row-icon"><i data-lucide="archive-restore"></i></div>
+      <div class="settings-row-body"><label>Backup Retention</label><span>Choose how many backup snapshots to keep.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" data-pref="backupBeforeDestructive" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-backupBeforeDestructive">
+      <div class="settings-row-icon"><i data-lucide="shield-alert"></i></div>
+      <div class="settings-row-body"><label>Backup Before Destructive Actions</label><span>Create a backup before wiping or replacing data.</span></div>
+      <div class="settings-row-value"><span>On</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-import.html" id="setting-link-manage-import">
+      <div class="settings-row-icon"><i data-lucide="file-up"></i></div>
+      <div class="settings-row-body"><label>Import List</label><span>Import anime, movies, series, manga, and games.</span></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-storage.html" id="setting-link-manage-storage">
+      <div class="settings-row-icon"><i data-lucide="hard-drive"></i></div>
+      <div class="settings-row-body"><label>Storage</label><span>See what is using space and manage saved data.</span></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Backup preferences</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" id="folder-sync-delay-picker" data-pref="folderSyncDelay">
+      <div class="settings-row-icon"><i data-lucide="folder-sync"></i></div>
+      <div class="settings-row-body">
+        <label>Folder Sync Delay</label>
+      </div>
+      <div class="settings-row-value"><span id="folder-sync-delay-picker-value">30 seconds</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="backupPasswordReminder" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-backupPasswordReminder"><div class="settings-row-icon"><i data-lucide="key-round"></i></div><div class="settings-row-body"><label>Backup Password Reminder</label></div><div class="settings-row-value"><span>On</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button><button type="button" class="settings-row settings-row-picker" data-pref="backupMaxSizeMb" id="setting-backupMaxSizeMb"><div class="settings-row-icon"><i data-lucide="hard-drive"></i></div><div class="settings-row-body"><label>Maximum Backup Size</label></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button><button type="button" class="settings-row settings-row-picker" data-pref="backupValidateLocation" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-backupValidateLocation"><div class="settings-row-icon"><i data-lucide="folder-check"></i></div><div class="settings-row-body"><label>Validate Backup Location</label></div><div class="settings-row-value"><span>On</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button><button type="button" class="settings-row settings-row-picker" data-pref="backupRestorePreview" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-backupRestorePreview"><div class="settings-row-icon"><i data-lucide="file-search"></i></div><div class="settings-row-body"><label>Restore Preview</label></div><div class="settings-row-value"><span>On</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Import and export</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="importDefaultCategory" id="setting-importDefaultCategory">
+      <div class="settings-row-icon"><i data-lucide="folder-input"></i></div>
+      <div class="settings-row-body"><label>Import Default Category</label><span>Choose the category preselected for new imports.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="importDuplicatePolicy" id="setting-importDuplicatePolicy">
+      <div class="settings-row-icon"><i data-lucide="copy-check"></i></div>
+      <div class="settings-row-body"><label>Import Duplicate Handling</label><span>Choose what happens when a title already exists.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="exportDefaultFormat" id="setting-exportDefaultFormat">
+      <div class="settings-row-icon"><i data-lucide="file-output"></i></div>
+      <div class="settings-row-body"><label>Export Default Format</label><span>Choose the preferred export file type.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="exportIncludeMetadata" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-exportIncludeMetadata">
+      <div class="settings-row-icon"><i data-lucide="file-spreadsheet"></i></div>
+      <div class="settings-row-body"><label>Export Metadata</label><span>Include ratings, notes, and extra item fields when supported.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button></div></div></section></main>
+<nav class="bottom-nav"><a class="nav-item" data-tab="tab-dashboard" href="static/pages/main/dashboard.html" aria-label="Dashboard"><i data-lucide="layout-grid"></i></a><a class="nav-item" data-tab="tab-timeline" href="static/pages/main/timeline.html" aria-label="Timeline"><i data-lucide="calendar"></i></a><a class="nav-item" data-tab="tab-discover" href="static/pages/main/discover.html" aria-label="Discover"><i data-lucide="search"></i></a><a class="nav-item" data-tab="tab-sources" href="static/pages/main/sources.html" aria-label="Sources"><i data-lucide="database"></i></a><a class="nav-item" data-tab="tab-explore" href="static/pages/main/explore.html" aria-label="Explore"><i data-lucide="compass"></i></a><a class="nav-item" data-tab="tab-stats" href="static/pages/main/statistics.html" aria-label="Statistics"><i data-lucide="pie-chart"></i></a><a class="nav-item active" data-tab="tab-settings" href="static/pages/settings/settings.html" aria-label="Settings"><i data-lucide="settings"></i></a></nav>
+<div id="picker-modal" class="modal-overlay">
+  <div class="modal-content picker-sheet">
+    <div class="modal-header">
+      <h3 id="picker-modal-title" class="modal-title">Options</h3>
+      <button class="modal-close" id="picker-modal-close">&times;</button>
+    </div>
+    <div id="picker-options-list" class="picker-options-list"></div>
+  </div>
+</div>
+</div><script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="static/pages/settings/settings-index.js"></script></body></html>

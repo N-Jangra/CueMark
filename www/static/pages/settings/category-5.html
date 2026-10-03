@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Settings</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<body class="settings-screen settings-category-screen"><div id="app-container">
+<header class="settings-ios-header">
+  <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Settings</button>
+  <h1>Metadata</h1>
+  <span class="settings-ios-header-spacer" aria-hidden="true"></span>
+</header>
+<main><section id="tab-settings" class="tab-content active settings-category-page"><div class="settings-page-header settings-category-title"><p class="settings-breadcrumb"><a href="static/pages/settings/settings.html">Settings</a> / Metadata</p><h2>Metadata</h2></div>
+<div class="settings-search settings-page-search"><i data-lucide="search"></i><input data-settings-search-input type="search" placeholder="Search all settings" aria-label="Search all settings"><button type="button" class="settings-search-clear" data-settings-search-clear aria-label="Clear search" hidden><i data-lucide="x"></i></button></div>
+<div class="settings-search-history" data-settings-search-history hidden></div>
+<div class="settings-search-results" data-settings-search-results hidden aria-live="polite"></div>
+
+<div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" id="metadata-mode-picker" data-pref="metadataMode">
+      <div class="settings-row-icon"><i data-lucide="cloud-cog"></i></div>
+      <div class="settings-row-body">
+        <label>Metadata Mode</label>
+        <span>Offline keeps manual entry. Online can look up metadata and thumbnails.</span>
+      </div>
+      <div class="settings-row-value"><span id="metadata-mode-picker-value">Online</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-metadata-sources.html" id="setting-link-manage-metadata-sources">
+      <div class="settings-row-icon"><i data-lucide="server"></i></div>
+      <div class="settings-row-body">
+        <label>Metadata Sources</label>
+      </div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Refresh and sync</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="metadataRefreshInterval" id="setting-metadataRefreshInterval">
+      <div class="settings-row-icon"><i data-lucide="refresh-cw"></i></div>
+      <div class="settings-row-body"><label>Metadata Refresh Interval</label><span>Control how often saved metadata may be refreshed.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="metadataRetryLimit" id="setting-metadataRetryLimit">
+      <div class="settings-row-icon"><i data-lucide="rotate-ccw"></i></div>
+      <div class="settings-row-body"><label>Metadata Retry Limit</label><span>Maximum attempts for a failed metadata request.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="offlineFallback" id="setting-offlineFallback">
+      <div class="settings-row-icon"><i data-lucide="wifi-off"></i></div>
+      <div class="settings-row-body"><label>Offline Fallback</label><span>Choose what remains visible when metadata cannot be reached.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="metadataSyncFrequency" id="setting-metadataSyncFrequency">
+      <div class="settings-row-icon"><i data-lucide="refresh-cw"></i></div>
+      <div class="settings-row-body"><label>Metadata Sync Frequency</label><span>Choose how often queued metadata is processed.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="metadataImportConcurrency" id="setting-metadataImportConcurrency">
+      <div class="settings-row-icon"><i data-lucide="between-horizontal-start"></i></div>
+      <div class="settings-row-body"><label>Metadata Sync Workers</label><span>Beta: process multiple metadata requests in parallel.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Thumbnail preferences</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="thumbnailCleanup" id="setting-thumbnailCleanup">
+      <div class="settings-row-icon"><i data-lucide="trash-2"></i></div>
+      <div class="settings-row-body"><label>Automatic Thumbnail Cleanup</label><span>Trim old cached thumbnails on a schedule.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" id="metadata-thumbnails-picker" data-pref="metadataThumbnails" data-direct-toggle="true" role="switch" aria-checked="false">
+      <div class="settings-row-icon"><i data-lucide="image"></i></div>
+      <div class="settings-row-body">
+        <label>Metadata Thumbnails</label>
+      </div>
+      <div class="settings-row-value"><span id="metadata-thumbnails-picker-value">On</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="thumbnailSize" id="setting-thumbnailSize">
+      <div class="settings-row-icon"><i data-lucide="scan"></i></div>
+      <div class="settings-row-body"><label>Thumbnail Size</label><span>Choose how large thumbnails appear in the Dashboard.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" data-pref="thumbnailQuality" id="setting-thumbnailQuality">
+      <div class="settings-row-icon"><i data-lucide="image-up"></i></div>
+      <div class="settings-row-body"><label>Thumbnail Quality</label><span>Balance image quality, data use, and storage.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button></div></div></section></main>
+<nav class="bottom-nav"><a class="nav-item" data-tab="tab-dashboard" href="static/pages/main/dashboard.html" aria-label="Dashboard"><i data-lucide="layout-grid"></i></a><a class="nav-item" data-tab="tab-timeline" href="static/pages/main/timeline.html" aria-label="Timeline"><i data-lucide="calendar"></i></a><a class="nav-item" data-tab="tab-discover" href="static/pages/main/discover.html" aria-label="Discover"><i data-lucide="search"></i></a><a class="nav-item" data-tab="tab-sources" href="static/pages/main/sources.html" aria-label="Sources"><i data-lucide="database"></i></a><a class="nav-item" data-tab="tab-explore" href="static/pages/main/explore.html" aria-label="Explore"><i data-lucide="compass"></i></a><a class="nav-item" data-tab="tab-stats" href="static/pages/main/statistics.html" aria-label="Statistics"><i data-lucide="pie-chart"></i></a><a class="nav-item active" data-tab="tab-settings" href="static/pages/settings/settings.html" aria-label="Settings"><i data-lucide="settings"></i></a></nav>
+<div id="picker-modal" class="modal-overlay">
+  <div class="modal-content picker-sheet">
+    <div class="modal-header">
+      <h3 id="picker-modal-title" class="modal-title">Options</h3>
+      <button class="modal-close" id="picker-modal-close">&times;</button>
+    </div>
+    <div id="picker-options-list" class="picker-options-list"></div>
+  </div>
+</div>
+</div><script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="static/pages/settings/settings-index.js"></script></body></html>

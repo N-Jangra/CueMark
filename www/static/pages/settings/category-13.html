@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Settings</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<body class="settings-screen settings-category-screen"><div id="app-container">
+<header class="settings-ios-header">
+  <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Settings</button>
+  <h1>Advanced</h1>
+  <span class="settings-ios-header-spacer" aria-hidden="true"></span>
+</header>
+<main><section id="tab-settings" class="tab-content active settings-category-page"><div class="settings-page-header settings-category-title"><p class="settings-breadcrumb"><a href="static/pages/settings/settings.html">Settings</a> / Advanced</p><h2>Advanced</h2></div>
+<div class="settings-search settings-page-search"><i data-lucide="search"></i><input data-settings-search-input type="search" placeholder="Search all settings" aria-label="Search all settings"><button type="button" class="settings-search-clear" data-settings-search-clear aria-label="Clear search" hidden><i data-lucide="x"></i></button></div>
+<div class="settings-search-history" data-settings-search-history hidden></div>
+<div class="settings-search-results" data-settings-search-results hidden aria-live="polite"></div>
+
+<div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Network behavior</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="networkTimeout" id="setting-networkTimeout"><div class="settings-row-icon"><i data-lucide="hourglass"></i></div><div class="settings-row-body"><label>Network Timeout</label></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button><button type="button" class="settings-row settings-row-picker" data-pref="apiRateLimitDelay" id="setting-apiRateLimitDelay"><div class="settings-row-icon"><i data-lucide="gauge"></i></div><div class="settings-row-body"><label>API Rate-Limit Delay</label></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Diagnostics and experiments</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="debugMode" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-debugMode"><div class="settings-row-icon"><i data-lucide="bug"></i></div><div class="settings-row-body"><label>Debug Mode</label></div><div class="settings-row-value"><span>Off</span></div></button><button type="button" class="settings-row settings-row-picker" data-pref="experimentalFeatures" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-experimentalFeatures"><div class="settings-row-icon"><i data-lucide="flask-conical"></i></div><div class="settings-row-body"><label>Experimental Features</label></div><div class="settings-row-value"><span>Off</span></div></button></div></div></section></main>
+<nav class="bottom-nav"><a class="nav-item" data-tab="tab-dashboard" href="static/pages/main/dashboard.html" aria-label="Dashboard"><i data-lucide="layout-grid"></i></a><a class="nav-item" data-tab="tab-timeline" href="static/pages/main/timeline.html" aria-label="Timeline"><i data-lucide="calendar"></i></a><a class="nav-item" data-tab="tab-discover" href="static/pages/main/discover.html" aria-label="Discover"><i data-lucide="search"></i></a><a class="nav-item" data-tab="tab-sources" href="static/pages/main/sources.html" aria-label="Sources"><i data-lucide="database"></i></a><a class="nav-item" data-tab="tab-explore" href="static/pages/main/explore.html" aria-label="Explore"><i data-lucide="compass"></i></a><a class="nav-item" data-tab="tab-stats" href="static/pages/main/statistics.html" aria-label="Statistics"><i data-lucide="pie-chart"></i></a><a class="nav-item active" data-tab="tab-settings" href="static/pages/settings/settings.html" aria-label="Settings"><i data-lucide="settings"></i></a></nav>
+<div id="picker-modal" class="modal-overlay">
+  <div class="modal-content picker-sheet">
+    <div class="modal-header">
+      <h3 id="picker-modal-title" class="modal-title">Options</h3>
+      <button class="modal-close" id="picker-modal-close">&times;</button>
+    </div>
+    <div id="picker-options-list" class="picker-options-list"></div>
+  </div>
+</div>
+</div><script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="static/pages/settings/settings-index.js"></script></body></html>

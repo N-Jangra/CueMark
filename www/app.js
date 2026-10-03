@@ -658,7 +658,7 @@ async function loadData() {
   if (!state.preferences.categoryColors || typeof state.preferences.categoryColors !== "object") state.preferences.categoryColors = {};
   if (typeof state.preferences.highContrast !== "boolean") state.preferences.highContrast = false;
   if (typeof state.preferences.reducedMotion !== "boolean") state.preferences.reducedMotion = false;
-  if (!["standard", "high-contrast", "reduced-motion", "maximum"].includes(state.preferences.accessibilityPreset)) state.preferences.accessibilityPreset = "standard";
+  if (!["standard", "high-contrast", "reduced-motion", "maximum", "custom"].includes(state.preferences.accessibilityPreset)) state.preferences.accessibilityPreset = "standard";
   if (!["normal", "large", "largest"].includes(state.preferences.accessibleTextSize)) state.preferences.accessibleTextSize = "normal";
   if (!["system", "en"].includes(state.preferences.language)) state.preferences.language = "system";
   if (!["system", "short", "long", "iso"].includes(state.preferences.dateFormat)) state.preferences.dateFormat = "system";
@@ -1103,7 +1103,9 @@ function saveCategoryOrder(newEnabledOrder) {
 
 // Apply Theme
 function applyTheme() {
-  document.body.setAttribute("data-theme", state.preferences.uiTheme || state.theme);
+  const theme = state.preferences.uiTheme || state.theme || "dark";
+  document.documentElement.setAttribute("data-theme", theme);
+  document.body.setAttribute("data-theme", theme);
 }
 
 function applyPreferenceAttributes() {
@@ -1129,6 +1131,13 @@ function applyPreferenceAttributes() {
   document.body.setAttribute("data-dashboard-corners", state.preferences.dashboardCardCorners || "rounded");
   document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
   document.body.setAttribute("data-date-format", state.preferences.dateFormat || "system");
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  root.setAttribute("data-accent", accent);
+  root.setAttribute("data-contrast", state.preferences.highContrast ? "high" : "normal");
+  root.setAttribute("data-text-size", state.preferences.accessibleTextSize || "normal");
+  root.classList.toggle("reduced-motion", Boolean(state.preferences.reducedMotion));
+  root.style.colorScheme = ["light", "flashbang"].includes(theme) ? "light" : "dark";
   const appShell = document.getElementById("app-container");
   if (appShell && window.matchMedia("(max-width: 560px)").matches) {
     const hand = state.preferences.oneHandedMode || "off";
@@ -1533,7 +1542,10 @@ function setupEventListeners() {
   const backgroundBackupStatus = document.getElementById("background-backups-status");
   const updateBackgroundBackupStatus = () => {
     if (backgroundBackupStatus) backgroundBackupStatus.textContent = state.preferences.backgroundBackups ? "On" : "Off";
-    if (backgroundBackups) backgroundBackups.dataset.toggleOn = state.preferences.backgroundBackups ? "true" : "false";
+    if (backgroundBackups) {
+      backgroundBackups.dataset.toggleOn = state.preferences.backgroundBackups ? "true" : "false";
+      backgroundBackups.setAttribute("aria-checked", state.preferences.backgroundBackups ? "true" : "false");
+    }
   };
   updateBackgroundBackupStatus();
   if (backgroundBackups) backgroundBackups.addEventListener("click", async () => {
@@ -1573,7 +1585,10 @@ function setupEventListeners() {
   const notificationPermissionStatus = document.getElementById("notification-permission-status");
   const updateNotificationStatus = () => {
     if (notificationPermissionStatus) notificationPermissionStatus.textContent = state.preferences.notificationsEnabled ? "On" : "Off";
-    if (notificationPermission) notificationPermission.dataset.toggleOn = state.preferences.notificationsEnabled ? "true" : "false";
+    if (notificationPermission) {
+      notificationPermission.dataset.toggleOn = state.preferences.notificationsEnabled ? "true" : "false";
+      notificationPermission.setAttribute("aria-checked", state.preferences.notificationsEnabled ? "true" : "false");
+    }
   };
   updateNotificationStatus();
   const refreshNotificationPermission = async () => {
@@ -1639,7 +1654,10 @@ function setupEventListeners() {
     const status = document.getElementById(statusId);
     const update = () => {
       if (status) status.textContent = state.preferences[key] ? "On" : "Off";
-      if (row) row.dataset.toggleOn = state.preferences[key] ? "true" : "false";
+      if (row) {
+        row.dataset.toggleOn = state.preferences[key] ? "true" : "false";
+        row.setAttribute("aria-checked", state.preferences[key] ? "true" : "false");
+      }
     };
     update();
     row?.addEventListener("click", () => {
@@ -1687,7 +1705,10 @@ function setupEventListeners() {
   const quietStatus = document.getElementById("notification-quiet-hours-status");
   const updateQuietStatus = () => {
     if (quietStatus) quietStatus.textContent = state.preferences.notificationQuietHours ? `${state.preferences.notificationQuietStart}–${state.preferences.notificationQuietEnd}` : "Off";
-    if (quietRow) quietRow.dataset.toggleOn = state.preferences.notificationQuietHours ? "true" : "false";
+    if (quietRow) {
+      quietRow.dataset.toggleOn = state.preferences.notificationQuietHours ? "true" : "false";
+      quietRow.setAttribute("aria-checked", state.preferences.notificationQuietHours ? "true" : "false");
+    }
   };
   updateQuietStatus();
   quietRow?.addEventListener("click", () => {
@@ -2213,6 +2234,10 @@ const SETTINGS_PICKERS = {
       { value: "maximum", label: "Maximum accessibility" }
     ]
   },
+  ratingReminders: {
+    default: "false",
+    options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }]
+  },
   accessibleTextSize: {
     default: "normal",
     options: [{ value: "normal", label: "Normal" }, { value: "large", label: "Large" }, { value: "largest", label: "Largest" }]
@@ -2544,9 +2569,28 @@ function updatePickerRowValues() {
     const valueEl = row.querySelector(".settings-row-value span");
     const current = getPickerValue(pref);
     const match = picker.options.find(o => o.value === current);
-    if (valueEl) valueEl.textContent = match ? match.label : current;
-    if (row.dataset.directToggle === "true") row.dataset.toggleOn = current === "true" ? "true" : "false";
+    if (valueEl) {
+      const label = match ? match.label : current;
+      valueEl.textContent = pref === "highContrast" ? (current === "true" ? "High contrast" : "Standard") : label;
+    }
+    if (row.dataset.directToggle === "true") {
+      row.dataset.toggleOn = current === "true" ? "true" : "false";
+      if (row.getAttribute("role") === "switch") row.setAttribute("aria-checked", current === "true" ? "true" : "false");
+    }
   });
+
+  // Keep the preset summary accurate when a user changes one of its component
+  // controls individually after applying a preset.
+  const { highContrast, reducedMotion, accessibleTextSize } = state.preferences;
+  const preset = highContrast && reducedMotion && accessibleTextSize === "largest" ? "maximum"
+    : highContrast && !reducedMotion && accessibleTextSize === "large" ? "high-contrast"
+      : !highContrast && reducedMotion && accessibleTextSize === "normal" ? "reduced-motion"
+        : !highContrast && !reducedMotion && accessibleTextSize === "normal" ? "standard" : "custom";
+  state.preferences.accessibilityPreset = preset;
+  const presetRow = document.querySelector('[data-pref="accessibilityPreset"]');
+  const presetValue = presetRow?.querySelector(".settings-row-value span");
+  const presetLabel = SETTINGS_PICKERS.accessibilityPreset.options.find(option => option.value === preset)?.label;
+  if (presetValue && presetLabel) presetValue.textContent = presetLabel;
 }
 
 function setupSettingsPickers() {
