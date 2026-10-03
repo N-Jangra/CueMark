@@ -1,55 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Statistics</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Statistics</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
 <body class="stats-screen" data-disable-navigation-sheet="true"><div id="app-container">
 <header class="settings-ios-header">
   <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/main/explore.html">‹ Back</button>
   <h1>Statistics</h1>
   <span class="settings-ios-header-spacer" aria-hidden="true"></span>
 </header>
-<div class="chips-container" id="category-chips"></div>
 <main><section id="tab-stats" class="tab-content active">
-<div class="stats-grid"><div class="stats-card stats-card-rate"><span class="stats-label">Completion Rate</span><span class="stats-value" id="stats-rate">0%</span></div><div class="stats-card stats-card-completed"><span class="stats-value" id="stats-completed">0</span><span class="stats-label">Completed</span></div><div class="stats-card stats-card-active"><span class="stats-value" id="stats-active">0</span><span class="stats-label">In Progress</span></div><div class="stats-card stats-card-queued"><span class="stats-value" id="stats-queued">0</span><span class="stats-label">Watchlist / Queue</span></div><div class="stats-card stats-card-total"><span class="stats-value" id="stats-total">0</span><span class="stats-label">Total Tracked</span></div><div class="stats-card stats-card-time-done" id="stats-time-done-card" style="display:none;"><span class="stats-value" id="stats-time-done">0h</span><span class="stats-label">Time Completed</span></div><div class="stats-card stats-card-time-left" id="stats-time-left-card" style="display:none;"><span class="stats-value" id="stats-time-left">0h</span><span class="stats-label">Time Left</span></div></div>
+  <div class="chips-container stats-category-chips" id="category-chips" role="group" aria-label="Filter statistics by category"></div>
 
-<h3 class="stats-group-title">Activity</h3>
+  <section class="stats-overview" aria-labelledby="stats-overview-title">
+    <div class="stats-section-heading">
+      <div><span class="stats-eyebrow">OVERVIEW</span><h2 id="stats-overview-title">Collection health</h2><p class="stats-intro">Track progress and activity across your library.</p></div>
+    </div>
 
-<div class="stats-chart-card" id="stats-weekly-time-card" style="display:none;">
-  <span class="chart-title">Weekly activity</span>
-  <div id="stats-weekly-time-chart" class="column-chart"></div>
-</div>
+    <div class="stats-grid stats-primary-grid">
+      <div class="stats-card stats-card-rate">
+        <div class="stats-rate-copy"><span class="stats-label">Completion rate</span><span class="stats-value" id="stats-rate">0%</span><span class="stats-rate-context">Across <strong id="stats-total">0</strong> tracked items</span></div>
+        <div class="stats-rate-ring" id="stats-rate-ring" role="progressbar" aria-label="Collection completion rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span aria-hidden="true"></span></div>
+      </div>
+      <div class="stats-card stats-card-completed"><span class="stats-value" id="stats-completed">0</span><span class="stats-label">Completed</span><span class="stats-card-note">Finished</span></div>
+      <div class="stats-card stats-card-active"><span class="stats-value" id="stats-active">0</span><span class="stats-label">In progress</span><span class="stats-card-note">Active now</span></div>
+      <div class="stats-card stats-card-queued"><span class="stats-value" id="stats-queued">0</span><span class="stats-label">In your queue</span><span class="stats-card-note">Ready when you are</span></div>
+    </div>
 
-<div class="stats-chart-card" id="stats-weekly-episodes-card" style="display:none;">
-  <div class="chart-heading-row">
-    <span class="chart-title">Monthly activity</span>
-    <label class="stats-month-picker"><span class="sr-only">Choose month</span><select id="stats-month-select" class="stats-month-select"></select></label>
-  </div>
-  <div id="stats-weekly-episodes-chart" class="column-chart"></div>
-</div>
+    <div class="stats-status-panel">
+      <div class="stats-panel-heading"><div><span class="stats-eyebrow">LIBRARY MIX</span><h3>Status breakdown</h3></div><span class="stats-total-chip"><strong id="stats-total-caption">0</strong> tracked</span></div>
+      <div class="stats-status-bar" id="stats-status-bar" role="img" aria-label="Library status breakdown"></div>
+      <div class="stats-status-legend">
+        <span><i class="status-dot status-dot-completed"></i>Completed <strong id="stats-legend-completed">0</strong></span>
+        <span><i class="status-dot status-dot-active"></i>In progress <strong id="stats-legend-active">0</strong></span>
+        <span><i class="status-dot status-dot-queued"></i>Queue <strong id="stats-legend-queued">0</strong></span>
+        <span><i class="status-dot status-dot-hold"></i>On hold <strong id="stats-on-hold">0</strong></span>
+        <span><i class="status-dot status-dot-dropped"></i>Dropped <strong id="stats-dropped">0</strong></span>
+        <span><i class="status-dot status-dot-other"></i>Other <strong id="stats-legend-other">0</strong></span>
+      </div>
+    </div>
 
-<div class="stats-chart-card" id="stats-marathons-card" style="display:none;">
-  <span class="chart-title">Biggest Marathons</span>
-  <div id="stats-marathons-list" class="leaderboard-list"></div>
-</div>
+    <div class="stats-grid stats-time-grid">
+      <div class="stats-card stats-card-time-done" id="stats-time-done-card" style="display:none;"><span class="stats-eyebrow">TIME INVESTED</span><span class="stats-value" id="stats-time-done">0h</span><span class="stats-label">Estimated completed</span></div>
+      <div class="stats-card stats-card-time-left" id="stats-time-left-card" style="display:none;"><span class="stats-eyebrow">REMAINING</span><span class="stats-value" id="stats-time-left">0h</span><span class="stats-label">Estimated to finish</span></div>
+    </div>
+  </section>
 
-<div class="stats-chart-card" id="stats-genres-card" style="display:none;">
-  <span class="chart-title">Top Genres</span>
-  <div id="stats-genres-chart" class="bar-chart"></div>
-</div>
+  <section class="stats-section" aria-labelledby="stats-activity-title">
+    <div class="stats-section-heading"><div><span class="stats-eyebrow">TRENDS</span><h2 id="stats-activity-title">Activity</h2><p>Recent viewing and reading, by day and by week.</p></div></div>
+    <div class="stats-chart-grid">
+      <div class="stats-chart-card" id="stats-weekly-time-card" style="display:none;">
+        <div class="stats-chart-heading"><div><span class="chart-title">Watch time · This week</span><span class="stats-chart-caption" id="stats-weekly-time-caption">Time logged each day</span></div><span class="stats-chart-icon" aria-hidden="true"><i data-lucide="clock-3"></i></span></div>
+        <div id="stats-weekly-time-chart" class="column-chart" role="img" aria-label="Daily watch time this week"></div>
+      </div>
 
-<div class="stats-chart-card" id="stats-networks-card" style="display:none;">
-  <span class="chart-title">Top Networks</span>
-  <div id="stats-networks-chart" class="bar-chart"></div>
-</div>
+      <div class="stats-chart-card" id="stats-weekly-episodes-card" style="display:none;">
+        <div class="chart-heading-row"><div><span class="chart-title" id="stats-monthly-episodes-title">Episodes this month</span><span class="stats-chart-caption" id="stats-monthly-episodes-caption">Weekly totals for selected month</span></div>
+          <label class="stats-month-picker"><span class="sr-only">Choose month</span><select id="stats-month-select" class="stats-month-select"></select></label>
+        </div>
+        <div id="stats-weekly-episodes-chart" class="column-chart" role="img" aria-label="Episodes completed each week in selected month"></div>
+      </div>
+    </div>
 
-<div class="stats-chart-card" id="stats-ratings-card" style="display:none;">
-  <span class="chart-title">Your Ratings</span>
-  <div class="stats-grid">
-    <div class="stats-card stats-card-rate"><span class="stats-value" id="stats-avg-rating">0</span><span class="stats-label">Average Rating</span></div>
-    <div class="stats-card stats-card-total"><span class="stats-value" id="stats-rated-count">0</span><span class="stats-label">Items Rated</span></div>
-  </div>
-  <div id="stats-top-rated-list" class="leaderboard-list"></div>
-</div>
+    <div class="stats-insight-grid">
+      <div class="stats-chart-card" id="stats-marathons-card" style="display:none;">
+        <div class="stats-chart-heading"><div><span class="stats-eyebrow">WATCH SESSIONS</span><span class="chart-title">Longest marathons</span></div><span class="stats-chart-icon" aria-hidden="true"><i data-lucide="flame"></i></span></div>
+        <div id="stats-marathons-list" class="leaderboard-list"></div>
+      </div>
+
+      <div class="stats-chart-card stats-breakdown-card" id="stats-genres-card" style="display:none;">
+        <div class="stats-chart-heading"><div><span class="stats-eyebrow">DISCOVERY</span><span class="chart-title">Top genres</span></div><span class="stats-chart-icon" aria-hidden="true"><i data-lucide="tags"></i></span></div>
+        <div id="stats-genres-chart" class="bar-chart"></div>
+      </div>
+
+      <div class="stats-chart-card stats-breakdown-card" id="stats-networks-card" style="display:none;">
+        <div class="stats-chart-heading"><div><span class="stats-eyebrow">SOURCES</span><span class="chart-title">Top networks</span></div><span class="stats-chart-icon" aria-hidden="true"><i data-lucide="radio-tower"></i></span></div>
+        <div id="stats-networks-chart" class="bar-chart"></div>
+      </div>
+    </div>
+
+    <div class="stats-chart-card stats-ratings-card" id="stats-ratings-card" style="display:none;">
+      <div class="stats-chart-heading"><div><span class="stats-eyebrow">YOUR TASTE</span><span class="chart-title">Ratings</span></div><span class="stats-chart-icon" aria-hidden="true"><i data-lucide="star"></i></span></div>
+      <div class="stats-grid stats-rating-grid">
+        <div class="stats-card stats-card-rate"><span class="stats-value" id="stats-avg-rating">0</span><span class="stats-label">Average rating</span></div>
+        <div class="stats-card stats-card-total"><span class="stats-value" id="stats-rated-count">0</span><span class="stats-label">Items rated</span></div>
+      </div>
+      <div id="stats-top-rated-list" class="leaderboard-list"></div>
+    </div>
+  </section>
 </section></main>
 <nav class="bottom-nav"><a class="nav-item" data-tab="tab-dashboard" href="static/pages/main/dashboard.html" aria-label="Dashboard"><i data-lucide="layout-grid"></i></a><a class="nav-item" data-tab="tab-timeline" href="static/pages/main/timeline.html" aria-label="Timeline"><i data-lucide="calendar"></i></a><a class="nav-item" data-tab="tab-discover" href="static/pages/main/discover.html" aria-label="Discover"><i data-lucide="search"></i></a><a class="nav-item" data-tab="tab-sources" href="static/pages/main/sources.html" aria-label="Sources"><i data-lucide="database"></i></a><a class="nav-item" data-tab="tab-explore" href="static/pages/main/explore.html" aria-label="Explore"><i data-lucide="compass"></i></a><a class="nav-item active" data-tab="tab-stats" href="static/pages/main/statistics.html" aria-label="Statistics"><i data-lucide="pie-chart"></i></a><a class="nav-item" data-tab="tab-settings" href="static/pages/settings/settings.html" aria-label="Settings"><i data-lucide="settings"></i></a></nav>
 </div><script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script></body></html>

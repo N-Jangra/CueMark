@@ -10,6 +10,7 @@
 
 const APP_LOCK_MAX_ATTEMPTS = 5;
 const APP_LOCK_PBKDF2_ITERATIONS = 100000;
+let appLockBiometricAttemptInProgress = false;
 
 function normalizeAppLock() {
   const defaults = { method: "none", passwordHash: "", passwordSalt: "", securityQuestions: [] };
@@ -166,18 +167,30 @@ function renderAppLockOverlay() {
 }
 
 async function handleBiometricUnlock() {
+  if (appLockBiometricAttemptInProgress) return;
   const biometric = window.Capacitor?.Plugins?.Biometric;
   if (!biometric?.authenticate) {
     showAppLockError("Biometric unlock is available in the installed Android app only.");
     return;
   }
+
+  appLockBiometricAttemptInProgress = true;
+  const button = document.getElementById("app-lock-biometric-btn");
+  if (button) button.disabled = true;
   try {
-    await biometric.authenticate({ reason: "Unlock your SquashDB library" });
+    const result = await biometric.authenticate({ reason: "Unlock your SquashDB library" });
+    if (!result?.success) {
+      showAppLockError("Authentication did not complete. Try again or use your device screen lock.");
+      return;
+    }
     markSessionUnlocked();
     document.getElementById("app-lock-overlay")?.remove();
     document.dispatchEvent(new CustomEvent("app-unlocked"));
   } catch (err) {
-    showAppLockError("Biometric authentication was not completed.");
+    showAppLockError("Authentication was canceled or unavailable. Try again or use your device screen lock.");
+  } finally {
+    appLockBiometricAttemptInProgress = false;
+    if (button?.isConnected) button.disabled = false;
   }
 }
 
@@ -212,7 +225,7 @@ function renderAppLockInputArea(method) {
 
   if (method === "biometric") {
     area.innerHTML = `
-      <p class="setting-desc">Use your fingerprint, face, or device screen lock to continue.</p>
+      <p class="setting-desc">Use a fingerprint, face, or screen lock enrolled with Android.</p>
       <button type="button" class="btn btn-primary" id="app-lock-biometric-btn" style="width:100%;margin-top:10px;">Unlock with biometrics</button>
     `;
     document.getElementById("app-lock-biometric-btn").addEventListener("click", handleBiometricUnlock);

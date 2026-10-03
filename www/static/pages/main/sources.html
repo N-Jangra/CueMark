@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Sources</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
-<body><div id="app-container">
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Sources</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<body class="sources-screen"><div id="app-container">
+<header class="settings-ios-header">
+  <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/main/explore.html">‹ Back</button>
+  <h1>Sources</h1>
+  <span class="settings-ios-header-spacer" aria-hidden="true"></span>
+</header>
 <main><section id="tab-sources" class="tab-content active">
 
 <div class="settings-page-header">
   <h2>Metadata Sources</h2>
-  <p>Browse and search inside one specific source. Sources that are disabled or missing an API key can be configured in Settings → Metadata Sources.</p>
+  <p>Search one catalog at a time. Configure disabled sources and API keys in Settings.</p>
 </div>
 
 <div class="sources-grid" id="sources-list"></div>

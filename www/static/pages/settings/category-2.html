@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SquashDB - Settings</title><link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css"><script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script></head>
+<body class="settings-screen settings-category-screen"><div id="app-container">
+<header class="settings-ios-header">
+  <button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Settings</button>
+  <h1>Appearance</h1>
+  <span class="settings-ios-header-spacer" aria-hidden="true"></span>
+</header>
+<main><section id="tab-settings" class="tab-content active settings-category-page"><div class="settings-page-header settings-category-title"><p class="settings-breadcrumb"><a href="static/pages/settings/settings.html">Settings</a> / Appearance</p><h2>Appearance</h2></div>
+<div class="settings-search settings-page-search"><i data-lucide="search"></i><input data-settings-search-input type="search" placeholder="Search all settings" aria-label="Search all settings"><button type="button" class="settings-search-clear" data-settings-search-clear aria-label="Clear search" hidden><i data-lucide="x"></i></button></div>
+<div class="settings-search-history" data-settings-search-history hidden></div>
+<div class="settings-search-results" data-settings-search-results hidden aria-live="polite"></div>
+
+<div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" data-pref="highContrast" data-direct-toggle="true" role="switch" aria-checked="false" aria-label="Accessible Contrast" id="setting-highContrast">
+      <div class="settings-row-icon"><i data-lucide="contrast"></i></div>
+      <div class="settings-row-body"><label>Accessible Contrast</label><span>Increase contrast for easier reading.</span></div>
+      <div class="settings-row-value"><span>Standard</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" data-pref="accessibilityPreset" id="setting-accessibilityPreset">
+      <div class="settings-row-icon"><i data-lucide="accessibility"></i></div>
+      <div class="settings-row-body"><label>Accessibility Preset</label><span>Apply contrast, motion, and text-size settings together.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" data-pref="accessibleTextSize" id="setting-accessibleTextSize">
+      <div class="settings-row-icon"><i data-lucide="text-cursor-input"></i></div>
+      <div class="settings-row-body"><label>Text Size</label><span>Increase readable text size throughout the app.</span></div>
+      <div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" data-pref="reducedMotion" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-reducedMotion">
+      <div class="settings-row-icon"><i data-lucide="accessibility"></i></div>
+      <div class="settings-row-body"><label>Reduced Motion</label><span>Minimize transitions and animated movement.</span></div>
+      <div class="settings-row-value"><span>Off</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button>
+<button type="button" class="settings-row settings-row-picker" id="ui-theme-picker" data-pref="uiTheme">
+      <div class="settings-row-icon"><i data-lucide="palette"></i></div>
+      <div class="settings-row-body">
+        <label>Theme</label>
+        <span>Choose from 14 coordinated color palettes.</span>
+      </div>
+      <div class="settings-row-value"><span id="ui-theme-picker-value">Dark</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">Style and motion</h4></div><div class="settings-section"><div class="settings-list"><button type="button" class="settings-row settings-row-picker" id="animation-speed-picker" data-pref="animationSpeed">
+      <div class="settings-row-icon"><i data-lucide="zap"></i></div>
+      <div class="settings-row-body">
+        <label>Animation Speed</label>
+      </div>
+      <div class="settings-row-value"><span id="animation-speed-picker-value">Normal</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" id="category-colors-picker">
+      <div class="settings-row-icon"><i data-lucide="swatch-book"></i></div>
+      <div class="settings-row-body"><label>Category Colors</label><span>Customize accent color for categories.</span></div>
+      <div class="settings-row-value"><span>Customize</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" id="ui-font-picker" data-pref="uiFont">
+      <div class="settings-row-icon"><i data-lucide="type"></i></div>
+      <div class="settings-row-body">
+        <label>Font</label>
+        <span>Change the font used throughout the app.</span>
+      </div>
+      <div class="settings-row-value"><span id="ui-font-picker-value">Inter (default)</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button><button type="button" class="settings-row settings-row-picker" id="main-color-picker" data-pref="mainColor">
+      <div class="settings-row-icon"><i data-lucide="droplets"></i></div>
+      <div class="settings-row-body">
+        <label>Main Color</label>
+        <span>Change the accent color.</span>
+      </div>
+      <div class="settings-row-value"><span id="main-color-picker-value">Normal</span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div>
+    </button></div></div><div class="settings-page-header settings-detail-group-title"><h4 class="settings-section-title">App identity</h4></div>
+<div class="settings-section"><div class="settings-list"><a class="settings-row settings-row-link" href="static/pages/settings/manage-app-icon.html" id="setting-link-manage-app-icon">
+      <div class="settings-row-icon"><i data-lucide="app-window"></i></div>
+      <div class="settings-row-body"><label>App Icons and Names</label><span>Change icon and name on home screen.</span></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a>
+<button type="button" class="settings-row settings-row-picker" data-pref="bottomBarActiveStyle" id="setting-bottomBarActiveStyle"><div class="settings-row-icon"><i data-lucide="badge-check"></i></div><div class="settings-row-body"><label>Bottom Bar Active Style</label><span>Show a selected box or color the icon.</span></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button>
+<button type="button" class="settings-row settings-row-picker" data-pref="bottomBarSurface" id="setting-bottomBarSurface"><div class="settings-row-icon"><i data-lucide="layers-2"></i></div><div class="settings-row-body"><label>Bottom Bar Background</label><span>Use a solid or translucent bar.</span></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button>
+<button type="button" class="settings-row settings-row-picker" data-pref="showScrollbars" data-direct-toggle="true" role="switch" aria-checked="false" id="setting-showScrollbars"><div class="settings-row-icon"><i data-lucide="scroll-text"></i></div><div class="settings-row-body"><label>Show Scrollbars</label><span>Display scrollbars throughout the app.</span></div><div class="settings-row-value"><span></span><i data-lucide="chevron-right" class="settings-row-chevron"></i></div></button>
+<button type="button" class="settings-row settings-row-picker settings-range-row" id="setting-bottomBarTransparency">
+      <div class="settings-row-icon"><i data-lucide="panel-bottom"></i></div><div class="settings-row-body"><label>Bottom Bar Transparency</label><span>Adjust the bottom navigation background.</span><input id="bottom-bar-transparency" type="range" min="0" max="100" step="5" value="100" aria-label="Bottom Bar Transparency"></div><div class="settings-row-value"><span id="bottom-bar-transparency-value">100%</span></div>
+    </button>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-nav-bar.html" id="setting-link-manage-nav-bar">
+      <div class="settings-row-icon"><i data-lucide="layout-panel-left"></i></div>
+      <div class="settings-row-body"><label>Bottom Bar Layout</label></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a>
+<a class="settings-row settings-row-link" href="static/pages/settings/manage-nav-icons.html" id="setting-link-manage-nav-icons">
+      <div class="settings-row-icon"><i data-lucide="layout-panel-top"></i></div>
+      <div class="settings-row-body"><label>Bottom Menu Icons</label></div>
+      <i data-lucide="chevron-right" class="settings-row-chevron"></i>
+    </a></div></div></section></main>
+<nav class="bottom-nav"><a class="nav-item" data-tab="tab-dashboard" href="static/pages/main/dashboard.html" aria-label="Dashboard"><i data-lucide="layout-grid"></i></a><a class="nav-item" data-tab="tab-timeline" href="static/pages/main/timeline.html" aria-label="Timeline"><i data-lucide="calendar"></i></a><a class="nav-item" data-tab="tab-discover" href="static/pages/main/discover.html" aria-label="Discover"><i data-lucide="search"></i></a><a class="nav-item" data-tab="tab-sources" href="static/pages/main/sources.html" aria-label="Sources"><i data-lucide="database"></i></a><a class="nav-item" data-tab="tab-explore" href="static/pages/main/explore.html" aria-label="Explore"><i data-lucide="compass"></i></a><a class="nav-item" data-tab="tab-stats" href="static/pages/main/statistics.html" aria-label="Statistics"><i data-lucide="pie-chart"></i></a><a class="nav-item active" data-tab="tab-settings" href="static/pages/settings/settings.html" aria-label="Settings"><i data-lucide="settings"></i></a></nav>
+<div id="picker-modal" class="modal-overlay">
+  <div class="modal-content picker-sheet">
+    <div class="modal-header">
+      <h3 id="picker-modal-title" class="modal-title">Options</h3>
+      <button class="modal-close" id="picker-modal-close">&times;</button>
+    </div>
+    <div id="picker-options-list" class="picker-options-list"></div>
+  </div>
+</div>
+</div><script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="static/pages/settings/settings-index.js"></script></body></html>

@@ -109,7 +109,7 @@ function renderAppLockSetupArea() {
   if (appLockDraftMethod === "biometric") {
     setupTitle.textContent = "Biometric Unlock";
     setupArea.innerHTML = `
-      <p class="setting-desc">Android will verify your enrolled fingerprint, face, or device credential when the app opens.</p>
+      <p class="setting-desc">Uses biometrics or the device screen lock already set up in Android. SquashDB cannot enroll fingerprints or face data itself.</p>
       <button type="button" class="btn btn-primary" id="app-lock-enable-biometric" style="width:100%;margin-top:12px;">Enable Biometric Unlock</button>
       <p class="app-lock-error" id="app-lock-biometric-error" style="display:none;"></p>
     `;
@@ -298,18 +298,42 @@ async function enableBiometricAppLock() {
 
   try {
     const available = await biometric.isAvailable();
-    if (!available?.available) {
-      showError("No biometric or device credential is available. Enroll a fingerprint, face unlock, or screen lock first.");
+    if (!available?.supportsDeviceCredential) {
+      showError("Biometric unlock with device-screen-lock recovery requires Android 11 or later. Use an app PIN or password on this Android version.");
+      return;
+    }
+    if (!available.available) {
+      showError("No biometric or device screen lock is available. Set up a fingerprint, face unlock, or screen lock in Android settings first.");
       return;
     }
   } catch (err) {
-    showError("Android could not check biometric availability. Make sure a fingerprint, face unlock, or screen lock is enrolled.");
+    showError("Android could not check biometric availability. You can still choose an app PIN or password.");
     return;
+  }
+
+  const enableButton = document.getElementById("app-lock-enable-biometric");
+  try {
+    if (enableButton) {
+      enableButton.disabled = true;
+      enableButton.textContent = "Confirm on your device…";
+    }
+    const result = await biometric.authenticate({ reason: "Confirm biometric unlock for SquashDB" });
+    if (!result?.success) {
+      showError("Biometric confirmation did not succeed. App Lock has not been changed.");
+      return;
+    }
+  } catch (err) {
+    showError("Biometric confirmation was canceled or failed. App Lock has not been changed.");
+    return;
+  } finally {
+    if (enableButton?.isConnected) {
+      enableButton.disabled = false;
+      enableButton.textContent = "Enable Biometric Unlock";
+    }
   }
 
   setBiometricAppLock();
   updateAppLockSettingsSummary();
-  alert("Biometric unlock enabled.");
   window.location.href = SETTINGS_URL;
 }
 

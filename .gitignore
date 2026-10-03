@@ -33,3 +33,10 @@ android/app/src/main/res/xml/config.xml
 # Env/secrets
 .env
 .env.local
+
+# Local import/export examples
+examples/
+
+# Local planning notes
+suggestions.md
+suggestions2.md

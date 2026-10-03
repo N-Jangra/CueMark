@@ -38,7 +38,8 @@ function renderSourcesList(enabledOnly = false) {
       <a class="source-tile${enabled && hasKey ? "" : " source-row-unavailable"}" href="static/pages/main/source-search.html?source=${key}">
         <span class="source-tile-icon"><i data-lucide="${info.icon || "database"}"></i></span>
         <span class="source-tile-name">${info.name}</span>
-        <span class="source-tile-desc">${status || info.categories.map(c => CATEGORIES[c]?.label || c).join(", ")}</span>
+        <span class="source-tile-desc">${info.categories.map(c => CATEGORIES[c]?.label || c).join(", ")}</span>
+        ${status ? `<span class="source-tile-status">${status}</span>` : ""}
       </a>
     `;
   }).join("");

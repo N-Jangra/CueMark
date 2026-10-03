@@ -265,6 +265,14 @@ let state = {
     customCategories: {},
     categoryOrder: ["series", "movie", "anime", "novel", "game", "kdrama", "cdrama", "manga"],
     defaultStartPage: "remember-last",
+    dashboardDefaultCategory: "remember-last",
+    recentlyAddedLimit: 10,
+    dashboardCardCorners: "rounded",
+    automaticCompletion: "automatic",
+    defaultEntryStatus: "watchlist",
+    progressIncrement: 1,
+    ratingReminders: false,
+    notesTemplate: "none",
     ratingFormat: "5-stars",
     uiTheme: "dark",
     uiFont: "inter",
@@ -272,17 +280,46 @@ let state = {
     categoryColors: {},
     highContrast: false,
     reducedMotion: false,
+    accessibilityPreset: "standard",
+    accessibleTextSize: "normal",
+    language: "system",
+    dateFormat: "system",
+    analyticsEnabled: false,
+    sendErrorLogs: false,
+    networkOnlyOnWifi: false,
+    externalLinks: "ask",
     dashboardRowActions: "menu",
     dashboardView: "list",
+    dashboardDensity: "comfortable",
+    dashboardShowThumbnails: true,
+    dashboardShowRatings: true,
+    dashboardShowProgress: true,
+    dashboardGroupBy: "status",
     oneHandedMode: "off",
     tabletTwoColumn: true,
     compactMode: false,
     metadataMode: "online",
     metadataThumbnails: true,
+    thumbnailSize: "medium",
+    thumbnailQuality: "balanced",
+    duplicateDetector: true,
+    orphanedMetadataCleanup: false,
+    importHistory: true,
+    exportSelectedOnly: false,
+    databaseHealthCheck: false,
+    debugMode: false,
+    networkTimeout: 30,
+    apiRateLimitDelay: 250,
+    experimentalFeatures: false,
     episodeReminders: true,
     notificationsEnabled: false,
     notificationEpisodeReminders: true,
     notificationBackupReminders: false,
+    notificationSound: true,
+    notificationVibration: true,
+    reminderDays: 1,
+    notificationPerCategory: false,
+    notificationGrouping: "grouped",
     notificationCloudFailures: true,
     notificationUnfinishedItems: false,
     notificationSnoozeMinutes: 60,
@@ -291,9 +328,34 @@ let state = {
     notificationQuietEnd: "07:00",
     notificationReminderTime: "09:00",
     imageCacheMaxEntries: 250,
+    storageWarningLimitMb: 500,
+    backupStorageLimitMb: 1000,
     backgroundBackups: false,
+    autoLockTimeout: "never",
+    lockOnBackground: false,
+    biometricFallback: "pin",
+    hideSensitiveNotes: false,
+    backupSchedule: "daily",
+    backupRetention: "10",
+    backupBeforeDestructive: true,
+    backupPasswordReminder: true,
+    backupMaxSizeMb: 1000,
+    backupValidateLocation: true,
+    backupRestorePreview: true,
     folderSyncDelay: "30000",
     animationSpeed: "normal",
+    metadataQueue: [],
+    metadataQueuePaused: false,
+    metadataImportConcurrency: 5,
+    metadataSyncFrequency: "immediate",
+    metadataRefreshInterval: "weekly",
+    metadataRetryLimit: 3,
+    offlineFallback: "cached",
+    thumbnailCleanup: "weekly",
+    importDefaultCategory: "anime",
+    importDuplicatePolicy: "skip",
+    exportDefaultFormat: "csv",
+    exportIncludeMetadata: true,
     metadataSources: {
       builtinOrder: ["tvmaze", "wikidata", "openlibrary"],
       builtinEnabled: { tvmaze: true, wikidata: true, openlibrary: true },
@@ -312,6 +374,10 @@ let state = {
       order: ["dashboard", "timeline", "discover", "sources", "explore", "stats", "settings"],
       visible: { dashboard: true, timeline: false, discover: true, sources: false, explore: true, stats: false, settings: true }
     },
+    bottomBarTransparency: 100,
+    bottomBarActiveStyle: "box",
+    bottomBarSurface: "translucent",
+    showScrollbars: false,
     appLook: "default",
     appLock: {
       method: "none",           // "none" | "pin" | "pattern" | "alphanumeric" | "biometric"
@@ -470,7 +536,17 @@ function runAppInit() {
   renderNavIconPickers();
   renderAppIconPicker();
   lucide.createIcons();
+  if (window.SquashDBCache?.trimImages && state.preferences.thumbnailCleanup !== "never") {
+    const interval = state.preferences.thumbnailCleanup === "daily" ? 86400000 : 604800000;
+    const lastCleanup = Number(localStorage.getItem("squashdb_thumbnail_cleanup_at") || 0);
+    if (Date.now() - lastCleanup >= interval) {
+      window.SquashDBCache.trimImages(state.preferences.imageCacheMaxEntries).then(() => {
+        localStorage.setItem("squashdb_thumbnail_cleanup_at", String(Date.now()));
+      }).catch(error => console.warn("Thumbnail cleanup failed", error));
+    }
+  }
   updateProgressWidget();
+  window.dispatchEvent(new Event("squashdb-app-ready"));
   handleIncomingShareIntent();
   handleNotificationAction();
   scheduleUnfinishedItemReminder();
@@ -570,6 +646,18 @@ async function loadData() {
   if (!state.preferences.defaultStartPage) {
     state.preferences.defaultStartPage = "remember-last";
   }
+  if (!["default", "fire", "pinklogo", "purple", "capacitor", "calculator", "freeotp", "termux", "controller", "gear"].includes(state.preferences.appLook)) {
+    state.preferences.appLook = "default";
+  }
+  if (state.preferences.dashboardDefaultCategory !== "remember-last"
+    && !CATEGORIES[state.preferences.dashboardDefaultCategory]) state.preferences.dashboardDefaultCategory = "remember-last";
+  if (![5, 10, 20, 50].includes(Number(state.preferences.recentlyAddedLimit))) state.preferences.recentlyAddedLimit = 10;
+  if (!["rounded", "soft", "square"].includes(state.preferences.dashboardCardCorners)) state.preferences.dashboardCardCorners = "rounded";
+  if (!["automatic", "ask", "manual"].includes(state.preferences.automaticCompletion)) state.preferences.automaticCompletion = "automatic";
+  if (!["watchlist", "in-progress", "on-hold", "dropped", "completed"].includes(state.preferences.defaultEntryStatus)) state.preferences.defaultEntryStatus = "watchlist";
+  if (![1, 5, 10].includes(Number(state.preferences.progressIncrement))) state.preferences.progressIncrement = 1;
+  if (typeof state.preferences.ratingReminders !== "boolean") state.preferences.ratingReminders = false;
+  if (!["none", "review", "journal"].includes(state.preferences.notesTemplate)) state.preferences.notesTemplate = "none";
   if (!state.preferences.ratingFormat) state.preferences.ratingFormat = "5-stars";
   if (!state.preferences.uiTheme) state.preferences.uiTheme = "dark";
   if (!state.preferences.uiFont) state.preferences.uiFont = "inter";
@@ -577,8 +665,31 @@ async function loadData() {
   if (!state.preferences.categoryColors || typeof state.preferences.categoryColors !== "object") state.preferences.categoryColors = {};
   if (typeof state.preferences.highContrast !== "boolean") state.preferences.highContrast = false;
   if (typeof state.preferences.reducedMotion !== "boolean") state.preferences.reducedMotion = false;
+  if (!["standard", "high-contrast", "reduced-motion", "maximum", "custom"].includes(state.preferences.accessibilityPreset)) state.preferences.accessibilityPreset = "standard";
+  if (!["normal", "large", "largest"].includes(state.preferences.accessibleTextSize)) state.preferences.accessibleTextSize = "normal";
+  if (!["system", "en"].includes(state.preferences.language)) state.preferences.language = "system";
+  if (!["system", "short", "long", "iso"].includes(state.preferences.dateFormat)) state.preferences.dateFormat = "system";
+  if (typeof state.preferences.analyticsEnabled !== "boolean") state.preferences.analyticsEnabled = false;
+  if (typeof state.preferences.sendErrorLogs !== "boolean") state.preferences.sendErrorLogs = false;
+  if (typeof state.preferences.networkOnlyOnWifi !== "boolean") state.preferences.networkOnlyOnWifi = false;
+  if (!["ask", "always", "never"].includes(state.preferences.externalLinks)) state.preferences.externalLinks = "ask";
   if (!state.preferences.dashboardRowActions) state.preferences.dashboardRowActions = "menu";
-  if (!["list", "grid"].includes(state.preferences.dashboardView)) state.preferences.dashboardView = "list";
+  if (!["list", "compact-list", "grid", "compact-grid", "detailed-grid", "table", "minimal-list", "large-grid", "kanban", "timeline"].includes(state.preferences.dashboardView)) state.preferences.dashboardView = "list";
+  if (!["comfortable", "compact"].includes(state.preferences.dashboardDensity)) state.preferences.dashboardDensity = "comfortable";
+  if (typeof state.preferences.dashboardShowThumbnails !== "boolean") state.preferences.dashboardShowThumbnails = true;
+  if (typeof state.preferences.dashboardShowRatings !== "boolean") state.preferences.dashboardShowRatings = true;
+  if (typeof state.preferences.dashboardShowProgress !== "boolean") state.preferences.dashboardShowProgress = true;
+  if (localStorage.getItem("squashdb_dashboard_status_groups_v2") !== "true") {
+    const migratedGrouping = ["none", "category"].includes(state.preferences.dashboardGroupBy);
+    if (migratedGrouping) state.preferences.dashboardGroupBy = "status";
+    localStorage.setItem("squashdb_dashboard_status_groups_v2", "true");
+    if (migratedGrouping) saveData();
+  }
+  if (!["none", "status", "release"].includes(state.preferences.dashboardGroupBy)) state.preferences.dashboardGroupBy = "status";
+  if (!CATEGORIES[state.preferences.importDefaultCategory]) state.preferences.importDefaultCategory = "anime";
+  if (!["skip", "update", "create"].includes(state.preferences.importDuplicatePolicy)) state.preferences.importDuplicatePolicy = "skip";
+  if (!["csv", "tsv", "txt"].includes(state.preferences.exportDefaultFormat)) state.preferences.exportDefaultFormat = "csv";
+  if (typeof state.preferences.exportIncludeMetadata !== "boolean") state.preferences.exportIncludeMetadata = true;
   if (!["off", "left", "right"].includes(state.preferences.oneHandedMode)) state.preferences.oneHandedMode = "off";
   if (typeof state.preferences.tabletTwoColumn !== "boolean") state.preferences.tabletTwoColumn = true;
   if (typeof state.preferences.compactMode !== "boolean") state.preferences.compactMode = false;
@@ -591,10 +702,26 @@ async function loadData() {
     saveData();
   }
   if (typeof state.preferences.metadataThumbnails !== "boolean") state.preferences.metadataThumbnails = true;
+  if (!["small", "medium", "large"].includes(state.preferences.thumbnailSize)) state.preferences.thumbnailSize = "medium";
+  if (!["data-saver", "balanced", "best"].includes(state.preferences.thumbnailQuality)) state.preferences.thumbnailQuality = "balanced";
+  if (typeof state.preferences.duplicateDetector !== "boolean") state.preferences.duplicateDetector = true;
+  if (typeof state.preferences.orphanedMetadataCleanup !== "boolean") state.preferences.orphanedMetadataCleanup = false;
+  if (typeof state.preferences.importHistory !== "boolean") state.preferences.importHistory = true;
+  if (typeof state.preferences.exportSelectedOnly !== "boolean") state.preferences.exportSelectedOnly = false;
+  if (typeof state.preferences.databaseHealthCheck !== "boolean") state.preferences.databaseHealthCheck = false;
+  if (typeof state.preferences.debugMode !== "boolean") state.preferences.debugMode = false;
+  if (![10, 30, 60, 120].includes(Number(state.preferences.networkTimeout))) state.preferences.networkTimeout = 30;
+  if (![0, 250, 500, 1000].includes(Number(state.preferences.apiRateLimitDelay))) state.preferences.apiRateLimitDelay = 250;
+  if (typeof state.preferences.experimentalFeatures !== "boolean") state.preferences.experimentalFeatures = false;
   if (typeof state.preferences.episodeReminders !== "boolean") state.preferences.episodeReminders = true;
   if (typeof state.preferences.notificationsEnabled !== "boolean") state.preferences.notificationsEnabled = false;
   if (typeof state.preferences.notificationEpisodeReminders !== "boolean") state.preferences.notificationEpisodeReminders = state.preferences.episodeReminders;
   if (typeof state.preferences.notificationBackupReminders !== "boolean") state.preferences.notificationBackupReminders = false;
+  if (typeof state.preferences.notificationSound !== "boolean") state.preferences.notificationSound = true;
+  if (typeof state.preferences.notificationVibration !== "boolean") state.preferences.notificationVibration = true;
+  if (![1, 3, 7, 14].includes(Number(state.preferences.reminderDays))) state.preferences.reminderDays = 1;
+  if (typeof state.preferences.notificationPerCategory !== "boolean") state.preferences.notificationPerCategory = false;
+  if (!["grouped", "separate"].includes(state.preferences.notificationGrouping)) state.preferences.notificationGrouping = "grouped";
   if (typeof state.preferences.notificationCloudFailures !== "boolean") state.preferences.notificationCloudFailures = true;
   if (typeof state.preferences.notificationUnfinishedItems !== "boolean") state.preferences.notificationUnfinishedItems = false;
   if (![60, 180, 1440, 10080, 0].includes(Number(state.preferences.notificationSnoozeMinutes))) state.preferences.notificationSnoozeMinutes = 60;
@@ -603,7 +730,20 @@ async function loadData() {
   if (!/^\d{2}:\d{2}$/.test(state.preferences.notificationQuietEnd)) state.preferences.notificationQuietEnd = "07:00";
   if (!/^\d{2}:\d{2}$/.test(state.preferences.notificationReminderTime)) state.preferences.notificationReminderTime = "09:00";
   if (![0, 250, 500, 1000].includes(Number(state.preferences.imageCacheMaxEntries))) state.preferences.imageCacheMaxEntries = 250;
+  if (![100, 500, 1000, 5000, 0].includes(Number(state.preferences.storageWarningLimitMb))) state.preferences.storageWarningLimitMb = 500;
+  if (![250, 1000, 5000, 0].includes(Number(state.preferences.backupStorageLimitMb))) state.preferences.backupStorageLimitMb = 1000;
+  if (!["off", "daily", "weekly"].includes(state.preferences.backupSchedule)) state.preferences.backupSchedule = "daily";
+  if (!["3", "10", "30", "0"].includes(String(state.preferences.backupRetention))) state.preferences.backupRetention = "10";
+  if (typeof state.preferences.backupBeforeDestructive !== "boolean") state.preferences.backupBeforeDestructive = true;
+  if (typeof state.preferences.backupPasswordReminder !== "boolean") state.preferences.backupPasswordReminder = true;
+  if (![250, 1000, 5000, 0].includes(Number(state.preferences.backupMaxSizeMb))) state.preferences.backupMaxSizeMb = 1000;
+  if (typeof state.preferences.backupValidateLocation !== "boolean") state.preferences.backupValidateLocation = true;
+  if (typeof state.preferences.backupRestorePreview !== "boolean") state.preferences.backupRestorePreview = true;
   if (typeof state.preferences.backgroundBackups !== "boolean") state.preferences.backgroundBackups = false;
+  if (!["never", "5-minutes", "15-minutes", "1-hour"].includes(state.preferences.autoLockTimeout)) state.preferences.autoLockTimeout = "never";
+  if (typeof state.preferences.lockOnBackground !== "boolean") state.preferences.lockOnBackground = false;
+  if (!["pin", "password", "none"].includes(state.preferences.biometricFallback)) state.preferences.biometricFallback = "pin";
+  if (typeof state.preferences.hideSensitiveNotes !== "boolean") state.preferences.hideSensitiveNotes = false;
   if (!["0", "5000", "10000", "30000", "60000"].includes(String(state.preferences.folderSyncDelay))) {
     state.preferences.folderSyncDelay = "30000";
   }
@@ -612,6 +752,15 @@ async function loadData() {
   }
   normalizeMetadataSources();
   normalizeAppLock();
+  if (!Array.isArray(state.preferences.metadataQueue)) state.preferences.metadataQueue = [];
+  if (typeof state.preferences.metadataQueuePaused !== "boolean") state.preferences.metadataQueuePaused = false;
+  if (!Number.isFinite(Number(state.preferences.metadataImportConcurrency))) state.preferences.metadataImportConcurrency = 5;
+  state.preferences.metadataImportConcurrency = Math.max(1, Math.min(10, Math.round(Number(state.preferences.metadataImportConcurrency))));
+  if (!["immediate", "five-minutes", "fifteen-minutes"].includes(state.preferences.metadataSyncFrequency)) state.preferences.metadataSyncFrequency = "immediate";
+  if (!["never", "daily", "weekly"].includes(state.preferences.metadataRefreshInterval)) state.preferences.metadataRefreshInterval = "weekly";
+  if (![1, 3, 5].includes(Number(state.preferences.metadataRetryLimit))) state.preferences.metadataRetryLimit = 3;
+  if (!["cached", "manual", "strict"].includes(state.preferences.offlineFallback)) state.preferences.offlineFallback = "cached";
+  if (!["never", "daily", "weekly"].includes(state.preferences.thumbnailCleanup)) state.preferences.thumbnailCleanup = "weekly";
   if (!state.preferences.navIcons || typeof state.preferences.navIcons !== "object") {
     state.preferences.navIcons = { dashboard: "layout-grid", timeline: "calendar", discover: "search", sources: "database", explore: "compass", stats: "pie-chart", settings: "settings" };
   }
@@ -625,9 +774,8 @@ async function loadData() {
     settings: state.preferences.navIcons.settings || "settings"
   };
 
-  // Bottom bar arrangement: which tabs show and in what order. Explore stands
-  // in for Timeline/Sources/Statistics by default (it links to all of them);
-  // Settings can never be hidden so the config page always stays reachable.
+  // Bottom bar arrangement: every destination can be enabled independently.
+  // Dashboard and Settings can never be hidden.
   const navBarDefaults = { dashboard: true, timeline: false, discover: true, sources: false, explore: true, stats: false, settings: true };
   if (!state.preferences.navBar || typeof state.preferences.navBar !== "object") {
     state.preferences.navBar = { order: [...NAV_BAR_KEYS], visible: { ...navBarDefaults } };
@@ -645,17 +793,8 @@ async function loadData() {
       state.preferences.navBar.visible[key] = navBarDefaults[key];
     }
   });
+  state.preferences.navBar.visible.dashboard = true;
   state.preferences.navBar.visible.settings = true;
-  // Explore replaces Timeline/Sources/Statistics in the bar when enabled
-  // (its page links to all three); otherwise Timeline and Statistics still
-  // share a single slot between themselves.
-  if (state.preferences.navBar.visible.explore) {
-    state.preferences.navBar.visible.timeline = false;
-    state.preferences.navBar.visible.sources = false;
-    state.preferences.navBar.visible.stats = false;
-  } else if (state.preferences.navBar.visible.timeline && state.preferences.navBar.visible.stats) {
-    state.preferences.navBar.visible.stats = false;
-  }
 
   const savedTheme = localStorage.getItem("squashdb_theme");
   if (savedTheme) {
@@ -725,7 +864,9 @@ async function loadData() {
   }
 
   if (!state.activeCategoryChip) {
-    state.activeCategoryChip = "series";
+    const preferred = state.preferences.dashboardDefaultCategory;
+    state.activeCategoryChip = preferred !== "remember-last" && state.preferences[preferred]
+      ? preferred : getOrderedCategories().find(key => state.preferences[key]) || "series";
   }
 
   rebuildSearchIndex();
@@ -754,6 +895,18 @@ async function loadData() {
       console.warn("Could not migrate local data into encrypted storage", err);
     }
   }
+
+  // Keep older completed records internally consistent as well as visually
+  // complete. This also repairs imported records after their metadata arrives.
+  let completedProgressChanged = false;
+  state.items.forEach(item => {
+    if (item?.status !== "Completed") return;
+    const before = [item.completionDate, item.episodesDone, item.volumesRead, item.chaptersRead, item.watchedEpisodeIds?.length].join("|");
+    markItemAsCompleted(item);
+    const after = [item.completionDate, item.episodesDone, item.volumesRead, item.chaptersRead, item.watchedEpisodeIds?.length].join("|");
+    if (before !== after) completedProgressChanged = true;
+  });
+  if (completedProgressChanged) saveData();
 
   // Keep a readable JSON mirror for browser/local-storage users and backup
   // tools. Android still uses the encrypted store as the primary source, but
@@ -788,7 +941,8 @@ function initializePage() {
 
   if (pageTab) {
     state.currentTab = pageTab;
-    renderCategoryChips();
+    if (pageTab === "tab-stats") renderStatsCategoryChips();
+    else renderCategoryChips();
     renderCategorySelectOptions();
     switchTab(pageTab);
     if (pageTab === "tab-dashboard") {
@@ -953,7 +1107,9 @@ function saveCategoryOrder(newEnabledOrder) {
 
 // Apply Theme
 function applyTheme() {
-  document.body.setAttribute("data-theme", state.preferences.uiTheme || state.theme);
+  const theme = state.preferences.uiTheme || state.theme || "dark";
+  document.documentElement.setAttribute("data-theme", theme);
+  document.body.setAttribute("data-theme", theme);
 }
 
 function applyPreferenceAttributes() {
@@ -973,6 +1129,25 @@ function applyPreferenceAttributes() {
       || CATEGORIES[key].color;
   });
   document.body.classList.toggle("compact-mode", Boolean(state.preferences.compactMode));
+  document.body.setAttribute("data-thumbnail-size", state.preferences.thumbnailSize || "medium");
+  document.body.setAttribute("data-thumbnail-quality", state.preferences.thumbnailQuality || "balanced");
+  document.body.setAttribute("data-text-size", state.preferences.accessibleTextSize || "normal");
+  document.body.setAttribute("data-dashboard-corners", state.preferences.dashboardCardCorners || "rounded");
+  const bottomBarTransparency = Math.max(0, Math.min(100, Number(state.preferences.bottomBarTransparency ?? 100)));
+  document.documentElement.style.setProperty("--bottom-bar-alpha", String(bottomBarTransparency / 100));
+  document.body.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
+  document.body.setAttribute("data-bottom-bar-surface", state.preferences.bottomBarSurface || "translucent");
+  document.documentElement.setAttribute("data-show-scrollbars", state.preferences.showScrollbars === true ? "true" : "false");
+  document.documentElement.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
+  document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
+  document.body.setAttribute("data-date-format", state.preferences.dateFormat || "system");
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  root.setAttribute("data-accent", accent);
+  root.setAttribute("data-contrast", state.preferences.highContrast ? "high" : "normal");
+  root.setAttribute("data-text-size", state.preferences.accessibleTextSize || "normal");
+  root.classList.toggle("reduced-motion", Boolean(state.preferences.reducedMotion));
+  root.style.colorScheme = ["light", "flashbang", "sand", "mint"].includes(theme) ? "light" : "dark";
   const appShell = document.getElementById("app-container");
   if (appShell && window.matchMedia("(max-width: 560px)").matches) {
     const hand = state.preferences.oneHandedMode || "off";
@@ -997,6 +1172,22 @@ function applyAnimationSpeed() {
   document.documentElement.style.setProperty("--anim-speed", multiplier);
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("bottom-bar-transparency");
+  const value = document.getElementById("bottom-bar-transparency-value");
+  if (!input) return;
+  const update = () => {
+    const next = Number(input.value);
+    if (value) value.textContent = `${next}%`;
+    state.preferences.bottomBarTransparency = next;
+    applyPreferenceAttributes();
+    saveData();
+  };
+  input.value = String(state.preferences.bottomBarTransparency ?? 100);
+  if (value) value.textContent = `${input.value}%`;
+  input.addEventListener("input", update);
+});
+
 function formatRatingValue(rating) {
   const value = Number(rating) || 0;
   const format = state.preferences.ratingFormat || "5-stars";
@@ -1004,6 +1195,30 @@ function formatRatingValue(rating) {
   if (format === "10-decimal") return `${(value * 2).toFixed(1)}/10`;
   if (format === "100-points") return `${Math.round(value * 20)}/100`;
   return `${value}/5`;
+}
+
+function markItemAsCompleted(item) {
+  if (!item) return item;
+  item.status = "Completed";
+  if (!item.completionDate) item.completionDate = new Date().toISOString().split("T")[0];
+
+  if (["series", "kdrama", "cdrama", "anime"].includes(item.category)) {
+    const episodes = Array.isArray(item.episodesCache) ? item.episodesCache : [];
+    const seasons = normalizeSeasonEpisodes(item.seasonEpisodes);
+    const seasonTotal = Object.values(seasons).reduce((sum, season) => sum + (Number(season.total) || 0), 0);
+    const total = Math.max(Number(item.totalEpisodes) || 0, seasonTotal, episodes.length);
+    if (total > 0) {
+      item.totalEpisodes = total;
+      item.episodesDone = total;
+      if (episodes.length) item.watchedEpisodeIds = episodes.map(episode => episode.id);
+      Object.keys(seasons).forEach(key => { seasons[key].watched = seasons[key].total; seasons[key].completed = true; });
+      if (Object.keys(seasons).length) item.seasonEpisodes = seasons;
+    }
+  } else if (["manga", "novel"].includes(item.category)) {
+    if (Number(item.totalVolumes) > 0) item.volumesRead = Number(item.totalVolumes);
+    if (Number(item.totalChapters) > 0) item.chaptersRead = Number(item.totalChapters);
+  }
+  return item;
 }
 
 function ratingToStoredValue(value) {
@@ -1016,13 +1231,40 @@ function ratingToStoredValue(value) {
 
 // Setup Event Listeners
 function setupEventListeners() {
+  const resetDashboard = document.getElementById("reset-dashboard-preferences");
+  if (resetDashboard && resetDashboard.dataset.bound !== "true") {
+    resetDashboard.dataset.bound = "true";
+    resetDashboard.addEventListener("click", async () => {
+      const confirmed = await requestInAppConfirmation("Reset Dashboard preferences?", "This restores the Dashboard layout, grouping, sorting, density, and display options.", "Reset Dashboard");
+      if (!confirmed) return;
+      Object.assign(state.preferences, {
+        dashboardView: "list", dashboardDensity: "comfortable", dashboardGroupBy: "status",
+        dashboardShowThumbnails: true, dashboardShowRatings: true, dashboardShowProgress: true
+      });
+      state.currentSort = "alphabetical-asc";
+      state.statusFilter = "all";
+      state.dashboardFilters = { status: "", unwatched: false, recentlyAdded: false, rated: false };
+      saveData();
+      renderDashboard();
+      updatePickerRowValues();
+      showToast("Dashboard preferences reset", "success");
+    });
+  }
   // Global Search
   const globalSearch = document.getElementById("global-search");
   if (globalSearch) {
+    const clearButton = document.getElementById("dashboard-search-clear");
+    if (clearButton) clearButton.hidden = !globalSearch.value;
     let searchRenderTimer = null;
     globalSearch.addEventListener("input", (e) => {
       state.searchQuery = e.target.value.toLowerCase().trim();
-      renderSearchHistory();
+      const clearButton = document.getElementById("dashboard-search-clear");
+      if (clearButton) clearButton.hidden = !e.target.value;
+      if (!e.target.value) renderSearchHistory();
+      else {
+        const history = document.getElementById("dashboard-search-history");
+        if (history) history.style.display = "none";
+      }
       clearTimeout(searchRenderTimer);
       searchRenderTimer = setTimeout(() => renderDashboard(), 200);
     });
@@ -1041,11 +1283,19 @@ function setupEventListeners() {
   // Status filter button next to the search box
   const filterBtn = document.getElementById("dashboard-filter-btn");
   if (filterBtn) {
-    filterBtn.addEventListener("click", openDashboardStatusFilter);
+    filterBtn.addEventListener("click", openDashboardRefineSheet);
     updateDashboardFilterButton();
   }
-  const sortBtn = document.getElementById("dashboard-sort-btn");
-  if (sortBtn) sortBtn.addEventListener("click", openDashboardSortFilter);
+  const clearSearch = document.getElementById("dashboard-search-clear");
+  clearSearch?.addEventListener("click", () => {
+    if (!globalSearch) return;
+    globalSearch.value = "";
+    state.searchQuery = "";
+    clearSearch.hidden = true;
+    renderSearchHistory();
+    renderDashboard();
+    globalSearch.focus();
+  });
 
   // Floating cross-links between Timeline and Statistics (each page carries
   // a FAB to the other, since only one of the two sits in the bottom bar)
@@ -1209,11 +1459,15 @@ function setupEventListeners() {
 
   // Change Backup Folder
   const chooseFolderBtn = document.getElementById("backup-choose-folder");
+  const folderActions = document.getElementById("backup-folder-actions");
+  const folderCapabilityNote = document.getElementById("backup-folder-capability-note");
   if (chooseFolderBtn) {
     if (backupFolderPluginAvailable()) {
       chooseFolderBtn.addEventListener("click", chooseBackupFolder);
     } else {
       chooseFolderBtn.style.display = "none";
+      if (folderActions) folderActions.style.display = "none";
+      if (folderCapabilityNote) folderCapabilityNote.hidden = false;
     }
   }
 
@@ -1251,16 +1505,31 @@ function setupEventListeners() {
   }
   // Reset Database
   const dbReset = document.getElementById("db-reset");
-  if (dbReset) {
-    dbReset.addEventListener("click", () => {
-      if (confirm("Are you absolutely sure you want to delete all entries? This action cannot be undone.")) {
+  if (dbReset && dbReset.dataset.bound !== "true") {
+    dbReset.dataset.bound = "true";
+    dbReset.addEventListener("click", async () => {
+      const confirmed = await requestInAppConfirmation(
+        "Wipe all data?",
+        "This permanently removes your tracked entries, watch history, and pending metadata imports.",
+        "Wipe data"
+      );
+      if (confirmed) {
         state.items = [];
+        state.watchLog = [];
+        if (state.preferences && Array.isArray(state.preferences.metadataQueue)) {
+          state.preferences.metadataQueue = [];
+          state.preferences.metadataQueuePaused = false;
+        }
         saveData();
         renderDashboard();
         renderTimeline();
         renderStats();
-        alert("All SquashDB database data has been successfully wiped.");
-        switchTab("tab-dashboard");
+        if (typeof showToast === "function") showToast("All SquashDB data has been wiped.", "success");
+        if (document.getElementById("notes-container")) {
+          switchTab("tab-dashboard");
+        } else {
+          window.location.href = "static/pages/main/dashboard.html";
+        }
       }
     });
   }
@@ -1317,7 +1586,10 @@ function setupEventListeners() {
   const backgroundBackupStatus = document.getElementById("background-backups-status");
   const updateBackgroundBackupStatus = () => {
     if (backgroundBackupStatus) backgroundBackupStatus.textContent = state.preferences.backgroundBackups ? "On" : "Off";
-    if (backgroundBackups) backgroundBackups.dataset.toggleOn = state.preferences.backgroundBackups ? "true" : "false";
+    if (backgroundBackups) {
+      backgroundBackups.dataset.toggleOn = state.preferences.backgroundBackups ? "true" : "false";
+      backgroundBackups.setAttribute("aria-checked", state.preferences.backgroundBackups ? "true" : "false");
+    }
   };
   updateBackgroundBackupStatus();
   if (backgroundBackups) backgroundBackups.addEventListener("click", async () => {
@@ -1325,7 +1597,12 @@ function setupEventListeners() {
     try {
       const scheduler = nativePlugin("BackupScheduler");
       if (value === "on" && (!scheduler?.schedule || !backupFolderPluginAvailable())) {
-        throw new Error("Select a backup folder in the Android app first.");
+        const message = scheduler?.schedule
+          ? "Select a backup folder in the Android app first."
+          : "Background encrypted backups are available in the Android app after selecting a backup folder.";
+        updateBackgroundBackupStatus();
+        if (typeof showToast === "function") showToast(message, "error");
+        return;
       }
       const previous = state.preferences.backgroundBackups;
       state.preferences.backgroundBackups = value === "on";
@@ -1343,6 +1620,8 @@ function setupEventListeners() {
       }
     } catch (err) {
       console.warn("Background backup toggle failed", err);
+      updateBackgroundBackupStatus();
+      if (typeof showToast === "function") showToast(err.message || "Background backup could not be enabled.", "error");
     }
   });
 
@@ -1350,7 +1629,10 @@ function setupEventListeners() {
   const notificationPermissionStatus = document.getElementById("notification-permission-status");
   const updateNotificationStatus = () => {
     if (notificationPermissionStatus) notificationPermissionStatus.textContent = state.preferences.notificationsEnabled ? "On" : "Off";
-    if (notificationPermission) notificationPermission.dataset.toggleOn = state.preferences.notificationsEnabled ? "true" : "false";
+    if (notificationPermission) {
+      notificationPermission.dataset.toggleOn = state.preferences.notificationsEnabled ? "true" : "false";
+      notificationPermission.setAttribute("aria-checked", state.preferences.notificationsEnabled ? "true" : "false");
+    }
   };
   updateNotificationStatus();
   const refreshNotificationPermission = async () => {
@@ -1416,7 +1698,10 @@ function setupEventListeners() {
     const status = document.getElementById(statusId);
     const update = () => {
       if (status) status.textContent = state.preferences[key] ? "On" : "Off";
-      if (row) row.dataset.toggleOn = state.preferences[key] ? "true" : "false";
+      if (row) {
+        row.dataset.toggleOn = state.preferences[key] ? "true" : "false";
+        row.setAttribute("aria-checked", state.preferences[key] ? "true" : "false");
+      }
     };
     update();
     row?.addEventListener("click", () => {
@@ -1464,7 +1749,10 @@ function setupEventListeners() {
   const quietStatus = document.getElementById("notification-quiet-hours-status");
   const updateQuietStatus = () => {
     if (quietStatus) quietStatus.textContent = state.preferences.notificationQuietHours ? `${state.preferences.notificationQuietStart}–${state.preferences.notificationQuietEnd}` : "Off";
-    if (quietRow) quietRow.dataset.toggleOn = state.preferences.notificationQuietHours ? "true" : "false";
+    if (quietRow) {
+      quietRow.dataset.toggleOn = state.preferences.notificationQuietHours ? "true" : "false";
+      quietRow.setAttribute("aria-checked", state.preferences.notificationQuietHours ? "true" : "false");
+    }
   };
   updateQuietStatus();
   quietRow?.addEventListener("click", () => {
@@ -1696,15 +1984,17 @@ function renderNavBarSettings() {
     row.className = "sortable-item metadata-source-row";
     row.draggable = true;
     row.dataset.navKey = key;
-    const locked = key === "settings";
+    const locked = key === "dashboard" || key === "settings";
+    const visible = state.preferences.navBar.visible[key] !== false;
+    const iconName = state.preferences.navIcons[key] || "circle";
     row.innerHTML = `
       <span class="drag-handle" aria-hidden="true">⋮⋮</span>
       <span class="sortable-label">
-        ${NAV_BAR_LABELS[key]}
-        ${locked ? `<span class="setting-desc">Always shown</span>` : ""}
+        <span class="manage-nav-row-icon"><i data-lucide="${iconName}"></i></span>
+        <span class="manage-nav-row-copy"><strong>${NAV_BAR_LABELS[key]}</strong><small>${locked ? "Always shown" : visible ? "Shown in bottom bar" : "Hidden from bottom bar"}</small></span>
       </span>
       <label class="switch">
-        <input type="checkbox" data-nav-visible="${key}" ${state.preferences.navBar.visible[key] ? "checked" : ""} ${locked ? "disabled" : ""}>
+        <input type="checkbox" data-nav-visible="${key}" aria-label="Show ${NAV_BAR_LABELS[key]} in bottom bar" ${visible ? "checked" : ""} ${locked ? "disabled" : ""}>
         <span class="slider"></span>
       </label>
     `;
@@ -1726,28 +2016,12 @@ function renderNavBarSettings() {
       const key = e.target.dataset.navVisible;
       const vis = state.preferences.navBar.visible;
       vis[key] = e.target.checked;
-      if (e.target.checked) {
-        // Explore stands in for Timeline/Sources/Statistics; outside of it,
-        // Timeline and Statistics still share a single slot.
-        if (key === "explore") {
-          vis.timeline = false;
-          vis.sources = false;
-          vis.stats = false;
-        } else if (key === "timeline") {
-          vis.stats = false;
-          vis.explore = false;
-        } else if (key === "stats") {
-          vis.timeline = false;
-          vis.explore = false;
-        } else if (key === "sources") {
-          vis.explore = false;
-        }
-      }
       saveData();
       renderNavBarSettings();
       applyNavBarConfig();
     });
   });
+  if (window.lucide) lucide.createIcons(list);
 }
 
 const NAV_ICON_CHOICES = {
@@ -1768,11 +2042,28 @@ function renderNavIconPickers() {
 
     grid.innerHTML = "";
     const current = state.preferences.navIcons[navKey];
+    const section = grid.closest(".settings-section");
+    const heading = section?.querySelector(".settings-section-title");
+    if (heading) {
+      let selectedLabel = heading.querySelector(".nav-icon-current-label");
+      if (!selectedLabel) {
+        selectedLabel = document.createElement("span");
+        selectedLabel.className = "nav-icon-current-label";
+        heading.appendChild(selectedLabel);
+      }
+      const readableCurrent = (current || "circle").replace(/-/g, " ");
+      selectedLabel.textContent = `Selected · ${readableCurrent}`;
+      selectedLabel.setAttribute("aria-label", `Selected icon: ${readableCurrent}`);
+    }
 
     NAV_ICON_CHOICES[navKey].forEach(iconName => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = `icon-picker-option${iconName === current ? " active" : ""}`;
+      const selected = iconName === current;
+      btn.className = `icon-picker-option${selected ? " active" : ""}`;
+      btn.setAttribute("aria-label", `Use ${iconName.replace(/-/g, " ")} icon for ${NAV_BAR_LABELS[navKey]}`);
+      btn.setAttribute("aria-pressed", String(selected));
+      btn.title = iconName.replace(/-/g, " ");
       btn.innerHTML = `<i data-lucide="${iconName}"></i>`;
       needsIcons = true;
       btn.addEventListener("click", () => {
@@ -1798,25 +2089,10 @@ function renderNavIconPickers() {
 // Each look bakes in both an icon and a matching name as a single pre-declared
 // alias (see AndroidManifest.xml: Look_<key>), so there's one flat list to pick from.
 const APP_LOOK_CHOICES = [
-  { value: "default", label: "SquashDB", preview: "icons/previews/ic_launcher.png" },
-  { value: "fire", label: "SquashDB", preview: "icons/previews/ic_launcher_fire.png" },
-  { value: "pinklogo", label: "SquashDB", preview: "icons/previews/ic_launcher_pinklogo.png" },
-  { value: "purple", label: "SquashDB", preview: "icons/previews/ic_launcher_purple.png" },
-  { value: "backlog", label: "Backlog", preview: "icons/previews/ic_launcher_backlog.png" },
-  { value: "bingelog", label: "Binge Log", preview: "icons/previews/ic_launcher_bingelog.png" },
-  { value: "checklist", label: "Checklist", preview: "icons/previews/ic_launcher_checklist.png" },
-  { value: "listkeeper", label: "ListKeeper", preview: "icons/previews/ic_launcher_listkeeper.png" },
-  { value: "myfiles", label: "My Files", preview: "icons/previews/ic_launcher_myfiles.png" },
-  { value: "mylists", label: "My Lists", preview: "icons/previews/ic_launcher_mylists.png" },
-  { value: "mywatchlist", label: "My Watchlist", preview: "icons/previews/ic_launcher_mywatchlist.png" },
-  { value: "notes", label: "Notes", preview: "icons/previews/ic_launcher_notes.png" },
-  { value: "reminders", label: "Reminders", preview: "icons/previews/ic_launcher_reminders.png" },
-  { value: "splash", label: "Splash", preview: "icons/previews/ic_launcher_splash.png" },
-  { value: "squid", label: "Squid", preview: "icons/previews/ic_launcher_squid.png" },
-  { value: "towatch", label: "ToWatch", preview: "icons/previews/ic_launcher_towatch.png" },
-  { value: "tracker", label: "Tracker", preview: "icons/previews/ic_launcher_tracker.png" },
-  { value: "vault", label: "Vault", preview: "icons/previews/ic_launcher_vault.png" },
-  { value: "watchlist", label: "Watchlist", preview: "icons/previews/ic_launcher_watchlist.png" },
+  { value: "default", label: "SquashDB", style: "Classic", preview: "icons/previews/ic_launcher.png" },
+  { value: "fire", label: "SquashDB", style: "Flame", preview: "icons/previews/ic_launcher_fire.png" },
+  { value: "pinklogo", label: "SquashDB", style: "Rose", preview: "icons/previews/ic_launcher_pinklogo.png" },
+  { value: "purple", label: "SquashDB", style: "Violet", preview: "icons/previews/ic_launcher_purple.png" },
   { value: "capacitor", label: "Capacitor", preview: "icons/previews/ic_launcher_capacitor.png" },
   { value: "calculator", label: "Calculator", preview: "icons/previews/ic_launcher_calculator.png" },
   { value: "freeotp", label: "FreeOTP", preview: "icons/previews/ic_launcher_freeotp.png" },
@@ -1874,10 +2150,14 @@ async function renderAppIconPicker() {
   APP_LOOK_CHOICES.forEach(choice => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `app-icon-option${choice.value === current ? " active" : ""}`;
+    const selected = choice.value === current;
+    btn.className = `app-icon-option${selected ? " active" : ""}`;
+    btn.setAttribute("aria-pressed", String(selected));
+    btn.setAttribute("aria-label", `${choice.label}${choice.style ? `, ${choice.style}` : ""}${selected ? ", selected" : ""}`);
     btn.innerHTML = `
-      <img src="${choice.preview}" alt="${choice.label} icon">
-      <span>${choice.label}</span>
+      <img src="${choice.preview}" alt="">
+      <span class="app-icon-name">${choice.label}</span>
+      ${choice.style ? `<small class="app-icon-style">${choice.style}</small>` : ""}
     `;
     btn.addEventListener("click", () => selectAppLook(choice.value));
     grid.appendChild(btn);
@@ -1927,12 +2207,20 @@ const SETTINGS_PICKERS = {
   uiTheme: {
     default: "dark",
     options: [
-      { value: "light", label: "Light" },
-      { value: "dark", label: "Dark" },
-      { value: "grey", label: "Grey" },
-      { value: "amoled", label: "Amoled" },
-      { value: "flashbang", label: "Flashbang" },
-      { value: "material-you", label: "Material You" }
+      { value: "light", label: "Light", description: "Clean white surfaces with indigo accents.", colors: ["#f8fafc", "#4f46e5", "#0f172a"] },
+      { value: "dark", label: "Dark", description: "Deep navy surfaces with violet accents.", colors: ["#0b0f19", "#6366f1", "#f8fafc"] },
+      { value: "grey", label: "Grey", description: "Soft graphite surfaces with slate accents.", colors: ["#111827", "#64748b", "#f9fafb"] },
+      { value: "amoled", label: "AMOLED", description: "True black surfaces with vivid violet accents.", colors: ["#000000", "#8b5cf6", "#f8fafc"] },
+      { value: "flashbang", label: "Flashbang", description: "Bright white surfaces with bold charcoal accents.", colors: ["#f8fafc", "#111827", "#0f172a"] },
+      { value: "material-you", label: "Material You", description: "Layered charcoal surfaces with purple accents.", colors: ["#10131d", "#8b5cf6", "#f8fafc"] },
+      { value: "ocean", label: "Ocean", description: "Midnight blue surfaces with clear aqua accents.", colors: ["#081b2b", "#38bdf8", "#e0f2fe"] },
+      { value: "forest", label: "Forest", description: "Deep evergreen surfaces with fresh mint accents.", colors: ["#10221b", "#4ade80", "#ecfdf5"] },
+      { value: "sunset", label: "Sunset", description: "Warm espresso surfaces with golden orange accents.", colors: ["#261714", "#fb923c", "#fff7ed"] },
+      { value: "rose", label: "Rose", description: "Dark plum surfaces with soft rose accents.", colors: ["#251722", "#fb7185", "#fff1f2"] },
+      { value: "lavender", label: "Lavender", description: "Smoky violet surfaces with lilac accents.", colors: ["#211d35", "#c4b5fd", "#f5f3ff"] },
+      { value: "nord", label: "Nord", description: "Cool blue-grey surfaces with icy blue accents.", colors: ["#242d3b", "#88c0d0", "#eceff4"] },
+      { value: "sand", label: "Sand", description: "Warm paper surfaces with terracotta accents.", colors: ["#faf4e8", "#c2410c", "#29231d"] },
+      { value: "mint", label: "Mint", description: "Pale green surfaces with deep teal accents.", colors: ["#effaf5", "#0f766e", "#12352d"] }
     ]
   },
   uiFont: {
@@ -1951,6 +2239,18 @@ const SETTINGS_PICKERS = {
       { value: "merriweather", label: "Merriweather (online)" },
       { value: "jetbrains-mono", label: "JetBrains Mono (online)" }
     ]
+  },
+  bottomBarActiveStyle: {
+    default: "box",
+    options: [{ value: "box", label: "Selected box" }, { value: "icon", label: "Icon color" }]
+  },
+  bottomBarSurface: {
+    default: "translucent",
+    options: [{ value: "translucent", label: "Translucent" }, { value: "solid", label: "Solid" }]
+  },
+  showScrollbars: {
+    default: false,
+    options: [{ value: "false", label: "Hidden" }, { value: "true", label: "Shown" }]
   },
   mainColor: {
     default: "normal",
@@ -1981,6 +2281,41 @@ const SETTINGS_PICKERS = {
       { value: "true", label: "High contrast" }
     ]
   },
+  accessibilityPreset: {
+    default: "standard",
+    options: [
+      { value: "standard", label: "Standard" },
+      { value: "high-contrast", label: "High contrast" },
+      { value: "reduced-motion", label: "Reduced motion" },
+      { value: "maximum", label: "Maximum accessibility" }
+    ]
+  },
+  ratingReminders: {
+    default: "false",
+    options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }]
+  },
+  accessibleTextSize: {
+    default: "normal",
+    options: [{ value: "normal", label: "Normal" }, { value: "large", label: "Large" }, { value: "largest", label: "Largest" }]
+  },
+  language: {
+    default: "system",
+    options: [{ value: "system", label: "System default" }, { value: "en", label: "English" }]
+  },
+  dateFormat: {
+    default: "system",
+    options: [
+      { value: "system", label: "System default" }, { value: "short", label: "Short dates" },
+      { value: "long", label: "Long dates" }, { value: "iso", label: "YYYY-MM-DD" }
+    ]
+  },
+  externalLinks: {
+    default: "ask",
+    options: [{ value: "ask", label: "Ask every time" }, { value: "always", label: "Open automatically" }, { value: "never", label: "Block external links" }]
+  },
+  analyticsEnabled: { default: "false", options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  sendErrorLogs: { default: "false", options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  networkOnlyOnWifi: { default: "false", options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
   reducedMotion: {
     default: "false",
     options: [
@@ -2000,7 +2335,83 @@ const SETTINGS_PICKERS = {
     default: "list",
     options: [
       { value: "list", label: "List" },
-      { value: "grid", label: "Grid" }
+      { value: "compact-list", label: "Compact List" },
+      { value: "grid", label: "Poster Grid" },
+      { value: "compact-grid", label: "Compact Grid" },
+      { value: "detailed-grid", label: "Detailed Grid" },
+      { value: "table", label: "Table" },
+      { value: "minimal-list", label: "Minimal List" },
+      { value: "large-grid", label: "Large Poster Grid" },
+      { value: "kanban", label: "Kanban Board" },
+      { value: "timeline", label: "Timeline" }
+    ]
+  },
+  dashboardDensity: {
+    default: "comfortable",
+    options: [
+      { value: "comfortable", label: "Comfortable" },
+      { value: "compact", label: "Compact" }
+    ]
+  },
+  dashboardDefaultCategory: {
+    default: "remember-last",
+    options: [
+      { value: "remember-last", label: "Remember last" },
+      { value: "series", label: "TV Series" }, { value: "movie", label: "Movies" },
+      { value: "anime", label: "Anime" }, { value: "manga", label: "Manga" },
+      { value: "novel", label: "Novels" }, { value: "game", label: "Games" }
+    ]
+  },
+  recentlyAddedLimit: {
+    default: 10,
+    options: [5, 10, 20, 50].map(value => ({ value, label: `${value} items` }))
+  },
+  dashboardCardCorners: {
+    default: "rounded",
+    options: [{ value: "rounded", label: "Rounded" }, { value: "soft", label: "Soft" }, { value: "square", label: "Square" }]
+  },
+  automaticCompletion: {
+    default: "automatic",
+    options: [{ value: "automatic", label: "Automatic" }, { value: "ask", label: "Ask first" }, { value: "manual", label: "Manual" }]
+  },
+  defaultEntryStatus: {
+    default: "watchlist",
+    options: [
+      { value: "watchlist", label: "Watchlist" },
+      { value: "in-progress", label: "In Progress" },
+      { value: "on-hold", label: "On Hold" },
+      { value: "dropped", label: "Dropped" },
+      { value: "completed", label: "Completed" }
+    ]
+  },
+  progressIncrement: {
+    default: 1,
+    options: [{ value: 1, label: "1 episode/chapter" }, { value: 5, label: "5 episodes/chapters" }, { value: 10, label: "10 episodes/chapters" }]
+  },
+  notesTemplate: {
+    default: "none",
+    options: [{ value: "none", label: "None" }, { value: "review", label: "Review" }, { value: "journal", label: "Journal" }]
+  },
+  dashboardGroupBy: {
+    default: "status",
+    options: [
+      { value: "none", label: "No grouping" },
+      { value: "status", label: "Status" },
+      { value: "release", label: "Release date" }
+    ]
+  },
+  dashboardSort: {
+    default: "alphabetical-asc",
+    stateKey: "currentSort",
+    options: [
+      { value: "updated-desc", label: "Recently updated" },
+      { value: "created-desc", label: "Recently added" },
+      { value: "progress-desc", label: "Most progress" },
+      { value: "progress-asc", label: "Least progress" },
+      { value: "rating-desc", label: "Highest rated" },
+      { value: "release-desc", label: "Newest release" },
+      { value: "alphabetical-asc", label: "Title A–Z" },
+      { value: "alphabetical-desc", label: "Title Z–A" }
     ]
   },
   oneHandedMode: {
@@ -2040,6 +2451,136 @@ const SETTINGS_PICKERS = {
       { value: "false", label: "Off" }
     ]
   },
+  thumbnailSize: {
+    default: "medium",
+    options: [
+      { value: "small", label: "Small" },
+      { value: "medium", label: "Medium" },
+      { value: "large", label: "Large" }
+    ]
+  },
+  thumbnailQuality: {
+    default: "balanced",
+    options: [
+      { value: "data-saver", label: "Data saver" },
+      { value: "balanced", label: "Balanced" },
+      { value: "best", label: "Best quality" }
+    ]
+  },
+  importDefaultCategory: {
+    default: "anime",
+    options: [
+      { value: "anime", label: "Anime" }, { value: "movie", label: "Movies" },
+      { value: "series", label: "TV Series" }, { value: "manga", label: "Manga" },
+      { value: "novel", label: "Novels" }, { value: "game", label: "Games" }
+    ]
+  },
+  importDuplicatePolicy: {
+    default: "skip",
+    options: [
+      { value: "skip", label: "Skip existing" }, { value: "update", label: "Update existing" },
+      { value: "create", label: "Create duplicate" }
+    ]
+  },
+  exportDefaultFormat: {
+    default: "csv",
+    options: [{ value: "csv", label: "CSV" }, { value: "tsv", label: "TSV" }, { value: "txt", label: "TXT" }]
+  },
+  exportIncludeMetadata: {
+    default: "true",
+    options: [{ value: "true", label: "Include metadata" }, { value: "false", label: "Titles and status only" }]
+  },
+  metadataSyncFrequency: {
+    default: "immediate",
+    options: [
+      { value: "immediate", label: "Immediately" },
+      { value: "five-minutes", label: "Every 5 minutes" },
+      { value: "fifteen-minutes", label: "Every 15 minutes" }
+    ]
+  },
+  metadataRefreshInterval: {
+    default: "weekly",
+    options: [{ value: "never", label: "Never" }, { value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }]
+  },
+  metadataRetryLimit: {
+    default: 3,
+    options: [1, 3, 5].map(value => ({ value, label: `${value} attempt${value === 1 ? "" : "s"}` }))
+  },
+  offlineFallback: {
+    default: "cached",
+    options: [{ value: "cached", label: "Use cached metadata" }, { value: "manual", label: "Keep manual data" }, { value: "strict", label: "Do not use fallback" }]
+  },
+  thumbnailCleanup: {
+    default: "weekly",
+    options: [{ value: "never", label: "Never" }, { value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }]
+  },
+  metadataImportConcurrency: {
+    default: 5,
+    options: [1, 2, 3, 5, 8, 10].map(value => ({ value, label: `${value} workers` }))
+  },
+  storageWarningLimitMb: {
+    default: 500,
+    options: [100, 500, 1000, 5000, 0].map(value => ({ value, label: value ? `${value} MB` : "No warning" }))
+  },
+  backupStorageLimitMb: {
+    default: 1000,
+    options: [250, 1000, 5000, 0].map(value => ({ value, label: value ? `${value} MB` : "Unlimited" }))
+  },
+  backupSchedule: {
+    default: "daily",
+    options: [
+      { value: "off", label: "Off" },
+      { value: "daily", label: "Daily" },
+      { value: "weekly", label: "Weekly" }
+    ]
+  },
+  backupRetention: {
+    default: "10",
+    options: [
+      { value: "3", label: "Keep 3 backups" },
+      { value: "10", label: "Keep 10 backups" },
+      { value: "30", label: "Keep 30 backups" },
+      { value: "0", label: "Keep all backups" }
+    ]
+  },
+  backupBeforeDestructive: {
+    default: true,
+    options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }]
+  },
+  backupPasswordReminder: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  backupMaxSizeMb: { default: 1000, options: [250, 1000, 5000, 0].map(value => ({ value, label: value ? `${value} MB` : "Unlimited" })) },
+  backupValidateLocation: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  backupRestorePreview: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  notificationSound: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  notificationVibration: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  reminderDays: { default: 1, options: [1, 3, 7, 14].map(value => ({ value, label: `${value} day${value === 1 ? "" : "s"}` })) },
+  notificationPerCategory: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  notificationGrouping: { default: "grouped", options: [{ value: "grouped", label: "Grouped" }, { value: "separate", label: "Separate" }] },
+  autoLockTimeout: { default: "never", options: [{ value: "never", label: "Never" }, { value: "5-minutes", label: "5 minutes" }, { value: "15-minutes", label: "15 minutes" }, { value: "1-hour", label: "1 hour" }] },
+  lockOnBackground: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  biometricFallback: { default: "pin", options: [{ value: "pin", label: "PIN" }, { value: "password", label: "Password" }, { value: "none", label: "No fallback" }] },
+  hideSensitiveNotes: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  duplicateDetector: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  orphanedMetadataCleanup: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  importHistory: { default: true, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  exportSelectedOnly: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  databaseHealthCheck: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  debugMode: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  networkTimeout: { default: 30, options: [10, 30, 60, 120].map(value => ({ value, label: `${value} seconds` })) },
+  apiRateLimitDelay: { default: 250, options: [0, 250, 500, 1000].map(value => ({ value, label: `${value} ms` })) },
+  experimentalFeatures: { default: false, options: [{ value: "true", label: "On" }, { value: "false", label: "Off" }] },
+  dashboardShowThumbnails: {
+    default: "true",
+    options: [{ value: "true", label: "Shown" }, { value: "false", label: "Hidden" }]
+  },
+  dashboardShowRatings: {
+    default: "true",
+    options: [{ value: "true", label: "Shown" }, { value: "false", label: "Hidden" }]
+  },
+  dashboardShowProgress: {
+    default: "true",
+    options: [{ value: "true", label: "Shown" }, { value: "false", label: "Hidden" }]
+  },
   folderSyncDelay: {
     default: "30000",
     options: [
@@ -2064,6 +2605,119 @@ const SETTINGS_PICKERS = {
 // Multiplier applied to every CSS transition/animation duration via --anim-speed.
 const ANIMATION_SPEED_MULTIPLIERS = { off: 0.001, fast: 0.5, normal: 1, slow: 1.75 };
 
+const MAIN_COLOR_PREVIEWS = {
+  normal: "#6366f1", "carnation-pink": "#f472b6", "dark-green": "#16a34a", maroon: "#b91c1c",
+  "navy-blue": "#2563eb", grey: "#64748b", white: "#e2e8f0", brown: "#a16207", cool: "#06b6d4",
+  fire: "#f97316", burple: "#7c3aed", gren: "#22c55e", apple: "#65a30d", banan: "#eab308",
+  party: "#f43f5e", "pink-pain": "#fb7185", "material-you": "#8b5cf6"
+};
+
+const FONT_PREVIEW_FAMILIES = {
+  system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", inter: "Inter, sans-serif",
+  outfit: "Outfit, sans-serif", serif: "Georgia, 'Times New Roman', serif", monospace: "ui-monospace, monospace",
+  rounded: "ui-rounded, 'Segoe UI Rounded', sans-serif", poppins: "Poppins, sans-serif", roboto: "Roboto, sans-serif",
+  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace"
+};
+
+function getSettingsPickerPresentation(pref, option) {
+  if (pref === "uiTheme") return { kind: "theme", description: option.description, colors: option.colors };
+  if (pref === "accessibleTextSize") {
+    const choices = {
+      normal: ["Default text size throughout the app.", "15px"],
+      large: ["Larger labels and reading text.", "19px"],
+      largest: ["Maximum text size for easier reading.", "23px"]
+    };
+    return { kind: "text-size", description: choices[option.value][0], sampleSize: choices[option.value][1] };
+  }
+  if (pref === "accessibilityPreset") {
+    const choices = {
+      standard: ["Default contrast, motion, and text size.", []],
+      "high-contrast": ["Increase contrast and text clarity.", ["contrast"]],
+      "reduced-motion": ["Minimize transitions and movement.", ["motion"]],
+      maximum: ["High contrast, reduced motion, and largest text.", ["contrast", "motion", "text"]]
+    };
+    return { kind: "accessibility", description: choices[option.value][0], enabled: choices[option.value][1] };
+  }
+  if (pref === "animationSpeed") {
+    const choices = {
+      off: ["Transitions happen instantly.", "Instant", 12],
+      fast: ["Short, responsive transitions.", "0.5×", 22],
+      normal: ["Balanced transition timing.", "1×", 32],
+      slow: ["Relaxed, slower transitions.", "1.75×", 43]
+    };
+    return { kind: "speed", description: choices[option.value][0], pace: choices[option.value][1], width: choices[option.value][2] };
+  }
+  if (pref === "uiFont") {
+    const description = {
+      system: "Uses the font built into your device.", inter: "Clean, neutral, and easy to scan.", outfit: "Rounded geometric headings and labels.",
+      serif: "Traditional letterforms for a bookish feel.", monospace: "Even-width characters with a technical feel.", rounded: "Soft, friendly rounded letterforms.",
+      poppins: "Geometric sans serif with a warm feel.", roboto: "Compact, familiar Android-style lettering.", nunito: "Soft shapes with highly readable text.",
+      lato: "Open, balanced letterforms for longer reading.", merriweather: "Serif lettering tuned for comfortable reading.",
+      "jetbrains-mono": "Clear monospaced lettering for detail."
+    };
+    return { kind: "font", description: description[option.value], family: FONT_PREVIEW_FAMILIES[option.value] };
+  }
+  if (pref === "mainColor") return { kind: "accent", description: `Use ${option.label.toLowerCase()} for buttons and highlights.`, color: MAIN_COLOR_PREVIEWS[option.value] || MAIN_COLOR_PREVIEWS.normal };
+  if (pref === "bottomBarActiveStyle") {
+    return { kind: "nav-active", description: option.value === "box" ? "Highlight the selected destination with a soft tile." : "Color the selected icon without a tile.", mode: option.value };
+  }
+  if (pref === "bottomBarSurface") {
+    return { kind: "nav-surface", description: option.value === "translucent" ? "Let the page softly show through the navigation." : "Keep the navigation background opaque.", mode: option.value };
+  }
+  return null;
+}
+
+function createSettingsPickerPreview(presentation) {
+  const { kind } = presentation;
+  const preview = document.createElement("span");
+  preview.className = `setting-picker-preview picker-preview-${kind}`;
+  if (kind === "theme") {
+    preview.classList.add("theme-picker-preview");
+    preview.style.setProperty("--theme-preview-bg", presentation.colors[0]);
+    preview.style.setProperty("--theme-preview-accent", presentation.colors[1]);
+    preview.style.setProperty("--theme-preview-text", presentation.colors[2]);
+    preview.innerHTML = '<span class="theme-picker-preview-accent"></span><span class="theme-picker-preview-lines"><i></i><i></i></span>';
+  } else if (kind === "text-size") {
+    const sample = document.createElement("strong");
+    sample.className = "picker-preview-aa";
+    sample.textContent = "Aa";
+    sample.style.fontSize = presentation.sampleSize;
+    preview.appendChild(sample);
+  } else if (kind === "accessibility") {
+    ["contrast", "motion", "text"].forEach(feature => {
+      const mark = document.createElement("span");
+      mark.className = `picker-accessibility-mark${presentation.enabled.includes(feature) ? " enabled" : ""}`;
+      const icon = document.createElement("i");
+      icon.dataset.lucide = feature === "contrast" ? "contrast" : feature === "motion" ? "move-horizontal" : "type";
+      mark.appendChild(icon);
+      preview.appendChild(mark);
+    });
+  } else if (kind === "speed") {
+    const line = document.createElement("span");
+    line.className = "picker-speed-line";
+    line.style.width = `${presentation.width}px`;
+    const label = document.createElement("small");
+    label.textContent = presentation.pace;
+    preview.append(line, label);
+  } else if (kind === "font") {
+    const sample = document.createElement("strong");
+    sample.className = "picker-preview-aa";
+    sample.textContent = "Aa";
+    sample.style.fontFamily = presentation.family;
+    preview.appendChild(sample);
+  } else if (kind === "accent") {
+    preview.style.setProperty("--picker-accent-color", presentation.color);
+    preview.innerHTML = '<span class="picker-accent-dot"></span><span class="picker-accent-line"></span><span class="picker-accent-button"></span>';
+  } else if (kind === "nav-active") {
+    preview.classList.add(`picker-nav-mode-${presentation.mode}`);
+    preview.innerHTML = '<span><i data-lucide="layout-grid"></i></span><span><i data-lucide="search"></i></span><span><i data-lucide="settings"></i></span>';
+  } else if (kind === "nav-surface") {
+    preview.classList.add(`picker-surface-mode-${presentation.mode}`);
+    preview.innerHTML = '<span class="picker-surface-line"></span><span class="picker-surface-line short"></span><span class="picker-surface-nav"><i></i><i></i><i></i></span>';
+  }
+  return preview;
+}
+
 function getPickerValue(pref) {
   const picker = SETTINGS_PICKERS[pref];
   const source = picker.stateKey ? state : state.preferences;
@@ -2086,9 +2740,28 @@ function updatePickerRowValues() {
     const valueEl = row.querySelector(".settings-row-value span");
     const current = getPickerValue(pref);
     const match = picker.options.find(o => o.value === current);
-    if (valueEl) valueEl.textContent = match ? match.label : current;
-    if (row.dataset.directToggle === "true") row.dataset.toggleOn = current === "true" ? "true" : "false";
+    if (valueEl) {
+      const label = match ? match.label : current;
+      valueEl.textContent = pref === "highContrast" ? (current === "true" ? "High contrast" : "Standard") : label;
+    }
+    if (row.dataset.directToggle === "true") {
+      row.dataset.toggleOn = current === "true" ? "true" : "false";
+      if (row.getAttribute("role") === "switch") row.setAttribute("aria-checked", current === "true" ? "true" : "false");
+    }
   });
+
+  // Keep the preset summary accurate when a user changes one of its component
+  // controls individually after applying a preset.
+  const { highContrast, reducedMotion, accessibleTextSize } = state.preferences;
+  const preset = highContrast && reducedMotion && accessibleTextSize === "largest" ? "maximum"
+    : highContrast && !reducedMotion && accessibleTextSize === "large" ? "high-contrast"
+      : !highContrast && reducedMotion && accessibleTextSize === "normal" ? "reduced-motion"
+        : !highContrast && !reducedMotion && accessibleTextSize === "normal" ? "standard" : "custom";
+  state.preferences.accessibilityPreset = preset;
+  const presetRow = document.querySelector('[data-pref="accessibilityPreset"]');
+  const presetValue = presetRow?.querySelector(".settings-row-value span");
+  const presetLabel = SETTINGS_PICKERS.accessibilityPreset.options.find(option => option.value === preset)?.label;
+  if (presetValue && presetLabel) presetValue.textContent = presetLabel;
 }
 
 function setupSettingsPickers() {
@@ -2149,9 +2822,36 @@ function openSettingsPicker(pref, title) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `picker-option${opt.value === current ? " active" : ""}`;
-    btn.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${opt.label}</span>`;
+    btn.setAttribute("aria-pressed", String(opt.value === current));
+    const presentation = getSettingsPickerPresentation(pref, opt);
+    if (presentation) {
+      btn.classList.add("rich-picker-option");
+      if (pref === "uiTheme") {
+        btn.classList.add("theme-picker-option");
+        btn.dataset.themeOption = opt.value;
+      }
+      const radio = document.createElement("span");
+      radio.className = "choice-radio";
+      radio.setAttribute("aria-hidden", "true");
+      const preview = createSettingsPickerPreview(presentation);
+      const copy = document.createElement("span");
+      copy.className = "theme-picker-copy";
+      const name = document.createElement("strong");
+      name.textContent = opt.label;
+      const description = document.createElement("small");
+      description.textContent = presentation.description;
+      copy.append(name, description);
+      btn.append(radio, preview, copy);
+    } else {
+      btn.innerHTML = `<span class="choice-radio" aria-hidden="true"></span><span>${opt.label}</span>`;
+    }
     btn.addEventListener("click", () => {
       setPickerValue(pref, opt.value);
+      if (pref === "accessibilityPreset") {
+        state.preferences.highContrast = ["high-contrast", "maximum"].includes(opt.value);
+        state.preferences.reducedMotion = ["reduced-motion", "maximum"].includes(opt.value);
+        state.preferences.accessibleTextSize = opt.value === "maximum" ? "largest" : opt.value === "high-contrast" ? "large" : "normal";
+      }
       saveData();
       applyTheme();
       applyPreferenceAttributes();
@@ -2249,6 +2949,60 @@ function openActionPopup(title, message, actionLabel, action) {
   if (window.lucide) lucide.createIcons();
 }
 
+function requestInAppConfirmation(title, message, actionLabel = "Continue") {
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay active squashdb-confirm-modal";
+    overlay.innerHTML = `
+      <div class="modal-content" role="dialog" aria-modal="true">
+        <div class="modal-header"><h3 class="modal-title"></h3><button type="button" class="modal-close" aria-label="Close">&times;</button></div>
+        <p class="settings-row-note"></p>
+        <div class="form-actions"><button type="button" class="btn btn-secondary" data-confirm-cancel>Cancel</button><button type="button" class="btn btn-primary" data-confirm-action></button></div>
+      </div>`;
+    overlay.querySelector(".modal-title").textContent = title;
+    overlay.querySelector(".settings-row-note").textContent = message;
+    overlay.querySelector("[data-confirm-action]").textContent = actionLabel;
+    const finish = result => { overlay.remove(); resolve(result); };
+    overlay.querySelector("[data-confirm-cancel]").addEventListener("click", () => finish(false));
+    overlay.querySelector(".modal-close").addEventListener("click", () => finish(false));
+    overlay.addEventListener("click", event => { if (event.target === overlay) finish(false); });
+    overlay.querySelector("[data-confirm-action]").addEventListener("click", () => finish(true));
+    document.body.appendChild(overlay);
+  });
+}
+
+async function clearSquashDbData({ factoryReset = false } = {}) {
+  const title = factoryReset ? "Factory reset SquashDB?" : "Clear all tracked data?";
+  const message = factoryReset
+    ? "This removes tracked items, watch history, preferences, pending imports, and temporary caches. This cannot be undone."
+    : "This removes all tracked items, watch history, and pending imports. Preferences and backups will be kept.";
+  const confirmed = await requestInAppConfirmation(title, message, factoryReset ? "Factory reset" : "Clear data");
+  if (!confirmed) return false;
+
+  const encryptedStore = nativePlugin("EncryptedStore");
+  const writes = [];
+  if (encryptedStore?.deleteItem) state.items.forEach(item => { if (item?.id) writes.push(encryptedStore.deleteItem({ id: String(item.id) })); });
+  if (encryptedStore?.setMeta) writes.push(encryptedStore.setMeta({ data: "{\"watchLog\":[],\"preferences\":{}}" }));
+  state.items = [];
+  state.watchLog = [];
+  if (state.preferences) {
+    state.preferences.metadataQueue = [];
+    state.preferences.metadataQueuePaused = false;
+  }
+  saveData();
+  await Promise.allSettled(writes);
+
+  if (window.SquashDBCache) await window.SquashDBCache.clearTemporary();
+  if (factoryReset) {
+    Object.keys(localStorage).filter(key => key.startsWith("squashdb_")).forEach(key => localStorage.removeItem(key));
+  }
+  if (typeof showToast === "function") showToast(factoryReset ? "SquashDB was reset." : "All tracked data was cleared.", "success");
+  setTimeout(() => window.location.reload(), 350);
+  return true;
+}
+
+window.clearSquashDbData = clearSquashDbData;
+
 function openChoicePopup(title, message, options, currentValue, onSelect) {
   const modal = document.getElementById("picker-modal");
   const list = document.getElementById("picker-options-list");
@@ -2309,7 +3063,24 @@ function renderCategoryOrderSettings() {
   });
 
   let dragged = null;
+  let pointerId = null;
+  let captureTarget = null;
+  let moved = false;
+  const saveOrder = () => saveCategoryOrder(Array.from(list.querySelectorAll(".sortable-item")).map(el => el.dataset.category));
+  const finishPointerDrag = (event) => {
+    if (!dragged || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
+    dragged.classList.remove("dragging");
+    if (moved) saveOrder();
+    if (pointerId !== null && captureTarget?.hasPointerCapture?.(pointerId)) captureTarget.releasePointerCapture(pointerId);
+    dragged = null;
+    pointerId = null;
+    captureTarget = null;
+    moved = false;
+  };
+  document.addEventListener("pointerup", finishPointerDrag, true);
+  document.addEventListener("pointercancel", finishPointerDrag, true);
   list.querySelectorAll(".sortable-item").forEach(item => {
+    item.draggable = !window.matchMedia("(pointer: coarse)").matches;
     item.addEventListener("dragstart", () => {
       dragged = item;
       item.classList.add("dragging");
@@ -2327,6 +3098,28 @@ function renderCategoryOrderSettings() {
       const after = e.clientY > rect.top + rect.height / 2;
       list.insertBefore(dragged, after ? item.nextSibling : item);
     });
+    const handle = item.querySelector(".drag-handle");
+    handle?.addEventListener("pointerdown", (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      dragged = item;
+      pointerId = event.pointerId;
+      captureTarget = handle;
+      moved = false;
+      item.classList.add("dragging");
+      handle.setPointerCapture?.(pointerId);
+      event.preventDefault();
+    });
+    handle?.addEventListener("pointermove", (event) => {
+      if (!dragged || event.pointerId !== pointerId) return;
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".sortable-item");
+      if (!target || target.parentElement !== list || target === dragged) return;
+      moved = true;
+      const rect = target.getBoundingClientRect();
+      list.insertBefore(dragged, event.clientY > rect.top + rect.height / 2 ? target.nextSibling : target);
+      event.preventDefault();
+    });
+    handle?.addEventListener("pointerup", finishPointerDrag);
+    handle?.addEventListener("pointercancel", finishPointerDrag);
   });
 
 }
@@ -2491,9 +3284,11 @@ function renderCategoryChips() {
   // Render enabled chips
   getOrderedCategories().forEach(key => {
     if (state.preferences[key]) {
-      const chip = document.createElement("div");
+      const chip = document.createElement("button");
+      chip.type = "button";
       chip.className = `chip ${state.activeCategoryChip === key ? "active" : ""}`;
       chip.dataset.category = key;
+      chip.setAttribute("aria-pressed", String(state.activeCategoryChip === key));
       chip.style.setProperty("--theme-color", CATEGORIES[key].color);
       chip.innerHTML = `<i data-lucide="${CATEGORIES[key].icon}"></i> ${CATEGORIES[key].label}`;
       chip.addEventListener("click", () => {
@@ -2511,11 +3306,42 @@ function renderCategoryChips() {
   lucide.createIcons();
 }
 
+function renderStatsCategoryChips() {
+  const container = document.getElementById("category-chips");
+  if (!container) return;
+  container.replaceChildren();
+  const enabledCategories = getEnabledOrderedCategories();
+  let selected = localStorage.getItem("squashdb_stats_category") || "all";
+  if (selected !== "all" && !enabledCategories.includes(selected)) {
+    selected = "all";
+    localStorage.setItem("squashdb_stats_category", selected);
+  }
+  const choices = [{ key: "all", label: "All categories", icon: "layers-3" },
+    ...enabledCategories.map(key => ({ key, label: CATEGORIES[key].label, icon: CATEGORIES[key].icon }))];
+  choices.forEach(choice => {
+    const button = document.createElement("button");
+    const active = selected === choice.key;
+    button.type = "button";
+    button.className = `chip${active ? " active" : ""}`;
+    button.dataset.statsCategory = choice.key;
+    button.setAttribute("aria-pressed", String(active));
+    button.innerHTML = `<i data-lucide="${choice.icon}" aria-hidden="true"></i><span>${choice.label}</span>`;
+    button.addEventListener("click", () => {
+      localStorage.setItem("squashdb_stats_category", choice.key);
+      renderStatsCategoryChips();
+      renderStats();
+    });
+    container.appendChild(button);
+  });
+  lucide.createIcons(container);
+}
+
 // Update UI active styles for selected category chip
 function updateActiveChipUI() {
   const chips = document.querySelectorAll("#category-chips .chip");
   chips.forEach(chip => {
     chip.classList.toggle("active", chip.dataset.category === state.activeCategoryChip);
+    chip.setAttribute("aria-pressed", String(chip.dataset.category === state.activeCategoryChip));
   });
 }
 
@@ -2553,7 +3379,7 @@ function calculateProgress(item) {
   if (!item || typeof item !== "object") return 0;
   const signature = [item.category, item.status, item.seasonsDone, item.totalSeasons,
     item.episodesDone, item.totalEpisodes, item.seasonEpisodes, item.chaptersRead,
-    item.totalChapters].join("|");
+    item.totalChapters, item.volumesRead, item.totalVolumes].join("|");
   const cached = progressCache.get(item);
   if (cached?.signature === signature) return cached.value;
   const { category, status, seasonsDone, totalSeasons, episodesDone, totalEpisodes, chaptersRead, totalChapters } = item;
@@ -2587,11 +3413,19 @@ function calculateProgress(item) {
   } else if (category === "manga" || category === "novel") {
     const totalCh = parseInt(totalChapters) || 0;
     const doneCh = parseInt(chaptersRead) || 0;
-    if (totalCh > 0) result = Math.min(100, Math.round((doneCh / totalCh) * 100));
+    const totalVol = parseInt(item.totalVolumes) || 0;
+    const doneVol = parseInt(item.volumesRead) || 0;
+    if (totalCh > 0) {
+      result = Math.min(100, Math.round((doneCh / totalCh) * 100));
+    } else if (totalVol > 0) {
+      result = Math.min(100, Math.round((doneVol / totalVol) * 100));
+    }
   }
 
-  // Games / Movies with no numerical steps
-  if (!result && (status === "Playing" || status === "In Progress" || status === "Reading")) result = 50;
+  // A status-only estimate is useful for games and movies, but episodic
+  // titles have exact watched/total counts and must remain at 0% until watched.
+  const episodicCategory = category === "series" || category === "kdrama" || category === "cdrama" || category === "anime";
+  if (!result && !episodicCategory && (status === "Playing" || status === "In Progress" || status === "Reading")) result = 50;
   progressCache.set(item, { signature, value: result });
   return result;
 }
@@ -2603,11 +3437,21 @@ function calculateTimeToComplete(item) {
   const { category } = item;
 
   if (category === "series" || category === "kdrama" || category === "cdrama" || category === "anime") {
-    const runtime = parseInt(item.episodeRuntime) || 0;
+    const cachedRuntimes = Array.isArray(item.episodesCache)
+      ? item.episodesCache.map(episode => Number(episode.runtime)).filter(runtime => runtime > 0)
+      : [];
+    const averageRuntime = cachedRuntimes.length
+      ? Math.round(cachedRuntimes.reduce((sum, runtime) => sum + runtime, 0) / cachedRuntimes.length)
+      : 0;
+    const runtime = parseInt(item.episodeRuntime) || averageRuntime;
     if (runtime <= 0) return null;
     const totalEp = parseInt(item.totalEpisodes) || getSeasonTotalEpisodes(item) || 0;
     if (totalEp <= 0) return null;
-    const doneEp = Math.min(totalEp, parseInt(item.episodesDone) || 0);
+    const doneEp = Math.min(totalEp, Math.max(
+      parseInt(item.episodesDone) || 0,
+      getSeasonWatchedEpisodes(item),
+      Array.isArray(item.watchedEpisodeIds) ? item.watchedEpisodeIds.length : 0
+    ));
     return {
       total: runtime * totalEp,
       remaining: item.status === "Completed" ? 0 : runtime * (totalEp - doneEp)
@@ -2681,7 +3525,18 @@ function dashboardStatusFilterActive() {
 function updateDashboardFilterButton() {
   const btn = document.getElementById("dashboard-filter-btn");
   if (!btn) return;
-  btn.classList.toggle("active", dashboardStatusFilterActive() || dashboardFiltersActive());
+  const count = Number(Boolean(dashboardStatusFilterActive()))
+    + Number(Boolean(state.dashboardFilters?.status))
+    + Number(Boolean(state.dashboardFilters?.unwatched))
+    + Number(Boolean(state.dashboardFilters?.recentlyAdded))
+    + Number(Boolean(state.dashboardFilters?.rated));
+  btn.classList.toggle("active", count > 0);
+  const badge = document.getElementById("dashboard-filter-count");
+  if (badge) {
+    badge.textContent = String(count);
+    badge.hidden = count === 0;
+  }
+  btn.setAttribute("aria-label", count ? `Sort and filter your library, ${count} active` : "Sort and filter your library");
 }
 
 function dashboardFiltersActive() {
@@ -2723,6 +3578,8 @@ function renderSearchHistory() {
   root.querySelectorAll("[data-search-history]").forEach(button => button.addEventListener("click", () => {
     input.value = button.dataset.searchHistory;
     state.searchQuery = input.value.toLowerCase().trim();
+    const clearButton = document.getElementById("dashboard-search-clear");
+    if (clearButton) clearButton.hidden = !input.value;
     root.style.display = "none";
     renderDashboard();
   }));
@@ -2750,79 +3607,310 @@ function dashboardHasUnwatched(item) {
   return total > done || ["In Progress", "Playing", "Reading"].includes(item.status);
 }
 
-function dashboardFilterChips() {
-  return [
-    ["in-progress", "In Progress"], ["completed", "Completed"],
-    ["unwatched", "Unwatched episodes"], ["recentlyAdded", "Recently added"], ["rated", "Rating"]
-  ];
+function dashboardGroupKey(item, groupBy = state.preferences.dashboardGroupBy) {
+  if (groupBy === "status") return item.status || "Uncategorized";
+  if (groupBy === "category") return CATEGORIES[item.category]?.label || item.category || "Uncategorized";
+  if (groupBy === "release") {
+    const release = dashboardReleaseTime(item);
+    return release
+      ? new Date(release).toLocaleDateString(undefined, { year: "numeric", month: "long" })
+      : "No release date";
+  }
+  return "All items";
+}
+
+function dashboardStatusGroupRank(status) {
+  if (["In Progress", "Playing", "Reading"].includes(status)) return 0;
+  if (["Watchlist", "Backlog", "Playlist", "Plan to Read", "Plan to Watch", "Want to Play"].includes(status)) return 1;
+  if (status === "On Hold") return 2;
+  if (status === "Dropped") return 3;
+  if (status === "Completed") return 4;
+  return 5;
+}
+
+function compareDashboardGroups(a, b, groupBy) {
+  const aKey = dashboardGroupKey(a, groupBy);
+  const bKey = dashboardGroupKey(b, groupBy);
+  if (aKey === bKey) return 0;
+  if (groupBy === "status") {
+    const rank = dashboardStatusGroupRank(aKey) - dashboardStatusGroupRank(bKey);
+    return rank || aKey.localeCompare(bKey);
+  }
+  if (groupBy === "release") {
+    const releaseOrder = dashboardReleaseTime(b) - dashboardReleaseTime(a);
+    return releaseOrder || aKey.localeCompare(bKey);
+  }
+  return aKey.localeCompare(bKey);
+}
+
+function compareDashboardItemsBySort(a, b) {
+  if (state.currentSort === "alphabetical-asc") return a.title.localeCompare(b.title);
+  if (state.currentSort === "alphabetical-desc") return b.title.localeCompare(a.title);
+  if (state.currentSort === "created-desc") {
+    return (Number(b.created) || 0) - (Number(a.created) || 0);
+  }
+  if (state.currentSort === "updated-desc") {
+    return (Number(b.updated || b.lastUpdated || b.created) || 0) - (Number(a.updated || a.lastUpdated || a.created) || 0);
+  }
+  if (state.currentSort === "created-asc") return (Number(a.created) || 0) - (Number(b.created) || 0);
+  if (state.currentSort === "progress-desc") return calculateProgress(b) - calculateProgress(a);
+  if (state.currentSort === "progress-asc") return calculateProgress(a) - calculateProgress(b);
+  if (state.currentSort === "rating-desc") return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+  if (state.currentSort === "release-desc") return dashboardReleaseTime(b) - dashboardReleaseTime(a);
+  return 0;
 }
 
 function renderDashboardFilterChips() {
   const root = document.getElementById("dashboard-filter-chips");
   if (!root) return;
-  root.innerHTML = dashboardFilterChips().map(([key, label]) => {
-    const active = key === "in-progress" || key === "completed"
-      ? state.dashboardFilters.status === key : Boolean(state.dashboardFilters[key]);
-    return `<button type="button" class="dashboard-filter-chip${active ? " active" : ""}" data-dashboard-filter="${key}">${label}</button>`;
-  }).join("");
-  root.querySelectorAll("[data-dashboard-filter]").forEach(button => button.addEventListener("click", () => {
-    const key = button.dataset.dashboardFilter;
-    if (key === "in-progress" || key === "completed") {
-      state.dashboardFilters.status = state.dashboardFilters.status === key ? "" : key;
-    } else {
-      state.dashboardFilters[key] = !state.dashboardFilters[key];
-    }
+  const active = [];
+  const statusLabels = { "in-progress": "In progress", completed: "Completed" };
+  if (state.dashboardFilters.status) active.push([state.dashboardFilters.status, statusLabels[state.dashboardFilters.status]]);
+  if (state.dashboardFilters.unwatched) active.push(["unwatched", "Unfinished"]);
+  if (state.dashboardFilters.recentlyAdded) active.push(["recentlyAdded", "Recently added"]);
+  if (state.dashboardFilters.rated) active.push(["rated", "Rated"]);
+  if (dashboardStatusFilterActive()) active.push(["category-status", state.statusFilter]);
+  root.innerHTML = active.map(([key, label]) => `<button type="button" class="dashboard-filter-chip" data-remove-dashboard-filter="${key}" aria-label="Remove ${label} filter">${label}<i data-lucide="x"></i></button>`).join("");
+  root.querySelectorAll("[data-remove-dashboard-filter]").forEach(button => button.addEventListener("click", () => {
+    const key = button.dataset.removeDashboardFilter;
+    if (key === "category-status") state.statusFilter = "all";
+    else if (key === "in-progress" || key === "completed") state.dashboardFilters.status = "";
+    else state.dashboardFilters[key] = false;
     saveDashboardViewState();
     renderDashboard();
   }));
+  if (window.lucide) lucide.createIcons();
 }
 
-function openDashboardSortFilter() {
+function openDashboardRefineSheet(openSection = "") {
   const modal = document.getElementById("picker-modal");
   const list = document.getElementById("picker-options-list");
   const titleEl = document.getElementById("picker-modal-title");
   if (!modal || !list) return;
-  if (titleEl) titleEl.textContent = "Sort dashboard";
-  const options = [
-    ["updated-desc", "Last updated"], ["progress-desc", "Progress"],
-    ["rating-desc", "Rating"], ["release-desc", "Release date"], ["alphabetical-asc", "Alphabetical"]
+  const savedScrollTop = modal.classList.contains("active") ? list.scrollTop : 0;
+  if (titleEl) titleEl.textContent = "Refine collection";
+  const close = document.getElementById("picker-modal-close");
+  if (close) close.innerHTML = '<i data-lucide="x"></i>';
+  const sortOptions = [
+    ["updated-desc", "Recently updated"], ["created-desc", "Recently added"],
+    ["progress-desc", "Most progress"], ["progress-asc", "Least progress"],
+    ["rating-desc", "Highest rated"], ["release-desc", "Newest release"],
+    ["alphabetical-asc", "Title A–Z"], ["alphabetical-desc", "Title Z–A"]
   ];
-  list.innerHTML = options.map(([value, label]) => `<button type="button" class="picker-option${state.currentSort === value ? " active" : ""}" data-sort-value="${value}"><span class="choice-radio"></span><span>${label}</span></button>`).join("");
-  list.querySelectorAll("[data-sort-value]").forEach(button => button.addEventListener("click", () => {
+  const sortSection = document.createElement("div");
+  sortSection.className = "picker-section-label";
+  sortSection.textContent = "Sort by";
+  list.replaceChildren(sortSection);
+  const sortRow = document.createElement("div");
+  sortRow.className = "dashboard-sort-options";
+  sortRow.innerHTML = sortOptions.map(([value, label]) => `<button type="button" class="dashboard-sort-option${state.currentSort === value ? " active" : ""}" data-sort-value="${value}" aria-pressed="${state.currentSort === value}">${label}</button>`).join("");
+  list.appendChild(sortRow);
+  sortRow.querySelectorAll("[data-sort-value]").forEach(button => button.addEventListener("click", () => {
     state.currentSort = button.dataset.sortValue;
     saveDashboardViewState();
-    closeSettingsPicker();
     renderDashboard();
+    openDashboardRefineSheet();
   }));
-  modal.classList.add("active");
-}
-
-function openDashboardStatusFilter() {
-  const modal = document.getElementById("picker-modal");
-  const list = document.getElementById("picker-options-list");
-  const titleEl = document.getElementById("picker-modal-title");
-  if (!modal || !list) return;
-
-  if (titleEl) titleEl.textContent = "Filter by Status";
-  const statuses = CATEGORIES[state.activeCategoryChip]?.statuses || [];
-  const current = dashboardStatusFilterActive() ? state.statusFilter : "all";
-
-  list.innerHTML = "";
-  ["all", ...statuses].forEach(value => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `picker-option${current === value ? " active" : ""}`;
-    btn.innerHTML = `<span class="choice-radio"></span><span>${value === "all" ? "All statuses" : value}</span>`;
-    btn.addEventListener("click", () => {
-      state.statusFilter = value;
-      closeSettingsPicker();
-      updateDashboardFilterButton();
+  const filterSection = document.createElement("div");
+  filterSection.className = "picker-section-label";
+  filterSection.textContent = "Show me";
+  list.appendChild(filterSection);
+  [["in-progress", "In progress"], ["completed", "Completed"], ["unwatched", "Unfinished"], ["recentlyAdded", "Recently added"], ["rated", "Rated"]].forEach(([key, label]) => {
+    const active = key === "in-progress" || key === "completed"
+      ? state.dashboardFilters.status === key : Boolean(state.dashboardFilters[key]);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `dashboard-refine-toggle${active ? " active" : ""}`;
+    button.setAttribute("aria-pressed", String(active));
+    button.innerHTML = `<span>${label}</span><span class="dashboard-refine-check"><i data-lucide="check"></i></span>`;
+    button.addEventListener("click", () => {
+      if (key === "in-progress" || key === "completed") {
+        state.dashboardFilters.status = state.dashboardFilters.status === key ? "" : key;
+        state.statusFilter = "all";
+      }
+      else state.dashboardFilters[key] = !state.dashboardFilters[key];
+      saveDashboardViewState();
       renderDashboard();
+      openDashboardRefineSheet();
     });
-    list.appendChild(btn);
+    list.appendChild(button);
   });
+  const statuses = CATEGORIES[state.activeCategoryChip]?.statuses || [];
+  if (statuses.length) {
+    const label = document.createElement("div");
+    label.className = "picker-section-label";
+    label.textContent = "Category status";
+    list.appendChild(label);
+    const select = document.createElement("select");
+    select.className = "dashboard-status-select";
+    select.setAttribute("aria-label", "Filter by category status");
+    const specificStatuses = statuses.filter(status => !["Completed", "In Progress", "Playing", "Reading"].includes(status)
+      || (dashboardStatusFilterActive() && status === state.statusFilter));
+    select.innerHTML = `<option value="all">All statuses</option>` + specificStatuses.map(status => `<option value="${status.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")}">${status.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</option>`).join("");
+    select.value = dashboardStatusFilterActive() ? state.statusFilter : "all";
+    select.addEventListener("change", () => {
+      state.statusFilter = select.value;
+      state.dashboardFilters.status = "";
+      renderDashboard();
+      openDashboardRefineSheet();
+    });
+    list.appendChild(select);
+  }
+
+  if (dashboardFiltersActive() || dashboardStatusFilterActive()) {
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "dashboard-refine-clear";
+    clear.textContent = "Clear all filters";
+    clear.addEventListener("click", () => {
+      state.dashboardFilters = { status: "", unwatched: false, recentlyAdded: false, rated: false };
+      state.statusFilter = "all";
+      saveDashboardViewState();
+      renderDashboard();
+      openDashboardRefineSheet();
+    });
+    list.appendChild(clear);
+  }
+
+  const viewLabels = {
+    list: "List", "compact-list": "Compact list", grid: "Poster grid",
+    "compact-grid": "Compact grid", "detailed-grid": "Detailed grid", table: "Table",
+    "minimal-list": "Minimal list", "large-grid": "Large poster grid",
+    kanban: "Kanban board", timeline: "Timeline"
+  };
+  const viewDescriptions = {
+    list: "Cover, title and progress", "compact-list": "Short rows with the essentials",
+    grid: "Browse your collection by poster", "detailed-grid": "Poster, full title and item details",
+    "compact-grid": "Fit more labeled posters on screen", table: "Compare titles, status and progress",
+    "minimal-list": "A clean, text-first list", "large-grid": "Larger posters with readable titles",
+    kanban: "Status lanes stack on phones", timeline: "Browse by release date"
+  };
+  const viewIcons = {
+    list: "list", "compact-list": "list-filter", grid: "layout-grid",
+    "detailed-grid": "gallery-vertical-end", "compact-grid": "grid-2x2",
+    table: "table-2", "minimal-list": "align-left", "large-grid": "images",
+    kanban: "columns-3", timeline: "calendar-range"
+  };
+  const viewDetails = document.createElement("details");
+  viewDetails.className = "dashboard-refine-group";
+  viewDetails.open = openSection === "view";
+  viewDetails.innerHTML = `<summary><span>View &amp; layout</span><small>${viewLabels[state.preferences.dashboardView] || "List"}</small></summary>`;
+  const viewBody = document.createElement("div");
+  viewBody.className = "dashboard-refine-group-body";
+  const commonViews = [["list", "List"], ["compact-list", "Compact list"], ["grid", "Poster grid"], ["detailed-grid", "Detailed grid"]];
+  const addViewChoice = ([value, label], parent) => {
+    const button = document.createElement("button");
+    const selected = state.preferences.dashboardView === value;
+    button.type = "button";
+    button.className = `dashboard-view-choice${selected ? " active" : ""}`;
+    button.setAttribute("aria-pressed", String(selected));
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const description = document.createElement("small");
+    description.textContent = viewDescriptions[value];
+    const icon = document.createElement("i");
+    icon.dataset.lucide = viewIcons[value] || "layout-grid";
+    button.append(icon, Object.assign(document.createElement("span"), { className: "dashboard-view-copy" }));
+    button.querySelector(".dashboard-view-copy").append(title, description);
+    const check = document.createElement("span");
+    check.className = "dashboard-view-check";
+    check.innerHTML = '<i data-lucide="check"></i>';
+    button.appendChild(check);
+    button.addEventListener("click", () => {
+      state.preferences.dashboardView = value;
+      saveData();
+      renderDashboard();
+      openDashboardRefineSheet("view");
+    });
+    parent.appendChild(button);
+  };
+  const commonGrid = document.createElement("div");
+  commonGrid.className = "dashboard-view-grid";
+  commonViews.forEach(option => addViewChoice(option, commonGrid));
+  viewBody.appendChild(commonGrid);
+  const advancedViews = [["compact-grid", "Compact grid"], ["table", "Table"], ["minimal-list", "Minimal list"], ["large-grid", "Large poster grid"], ["kanban", "Kanban board"], ["timeline", "Timeline"]];
+  const moreViews = document.createElement("details");
+  moreViews.className = "dashboard-more-layouts";
+  moreViews.open = ["compact-grid", "table", "minimal-list", "large-grid", "kanban", "timeline"].includes(state.preferences.dashboardView);
+  moreViews.innerHTML = `<summary><span>More layouts</span><small>Table, board &amp; more</small></summary>`;
+  const moreGrid = document.createElement("div");
+  moreGrid.className = "dashboard-view-grid";
+  advancedViews.forEach(option => addViewChoice(option, moreGrid));
+  moreViews.appendChild(moreGrid);
+  viewBody.appendChild(moreViews);
+  viewDetails.appendChild(viewBody);
+  list.appendChild(viewDetails);
+
+  const themeLabels = {
+    light: "Light", dark: "Dark", grey: "Grey", amoled: "AMOLED", flashbang: "Flashbang", "material-you": "Material You",
+    ocean: "Ocean", forest: "Forest", sunset: "Sunset", rose: "Rose", lavender: "Lavender", nord: "Nord", sand: "Sand", mint: "Mint"
+  };
+  const appearanceDetails = document.createElement("details");
+  appearanceDetails.className = "dashboard-refine-group";
+  appearanceDetails.open = openSection === "appearance";
+  appearanceDetails.innerHTML = `<summary><span>Appearance &amp; display</span><small>${themeLabels[state.preferences.uiTheme] || "Dark"}</small></summary>`;
+  const appearanceBody = document.createElement("div");
+  appearanceBody.className = "dashboard-refine-group-body dashboard-appearance-options";
+  const addSelectSetting = (label, value, options, onChange) => {
+    const row = document.createElement("label");
+    row.className = "dashboard-refine-setting";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const setting = document.createElement("select");
+    setting.setAttribute("aria-label", label);
+    options.forEach(([optionValue, optionLabel]) => {
+      const option = document.createElement("option");
+      option.value = optionValue;
+      option.textContent = optionLabel;
+      setting.appendChild(option);
+    });
+    setting.value = value;
+    setting.addEventListener("change", () => onChange(setting.value));
+    row.append(name, setting);
+    appearanceBody.appendChild(row);
+  };
+  addSelectSetting("Theme", state.preferences.uiTheme || "dark", Object.entries(themeLabels), value => {
+    state.preferences.uiTheme = value;
+    state.theme = value;
+    saveData();
+    applyTheme();
+    applyPreferenceAttributes();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
+  });
+  addSelectSetting("Density", state.preferences.dashboardDensity, [["comfortable", "Comfortable"], ["compact", "Compact"]], value => {
+    state.preferences.dashboardDensity = value;
+    saveData();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
+  });
+  addSelectSetting("Group by", state.preferences.dashboardGroupBy, [["none", "No grouping"], ["status", "Status"], ["release", "Release date"]], value => {
+    state.preferences.dashboardGroupBy = value;
+    saveData();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
+  });
+  [["dashboardShowRatings", "Show ratings"], ["dashboardShowProgress", "Show progress"], ["dashboardShowThumbnails", "Show thumbnails"]].forEach(([key, label]) => {
+    const row = document.createElement("button");
+    const enabled = Boolean(state.preferences[key]);
+    row.type = "button";
+    row.className = `dashboard-refine-toggle dashboard-display-toggle${enabled ? " active" : ""}`;
+    row.setAttribute("aria-pressed", String(enabled));
+    row.innerHTML = `<span>${label}</span><span class="dashboard-refine-check"><i data-lucide="check"></i></span>`;
+    row.addEventListener("click", () => {
+      state.preferences[key] = !state.preferences[key];
+      saveData();
+      renderDashboard();
+      openDashboardRefineSheet("appearance");
+    });
+    appearanceBody.appendChild(row);
+  });
+  appearanceDetails.appendChild(appearanceBody);
+  list.appendChild(appearanceDetails);
 
   modal.classList.add("active");
+  list.scrollTop = Math.min(savedScrollTop, Math.max(0, list.scrollHeight - list.clientHeight));
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderDashboardSkeleton() {
@@ -2838,6 +3926,10 @@ function renderDashboardSkeleton() {
       <span class="dashboard-skeleton-lines"><i></i><i></i><i></i></span>
     </div>
   `).join("");
+}
+
+function dashboardUsesGridView() {
+  return ["grid", "compact-grid", "detailed-grid", "large-grid"].includes(state.preferences.dashboardView);
 }
 
 function dashboardCategoryItems() {
@@ -2861,13 +3953,23 @@ function progressRingHTML(progress, className = "") {
   return `<span class="dashboard-progress-ring ${className}" style="--progress:${value}%" aria-label="${value}% complete"><span>${value}%</span></span>`;
 }
 
+function dashboardThumbnail(item, className) {
+  return state.preferences.dashboardShowThumbnails
+    ? thumbnailOrPlaceholder(item.thumbnail, className)
+    : `<span class="${className} dashboard-thumb-hidden" aria-hidden="true"></span>`;
+}
+
 function dashboardInsightCard(item, label, extra = "") {
-  const progress = calculateProgress(item);
+  const isStatusOnly = item.category === "movie" || item.category === "game";
+  const isTable = state.preferences.dashboardView === "table";
+  const progress = isStatusOnly ? 0 : calculateProgress(item);
+  const movieRating = state.preferences.dashboardShowRatings
+    ? (Number(item.rating) > 0 ? `Rating: ${formatRatingValue(item.rating)}` : "Unrated") : "";
   return `
-    <button type="button" class="dashboard-insight-card" data-id="${item.id}">
-      ${thumbnailOrPlaceholder(item.thumbnail, "dashboard-insight-thumb")}
-      <span class="dashboard-insight-body"><strong>${item.title}</strong><small>${label}${extra ? ` · ${extra}` : ""}</small></span>
-      ${progressRingHTML(progress)}
+    <button type="button" class="dashboard-insight-card${isStatusOnly ? " dashboard-status-only-card" : ""}${isTable ? " dashboard-table-row" : ""}" data-id="${item.id}">
+      ${dashboardThumbnail(item, "dashboard-insight-thumb")}
+      <span class="dashboard-insight-body"><strong>${item.title}</strong><small>${isStatusOnly ? (movieRating || item.status || "") : `${label}${extra ? ` · ${extra}` : ""}`}</small></span>
+      ${isTable ? `<span class="dashboard-table-status">${item.status || "—"}</span><span class="dashboard-table-value">${isStatusOnly ? (movieRating || "—") : (state.preferences.dashboardShowProgress ? `${progress}%` : "—")}</span>` : (isStatusOnly ? `<span class="dashboard-status-pill">${item.status || "Unrated"}</span>` : (state.preferences.dashboardShowProgress ? progressRingHTML(progress) : ""))}
     </button>
   `;
 }
@@ -2875,9 +3977,19 @@ function dashboardInsightCard(item, label, extra = "") {
 function renderDashboardInsights() {
   const root = document.getElementById("dashboard-insights");
   if (!root) return;
-  root.dataset.view = state.preferences.dashboardView === "grid" ? "grid" : "list";
+  if (document.body.classList.contains("dashboard-screen")) {
+    root.innerHTML = "";
+    root.style.display = "none";
+    return;
+  }
+  root.dataset.view = dashboardUsesGridView() ? "grid" : "list";
+  root.dataset.layout = state.preferences.dashboardView;
+  root.dataset.density = state.preferences.dashboardDensity;
   const items = dashboardCategoryItems();
-  const visible = !state.searchQuery && !dashboardStatusFilterActive() && !dashboardFiltersActive();
+  const visible = !state.searchQuery
+    && !dashboardStatusFilterActive()
+    && !dashboardFiltersActive()
+    && !["kanban", "timeline"].includes(state.preferences.dashboardView);
   if (!visible || !items.length) {
     root.innerHTML = "";
     root.style.display = "none";
@@ -2886,29 +3998,24 @@ function renderDashboardInsights() {
 
   const continueItems = items
     .filter(item => item.status !== "Completed" && (calculateProgress(item) > 0 || ["In Progress", "Playing", "Reading"].includes(item.status)))
-    .sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0))
-    .slice(0, 4);
+    .sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0));
   const continueIds = new Set(continueItems.map(item => item.id));
   const completedItems = items
     .filter(item => item.status === "Completed")
-    .sort((a, b) => String(b.completionDate || b.updated || "").localeCompare(String(a.completionDate || a.updated || "")))
-    .slice(0, 4);
+    .sort((a, b) => String(b.completionDate || b.updated || "").localeCompare(String(a.completionDate || a.updated || "")));
   const completedIds = new Set(completedItems.map(item => item.id));
   const notStartedItems = items
     .filter(item => item.status !== "Completed"
       && calculateProgress(item) <= 0
       && !["Dropped", "On Hold"].includes(item.status)
       && !["In Progress", "Playing", "Reading"].includes(item.status))
-    .sort((a, b) => (Number(b.created || b.updated) || 0) - (Number(a.created || a.updated) || 0))
-    .slice(0, 4);
+    .sort((a, b) => (Number(b.created || b.updated) || 0) - (Number(a.created || a.updated) || 0));
   const onHoldItems = items
     .filter(item => item.status === "On Hold")
-    .sort((a, b) => (Number(b.updated || b.created) || 0) - (Number(a.updated || a.created) || 0))
-    .slice(0, 4);
+    .sort((a, b) => (Number(b.updated || b.created) || 0) - (Number(a.updated || a.created) || 0));
   const droppedItems = items
     .filter(item => item.status === "Dropped")
-    .sort((a, b) => (Number(b.updated || b.created) || 0) - (Number(a.updated || a.created) || 0))
-    .slice(0, 4);
+    .sort((a, b) => (Number(b.updated || b.created) || 0) - (Number(a.updated || a.created) || 0));
   const notStartedIds = new Set(notStartedItems.map(item => item.id));
   const onHoldIds = new Set(onHoldItems.map(item => item.id));
   const droppedIds = new Set(droppedItems.map(item => item.id));
@@ -2921,22 +4028,33 @@ function renderDashboardInsights() {
         && !["Dropped", "On Hold"].includes(item.status)
         && lastUpdated > 0 && lastUpdated < staleCutoff;
     })
-    .sort((a, b) => (Number(a.updated || a.created) || 0) - (Number(b.updated || b.created) || 0))
-    .slice(0, 4);
+    .sort((a, b) => (Number(a.updated || a.created) || 0) - (Number(b.updated || b.created) || 0));
+
+  const categorizedIds = new Set([
+    ...continueItems, ...completedItems, ...notStartedItems, ...onHoldItems, ...droppedItems, ...staleItems
+  ].map(item => item.id));
+  const otherItems = items.filter(item => !categorizedIds.has(item.id));
+  const recentlyAddedItems = [...items]
+    .sort((a, b) => (Number(b.created || b.updated) || 0) - (Number(a.created || a.updated) || 0))
+    .slice(0, Number(state.preferences.recentlyAddedLimit) || 10);
 
   const staleLabel = item => {
     const days = Math.max(1, Math.floor((Date.now() - Number(item.updated || item.created || Date.now())) / (24 * 60 * 60 * 1000)));
     return `${days} days since update`;
   };
 
-  const section = (title, content, className = "") => content ? `<section class="dashboard-insight-section ${className}"><h3>${title}</h3><div class="dashboard-insight-scroller">${content}</div></section>` : "";
+  const tableHeader = state.preferences.dashboardView === "table"
+    ? '<div class="dashboard-table-header"><span>Title</span><span>Status</span><span>Rating / Progress</span></div>' : "";
+  const section = (title, content, className = "") => content ? `<section class="dashboard-insight-section ${className}"><h3>${title}</h3>${tableHeader}<div class="dashboard-insight-scroller">${content}</div></section>` : "";
   root.innerHTML = [
     section("Continue watching", continueItems.map(item => dashboardInsightCard(item, item.status, `${calculateProgress(item)}%`)).join(""), "continue"),
     section("Not started yet", notStartedItems.map(item => dashboardInsightCard(item, item.status || "No progress yet", "Ready to start")).join(""), "not-started"),
     section("On hold", onHoldItems.map(item => dashboardInsightCard(item, item.status)).join(""), "on-hold"),
     section("Dropped", droppedItems.map(item => dashboardInsightCard(item, item.status)).join(""), "dropped"),
     section("Haven't updated in a long time", staleItems.map(item => dashboardInsightCard(item, item.status, staleLabel(item))).join(""), "stale"),
-    section("Completed", completedItems.map(item => dashboardInsightCard(item, item.completionDate || "Completed")).join(""), "completed")
+    section("Completed", completedItems.map(item => dashboardInsightCard(item, item.completionDate || "Completed")).join(""), "completed"),
+    section("Other", otherItems.map(item => dashboardInsightCard(item, item.status || "No status")).join(""), "other"),
+    section("Recently added", recentlyAddedItems.map(item => dashboardInsightCard(item, item.status || "Added recently")).join(""), "recently-added")
   ].join("");
   root.dataset.insightItemIds = JSON.stringify([...new Set([
     ...continueItems.map(item => item.id),
@@ -2944,7 +4062,9 @@ function renderDashboardInsights() {
     ...onHoldItems.map(item => item.id),
     ...droppedItems.map(item => item.id),
     ...staleItems.map(item => item.id),
-    ...completedItems.map(item => item.id)
+    ...completedItems.map(item => item.id),
+    ...otherItems.map(item => item.id),
+    ...recentlyAddedItems.map(item => item.id)
   ])]);
   root.style.display = root.innerHTML ? "block" : "none";
   root.querySelectorAll(".dashboard-insight-card").forEach(card => card.addEventListener("click", () => openItemForCategory(card.dataset.id)));
@@ -2977,17 +4097,31 @@ function setupDashboardPullToRefresh() {
     dashboard.classList.remove("dashboard-pulling");
     dashboard.style.removeProperty("--dashboard-pull-distance");
     if (distance < 64) return;
-    if (status) status.textContent = "Refreshing metadata and images…";
+    if (status) {
+      status.classList.add("is-refreshing");
+      status.innerHTML = '<span class="dashboard-refresh-spinner" aria-hidden="true"></span><span>Refreshing metadata and images…</span>';
+    }
     try {
       // Keep metadata and image caches during normal refresh. Cache clearing is
       // an explicit Settings action so pull-to-refresh remains fast and does
       // not force every thumbnail to download and decode again.
       renderDashboard();
-      if (status) status.textContent = "Dashboard refreshed";
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "Dashboard refreshed";
+      }
     } catch (err) {
-      if (status) status.textContent = "Refresh failed — your saved data is safe";
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "Refresh failed — your saved data is safe";
+      }
     }
-    setTimeout(() => { if (status) status.textContent = ""; }, 1800);
+    setTimeout(() => {
+      if (status) {
+        status.classList.remove("is-refreshing");
+        status.textContent = "";
+      }
+    }, 1800);
   }, { passive: true });
 }
 
@@ -3032,7 +4166,7 @@ function renderDashboard() {
   // 1. Filter items based on active preferences, quick filter chip, and search query
   const dashboardCacheKey = JSON.stringify([dashboardDataVersion, state.activeCategoryChip,
     state.searchQuery, state.statusFilter, state.dashboardFilters, state.currentSort,
-    state.preferences.dashboardView, [...insightItemIds].sort()]);
+    state.preferences.dashboardView, state.preferences.dashboardGroupBy, [...insightItemIds].sort()]);
   let filtered;
   if (renderDashboard._cache?.key === dashboardCacheKey) {
     filtered = renderDashboard._cache.items;
@@ -3070,32 +4204,18 @@ function renderDashboard() {
       return true;
     });
 
-  // 2. Sort items
+  // Keep status/category sections stable while applying the selected sort
+  // within each section.
     filtered.sort((a, b) => {
-    if (state.currentSort === "alphabetical-asc") {
-      return a.title.localeCompare(b.title);
-    } else if (state.currentSort === "alphabetical-desc") {
-      return b.title.localeCompare(a.title);
-    } else if (state.currentSort === "created-desc" || state.currentSort === "updated-desc") {
-      return (Number(b.updated || b.lastUpdated || b.created) || 0) - (Number(a.updated || a.lastUpdated || a.created) || 0);
-    } else if (state.currentSort === "created-asc") {
-      return a.created - b.created;
-    } else if (state.currentSort === "progress-desc") {
-      return calculateProgress(b) - calculateProgress(a);
-    } else if (state.currentSort === "progress-asc") {
-      return calculateProgress(a) - calculateProgress(b);
-    } else if (state.currentSort === "rating-desc") {
-      return (Number(b.rating) || 0) - (Number(a.rating) || 0);
-    } else if (state.currentSort === "release-desc") {
-      return dashboardReleaseTime(b) - dashboardReleaseTime(a);
-    }
-    return 0;
+      const groupBy = state.preferences.dashboardGroupBy;
+      return (groupBy !== "none" ? compareDashboardGroups(a, b, groupBy) : 0)
+        || compareDashboardItemsBySort(a, b);
     });
     renderDashboard._cache = { key: dashboardCacheKey, items: filtered };
   }
 
-  // 3. Render note elements incrementally: only a first batch is built up front,
-  // more are appended as the user scrolls near the bottom (see setupDashboardLazyLoad).
+  // 3. Grouped layouts render complete status sections; ungrouped layouts use
+  // the bounded scroll window in setupDashboardLazyLoad.
   if (filtered.length === 0) {
     if (insightsAreActive) {
       emptyState.style.display = "none";
@@ -3109,15 +4229,29 @@ function renderDashboard() {
     teardownDashboardLazyLoad();
   } else {
     emptyState.style.display = "none";
-    const isGrid = state.preferences.dashboardView === "grid";
+    const isGrid = dashboardUsesGridView();
     container.style.display = isGrid ? "grid" : "flex";
     container.classList.toggle("notes-grid-view", isGrid);
+    container.classList.toggle("notes-compact-view", state.preferences.dashboardView === "compact-list");
+    container.classList.toggle("notes-detailed-grid-view", state.preferences.dashboardView === "detailed-grid");
+    container.classList.toggle("notes-compact-grid-view", state.preferences.dashboardView === "compact-grid");
+    container.classList.toggle("notes-large-grid-view", state.preferences.dashboardView === "large-grid");
+    container.classList.toggle("notes-table-view", state.preferences.dashboardView === "table");
+    container.classList.toggle("notes-minimal-view", state.preferences.dashboardView === "minimal-list");
+    container.classList.remove("dashboard-special-view", "dashboard-kanban-view", "dashboard-timeline-view");
+    container.classList.toggle("dashboard-density-compact", state.preferences.dashboardDensity === "compact");
     container.dataset.rowActions = state.preferences.dashboardRowActions || "menu";
     if (!isGrid && dashboardSelectedIds.size > 0) {
       clearGridSelection();
     }
     updateGridSelectionBar();
-    setupDashboardLazyLoad(container, filtered);
+    if (["kanban", "timeline"].includes(state.preferences.dashboardView)) {
+      setupDashboardSpecialView(container, filtered);
+    } else if (state.preferences.dashboardGroupBy !== "none") {
+      setupDashboardGroupedView(container, filtered);
+    } else {
+      setupDashboardLazyLoad(container, filtered);
+    }
   }
 }
 
@@ -3161,6 +4295,112 @@ let dashboardLazyLoadObserver = null;
 let dashboardGridSelectionMode = false;
 let dashboardSelectedIds = new Set();
 
+function setupDashboardSpecialView(container, filtered) {
+  teardownDashboardLazyLoad();
+  container.innerHTML = "";
+  const view = state.preferences.dashboardView;
+  container.className = `notes-container dashboard-special-view ${view === "kanban" ? "dashboard-kanban-view" : "dashboard-timeline-view"}`;
+  const groupBy = state.preferences.dashboardGroupBy;
+  const effectiveGroupBy = groupBy === "none" ? (view === "kanban" ? "status" : view === "timeline" ? "release" : "none") : groupBy;
+  container.setAttribute("role", "region");
+  container.setAttribute("aria-label", view === "kanban"
+    ? "Kanban board, scroll horizontally between statuses"
+    : "Timeline grouped by release date");
+  const groups = new Map();
+  filtered.forEach(item => {
+    const key = effectiveGroupBy === "none" ? "All items" : dashboardGroupKey(item, effectiveGroupBy);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+  let orderedGroups = Array.from(groups.entries());
+  if (view === "kanban" && effectiveGroupBy === "status") {
+    orderedGroups.sort(([a], [b]) => {
+      return dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b);
+    });
+  } else if (view === "timeline" && effectiveGroupBy === "release") {
+    orderedGroups.sort(([a], [b]) => {
+      if (a === "No release date") return 1;
+      if (b === "No release date") return -1;
+      return (Date.parse(b) || 0) - (Date.parse(a) || 0);
+    });
+  }
+  orderedGroups.forEach(([title, items]) => {
+    const group = document.createElement("section");
+    group.className = `dashboard-special-group ${view === "kanban" ? "dashboard-kanban-column" : "dashboard-timeline-group"}`;
+    group.innerHTML = `<h3>${title}<span>${items.length}</span></h3><div class="dashboard-special-items"></div>`;
+    const list = group.querySelector(".dashboard-special-items");
+    items.forEach(item => list.appendChild(buildNoteCard(item)));
+    container.appendChild(group);
+  });
+  attachCardEvents();
+  if (window.lucide) lucide.createIcons(container);
+}
+
+function buildDashboardCardForCurrentView(item) {
+  if (["grid", "compact-grid", "large-grid"].includes(state.preferences.dashboardView)) return buildGridCard(item);
+  if (state.preferences.dashboardView === "detailed-grid") return buildDetailedGridCard(item);
+  if (state.preferences.dashboardView === "table") return buildTableCard(item);
+  const card = buildNoteCard(item);
+  if (state.preferences.dashboardView === "compact-list") card.classList.add("compact-list-card");
+  return card;
+}
+
+function setupDashboardGroupedView(container, filtered) {
+  teardownDashboardLazyLoad();
+  container.classList.remove("dashboard-special-view", "dashboard-kanban-view", "dashboard-timeline-view");
+  container.innerHTML = "";
+  const groupBy = state.preferences.dashboardGroupBy;
+  const groups = new Map();
+  if (groupBy === "status") {
+    const statuses = [...(CATEGORIES[state.activeCategoryChip]?.statuses || [])];
+    statuses.sort((a, b) => dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b));
+    statuses.forEach(status => groups.set(status, []));
+  }
+  filtered.forEach(item => {
+    const key = dashboardGroupKey(item, groupBy);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+
+  const filtersNarrowResults = Boolean(state.searchQuery || dashboardFiltersActive() || dashboardStatusFilterActive());
+  const entries = [...groups.entries()].filter(([, items]) => items.length || !filtersNarrowResults);
+  if (groupBy === "status") {
+    entries.sort(([a], [b]) => dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b));
+  }
+
+  if (state.preferences.dashboardView === "table") {
+    const header = document.createElement("div");
+    header.className = "dashboard-main-table-header";
+    header.innerHTML = "<span></span><span>Title</span><span>Status</span><span>Rating</span><span>Progress</span>";
+    container.appendChild(header);
+  }
+
+  entries.forEach(([groupKey, items]) => {
+    const section = document.createElement("details");
+    section.className = "dashboard-group-section";
+    section.dataset.groupKey = groupKey;
+    section.open = true;
+
+    const heading = document.createElement("summary");
+    heading.className = "dashboard-group-heading";
+    const label = document.createElement("span");
+    label.textContent = groupKey;
+    const count = document.createElement("span");
+    count.className = "dashboard-group-count";
+    count.textContent = String(items.length);
+    heading.append(label, count);
+
+    const itemList = document.createElement("div");
+    itemList.className = "dashboard-group-items";
+    items.forEach(item => itemList.appendChild(buildDashboardCardForCurrentView(item)));
+    section.append(heading, itemList);
+    container.appendChild(section);
+  });
+
+  attachCardEvents();
+  if (window.lucide) lucide.createIcons(container);
+}
+
 // Grid view: poster-only card with a progress strip along the bottom edge —
 // full purple bar for completed items, green partial bar for anything the
 // user has started or is actively on, no bar for untouched queue entries.
@@ -3182,78 +4422,90 @@ function buildGridCard(item) {
   }
 
   card.innerHTML = `
-    ${thumbnailOrPlaceholder(item.thumbnail, "grid-card-thumb")}
-    <div class="grid-card-progress">${progressRingHTML(progress)}</div>
+    ${dashboardThumbnail(item, "grid-card-thumb")}
+    ${state.preferences.dashboardShowProgress ? `<div class="grid-card-progress">${progressRingHTML(progress)}</div>` : ""}
     ${barHTML ? `<div class="grid-card-bar-track">${barHTML}</div>` : ""}
     <div class="grid-card-select-overlay">
       <div class="grid-card-select-check"><i data-lucide="check"></i></div>
     </div>
   `;
+  const title = document.createElement("strong");
+  title.className = "grid-card-title";
+  title.textContent = item.title || "Untitled";
+  card.setAttribute("aria-label", item.title || "Untitled");
+  card.title = item.title || "Untitled";
+  card.appendChild(title);
+  return card;
+}
+
+function buildDetailedGridCard(item) {
+  const card = document.createElement("div");
+  const isStatusOnly = item.category === "movie" || item.category === "game";
+  const isCompleted = item.status === "Completed";
+  const progress = isStatusOnly ? 0 : calculateProgress(item);
+  const subtitle = isCompleted ? (item.completionDate || "Completed") : (item.status || "No status");
+  const rating = Number(item.rating) > 0 ? formatRatingValue(item.rating) : "Unrated";
+  card.className = `grid-card detailed-grid-card${isCompleted ? " completed" : ""}`;
+  card.dataset.id = item.id;
+  const thumbnail = document.createElement("template");
+  thumbnail.innerHTML = dashboardThumbnail(item, "detailed-grid-thumb");
+  card.appendChild(thumbnail.content.firstElementChild);
+  const body = document.createElement("div");
+  body.className = "detailed-grid-body";
+  const title = document.createElement("strong");
+  title.textContent = item.title || "Untitled";
+  const detail = document.createElement("small");
+  detail.textContent = subtitle;
+  const meta = document.createElement("span");
+  meta.className = "detailed-grid-meta";
+  meta.textContent = isStatusOnly
+    ? (state.preferences.dashboardShowRatings ? `Rating: ${rating}` : item.status || "")
+    : (state.preferences.dashboardShowProgress ? `${progress}% complete` : "");
+  body.append(title, detail, meta);
+  card.appendChild(body);
+  if (isStatusOnly) {
+    const status = document.createElement("span");
+    status.className = "dashboard-status-pill";
+    status.textContent = item.status || "Unrated";
+    card.appendChild(status);
+  } else if (state.preferences.dashboardShowProgress) {
+    card.insertAdjacentHTML("beforeend", progressRingHTML(progress));
+  }
+  card.insertAdjacentHTML("beforeend", '<div class="grid-card-select-overlay"><div class="grid-card-select-check"><i data-lucide="check"></i></div></div>');
+  return card;
+}
+
+function buildTableCard(item) {
+  const card = document.createElement("div");
+  const isStatusOnly = item.category === "movie" || item.category === "game";
+  const progress = isStatusOnly ? 0 : calculateProgress(item);
+  const rating = Number(item.rating) > 0 ? formatRatingValue(item.rating) : "—";
+  card.className = "note-card table-card";
+  card.dataset.id = item.id;
+  card.innerHTML = `
+    ${dashboardThumbnail(item, "table-card-thumb")}
+    <strong class="table-card-title">${item.title}</strong>
+    <span class="table-card-status">${item.status || "—"}</span>
+    <span class="table-card-rating">${state.preferences.dashboardShowRatings ? rating : "—"}</span>
+    <span class="table-card-progress">${isStatusOnly || !state.preferences.dashboardShowProgress ? "—" : `${progress}%`}</span>
+  `;
   return card;
 }
 
 function buildNoteCard(item) {
-  const rowActions = state.preferences.dashboardRowActions || "menu";
   const card = document.createElement("div");
   const isCompleted = item.status === "Completed";
-  card.className = `note-card ${isCompleted ? "completed" : ""}`;
+  card.className = `note-card dashboard-insight-card ${isCompleted ? "completed" : ""}`;
+  if (state.preferences.dashboardView === "minimal-list") card.classList.add("minimal-list-card");
   card.dataset.id = item.id;
-  card.style.setProperty("--theme-color", CATEGORIES[item.category].color);
 
   const progress = calculateProgress(item);
-  const subtitleParts = [item.status];
-  const showProgressPercent = !isCompleted && progress > 0 && (item.category === "series" || item.category === "kdrama" || item.category === "cdrama" || item.category === "anime" || item.category === "manga" || item.category === "novel");
-  if (showProgressPercent) subtitleParts.push(`${progress}%`);
-  if (item.rating) subtitleParts.push(formatRatingValue(item.rating));
-  const timeToComplete = calculateTimeToComplete(item);
-  if (timeToComplete && !isCompleted && timeToComplete.remaining > 0) {
-    subtitleParts.push(`${formatMinutesAsDuration(timeToComplete.remaining)} left`);
-  }
-
-  // Second meta line from captured online metadata; hidden when the item
-  // predates metadata capture and has none of these fields.
-  const metaParts = [];
-  if (Array.isArray(item.genres) && item.genres.length) metaParts.push(item.genres.slice(0, 2).join(", "));
-  if (item.network) metaParts.push(item.network);
-  if (item.productionStatus) metaParts.push(item.productionStatus);
-  const sourceName = itemSourceName(item);
-  if (sourceName) metaParts.push(sourceName);
-  const metaLineHTML = metaParts.length ? `<span class="note-meta-line">${metaParts.join(" · ")}</span>` : "";
-
-  const progressType = ["series", "kdrama", "cdrama", "anime"].includes(item.category)
-    ? "ep"
-    : ["manga", "novel"].includes(item.category)
-      ? (parseInt(item.totalChapters) > 0 ? "ch" : "vol")
-      : "";
-  const progressUnit = progressType === "ep" ? "episode" : progressType === "vol" ? "volume" : "chapter";
-  const quickProgressHTML = progressType ? `<button class="note-action-btn inc-btn" data-id="${item.id}" data-type="${progressType}" title="Mark next ${progressUnit} watched"><i data-lucide="plus"></i></button>` : "";
-  const actionsHTML = `<div class="note-quick-actions">
-      ${quickProgressHTML}
-      <button class="note-action-btn edit-btn" data-id="${item.id}" title="Edit"><i data-lucide="edit-2"></i></button>
-      <button class="note-action-btn delete-btn" data-id="${item.id}" title="Delete"><i data-lucide="trash-2"></i></button>
-    </div>`;
-
-  const swipeActionsHTML = rowActions === "swipe" ? `
-    <div class="note-row-swipe-actions">
-      <button class="note-action-btn edit-btn" data-id="${item.id}" title="Edit"><i data-lucide="edit-2"></i></button>
-      <button class="note-action-btn delete-btn" data-id="${item.id}" title="Delete"><i data-lucide="trash-2"></i></button>
-    </div>
-  ` : "";
+  const subtitle = isCompleted ? (item.completionDate || "Completed") : item.status;
 
   card.innerHTML = `
-    ${swipeActionsHTML}
-    <div class="note-row-content">
-      <input type="checkbox" class="note-checkbox" ${isCompleted ? "checked" : ""} data-id="${item.id}" title="Toggle Completion">
-      ${thumbnailOrPlaceholder(item.thumbnail, "note-thumb")}
-      <div class="note-row-body">
-        <span class="note-title">${item.title}</span>
-        <span class="note-subtitle">${subtitleParts.join(" · ")}</span>
-        ${metaLineHTML}
-      </div>
-      ${progressRingHTML(progress)}
-      <span class="note-tag" style="--theme-color: ${CATEGORIES[item.category].color}">${CATEGORIES[item.category].label}</span>
-      ${actionsHTML}
-    </div>
+    ${dashboardThumbnail(item, "dashboard-insight-thumb")}
+    <span class="dashboard-insight-body"><strong>${item.title}</strong><small>${subtitle}</small></span>
+    ${state.preferences.dashboardShowProgress ? progressRingHTML(progress) : ""}
   `;
   return card;
 }
@@ -3280,8 +4532,15 @@ function setupDashboardLazyLoad(container, filtered) {
   teardownDashboardLazyLoad();
   container.innerHTML = "";
 
-  const isGrid = state.preferences.dashboardView === "grid";
+  const isGrid = dashboardUsesGridView();
   const totalBatches = Math.ceil(filtered.length / DASHBOARD_BATCH_SIZE);
+
+  if (state.preferences.dashboardView === "table") {
+    const header = document.createElement("div");
+    header.className = "dashboard-main-table-header";
+    header.innerHTML = "<span></span><span>Title</span><span>Status</span><span>Rating</span><span>Progress</span>";
+    container.appendChild(header);
+  }
 
   // Spacers stand in for removed batches so the scrollbar height is stable.
   const topSpacer = document.createElement("div");
@@ -3312,7 +4571,7 @@ function setupDashboardLazyLoad(container, filtered) {
     // Grid needs the wrapper to participate in the grid; use display:contents
     // so batch wrappers don't break the CSS grid/flex layout of the cards.
     wrapper.style.display = "contents";
-    items.forEach(item => wrapper.appendChild(isGrid ? buildGridCard(item) : buildNoteCard(item)));
+    items.forEach(item => wrapper.appendChild(buildDashboardCardForCurrentView(item)));
     return wrapper;
   };
 
@@ -3395,7 +4654,7 @@ function setupDashboardLazyLoad(container, filtered) {
         if (entry.target === win.bottomSentinel) appendBottomBatch();
         else if (entry.target === win.topSentinel) prependTopBatch();
       });
-    }, { root: null, rootMargin: "600px" });
+    }, { root: container.closest("main"), rootMargin: "600px" });
     dashboardLazyLoadObserver.observe(win.bottomSentinel);
     dashboardLazyLoadObserver.observe(win.topSentinel);
   }
@@ -3677,30 +4936,73 @@ function renderStats() {
 
   if (!totalEl) return;
 
-  const activeCategory = state.activeCategoryChip || localStorage.getItem("squashdb_category_chip") || getOrderedCategories().find(key => state.preferences[key]);
-  if (activeCategory && !state.activeCategoryChip) {
-    state.activeCategoryChip = activeCategory;
-    saveData();
-  }
+  renderStatsCategoryChips();
+  const activeCategory = localStorage.getItem("squashdb_stats_category") || "all";
 
   // Filter items in enabled categories and selected category
-  const activeItems = state.items.filter(item => state.preferences[item.category] && (!activeCategory || item.category === activeCategory));
+  const activeItems = state.items.filter(item => state.preferences[item.category] && (activeCategory === "all" || item.category === activeCategory));
   const completedItems = activeItems.filter(item => item.status === "Completed");
   const inProgressItems = activeItems.filter(item => item.status === "Playing" || item.status === "In Progress" || item.status === "Reading");
   const queuedStatuses = new Set(["Watchlist", "Playlist", "Backlog", "Plan to Read", "Plan to Watch", "Want to Play"]);
   const queuedItems = activeItems.filter(item => queuedStatuses.has(item.status));
+  const onHoldItems = activeItems.filter(item => item.status === "On Hold");
+  const droppedItems = activeItems.filter(item => item.status === "Dropped");
 
   const totalCount = activeItems.length;
   const completedCount = completedItems.length;
   const activeCount = inProgressItems.length;
   const queuedCount = queuedItems.length;
   const rate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const otherCount = Math.max(0, totalCount - completedCount - activeCount - queuedCount - onHoldItems.length - droppedItems.length);
 
   totalEl.textContent = totalCount;
   completedEl.textContent = completedCount;
   activeEl.textContent = activeCount;
   if (queuedEl) queuedEl.textContent = queuedCount;
+  const onHoldEl = document.getElementById("stats-on-hold");
+  const droppedEl = document.getElementById("stats-dropped");
+  if (onHoldEl) onHoldEl.textContent = onHoldItems.length;
+  if (droppedEl) droppedEl.textContent = droppedItems.length;
   rateEl.textContent = `${rate}%`;
+  const totalCaption = document.getElementById("stats-total-caption");
+  if (totalCaption) totalCaption.textContent = totalCount;
+  const statusLegend = {
+    "stats-legend-completed": completedCount,
+    "stats-legend-active": activeCount,
+    "stats-legend-queued": queuedCount,
+    "stats-legend-other": otherCount
+  };
+  Object.entries(statusLegend).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  });
+  const rateRing = document.getElementById("stats-rate-ring");
+  if (rateRing) {
+    rateRing.style.setProperty("--completion-progress", `${rate}%`);
+    rateRing.setAttribute("aria-valuenow", String(rate));
+    const ringLabel = rateRing.querySelector("span");
+    if (ringLabel) ringLabel.textContent = `${rate}%`;
+  }
+  const statusBar = document.getElementById("stats-status-bar");
+  if (statusBar) {
+    const segments = [
+      ["completed", "Completed", completedCount], ["active", "In progress", activeCount],
+      ["queued", "In queue", queuedCount], ["hold", "On hold", onHoldItems.length],
+      ["dropped", "Dropped", droppedItems.length], ["other", "Other", otherCount]
+    ].filter(([, , count]) => count > 0);
+    statusBar.replaceChildren();
+    statusBar.setAttribute("aria-label", totalCount
+      ? `${totalCount} items: ${segments.map(([, label, count]) => `${count} ${label.toLowerCase()}`).join(", ")}`
+      : "No items in this category yet");
+    segments.forEach(([key, label, count]) => {
+      const segment = document.createElement("span");
+      segment.className = `stats-status-segment status-segment-${key}`;
+      segment.style.width = `${(count / totalCount) * 100}%`;
+      segment.title = `${label}: ${count}`;
+      segment.setAttribute("aria-hidden", "true");
+      statusBar.appendChild(segment);
+    });
+  }
 
   // Time-to-complete aggregates: only shown when at least one item in the
   // active view has enough data (runtime/reading speed) to estimate from.
@@ -3728,7 +5030,7 @@ function renderStats() {
   renderStatsGenres(activeItems);
   renderStatsNetworks(activeItems);
   renderStatsRatings(activeItems);
-  renderStatsWatchCharts(activeItemIds);
+  renderStatsWatchCharts(activeItemIds, activeItems);
 }
 
 // Top genres leaderboard, scoped to whatever category chip is active. Genres
@@ -3820,7 +5122,7 @@ function renderStatsRatings(activeItems) {
 // Weekly time-series (hours + episode count) built from state.watchLog, plus
 // a "biggest marathons" leaderboard (most episodes of one show in a single
 // day). Only reflects episodes ticked after watch-logging shipped.
-function renderStatsWatchCharts(activeItemIds) {
+function renderStatsWatchCharts(activeItemIds, activeItems = []) {
   const timeCard = document.getElementById("stats-weekly-time-card");
   const timeChart = document.getElementById("stats-weekly-time-chart");
   const epCard = document.getElementById("stats-weekly-episodes-card");
@@ -3829,8 +5131,29 @@ function renderStatsWatchCharts(activeItemIds) {
   const marathonsList = document.getElementById("stats-marathons-list");
   if (!timeCard || !timeChart || !epCard || !epChart || !marathonsCard || !marathonsList) return;
 
-  const log = (state.watchLog || []).filter(entry => activeItemIds.has(entry.itemId));
-  const hasWatchHistory = log.length > 0;
+  const watchLog = (state.watchLog || []).filter(entry => activeItemIds.has(entry.itemId));
+  // Imported and older items may not have watch-log rows. Use their last
+  // update as a lightweight activity event until real watch events exist.
+  const log = watchLog.length ? watchLog : activeItems
+    .filter(item => activeItemIds.has(item.id) && Number(item.updated || item.created) > 0)
+    .map(item => ({
+      itemId: item.id,
+      title: item.title,
+      watchedAt: item.updated || item.created,
+      runtime: Number(item.episodeRuntime || item.playtime) || 1,
+      derived: true
+    }));
+  const hasActivity = log.length > 0;
+  const weeklyTimeCaption = document.getElementById("stats-weekly-time-caption");
+  if (weeklyTimeCaption) weeklyTimeCaption.textContent = watchLog.length
+    ? "Recorded watch time, day by day"
+    : "Estimated from recent item updates";
+  const monthlyTitle = document.getElementById("stats-monthly-episodes-title");
+  if (monthlyTitle) monthlyTitle.textContent = watchLog.length ? "Episodes this month" : "Item activity this month";
+  const monthlyCaption = document.getElementById("stats-monthly-episodes-caption");
+  if (monthlyCaption) monthlyCaption.textContent = watchLog.length
+    ? "Weekly totals for selected month"
+    : "Estimated from library update dates";
 
   const dayTotals = {}; // "itemId|YYYY-MM-DD" -> { title, count }
   const now = new Date();
@@ -3843,6 +5166,13 @@ function renderStatsWatchCharts(activeItemIds) {
 
   timeCard.style.display = "flex";
   epCard.style.display = "flex";
+  if (!hasActivity) {
+    const emptyMessage = '<div class="stats-chart-empty">No activity recorded for this category yet.</div>';
+    timeChart.innerHTML = emptyMessage;
+    epChart.innerHTML = emptyMessage;
+    marathonsCard.style.display = "none";
+    return;
+  }
   // Weekly graph: one bar per day for the current Monday-Sunday week.
   const dayOfWeek = (now.getDay() + 6) % 7;
   const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
@@ -3858,6 +5188,9 @@ function renderStatsWatchCharts(activeItemIds) {
       weekBuckets[day].episodes += 1;
     }
   });
+  // The 100 below is only the CSS chart height. The data scale must always
+  // follow the largest value in the current result set so one quiet day does
+  // not make every bar look equally tall.
   const maxMinutes = Math.max(...weekBuckets.map(day => day.minutes), 1);
   timeChart.innerHTML = weekBuckets.map(day => `
     <div class="column-chart-col">
@@ -3868,6 +5201,9 @@ function renderStatsWatchCharts(activeItemIds) {
       <span class="column-chart-label">${day.date.toLocaleDateString(undefined, { weekday: "short" })}</span>
     </div>
   `).join("");
+  timeChart.setAttribute("aria-label", watchLog.length
+    ? "Recorded watch time for each day this week"
+    : "Estimated activity by day from recent item updates this week");
 
   // Monthly graph: selectable month, grouped into week-of-month bars.
   const monthKeys = [...new Set([
@@ -3903,19 +5239,25 @@ function renderStatsWatchCharts(activeItemIds) {
     bucket.minutes += Number(entry.runtime) || 0;
     bucket.episodes += 1;
   });
-  const maxMonthMinutes = Math.max(...monthBuckets.map(bucket => bucket.minutes), 1);
+  // This chart displays episode counts, so scale it by the largest episode
+  // count rather than by runtime minutes. Otherwise a long episode can make
+  // a week with fewer episodes appear larger than it should.
+  const maxMonthEpisodes = Math.max(...monthBuckets.map(bucket => bucket.episodes), 1);
   epChart.innerHTML = monthBuckets.map(bucket => `
     <div class="column-chart-col">
       <span class="column-chart-value">${bucket.episodes ? `${bucket.episodes} ep` : ""}</span>
       <div class="column-chart-bar-track">
-        <div class="column-chart-bar monthly-chart-bar" style="height:${Math.max(bucket.minutes ? 8 : 2, Math.round((bucket.minutes / maxMonthMinutes) * 100))}%" title="${formatMinutesAsDuration(bucket.minutes)}"></div>
+        <div class="column-chart-bar monthly-chart-bar" style="height:${Math.max(bucket.episodes ? 8 : 2, Math.round((bucket.episodes / maxMonthEpisodes) * 100))}%" title="${formatMinutesAsDuration(bucket.minutes)}"></div>
       </div>
       <span class="column-chart-label">Week ${bucket.week}</span>
     </div>
   `).join("");
+  epChart.setAttribute("aria-label", watchLog.length
+    ? "Episodes recorded each week in the selected month"
+    : "Estimated item activity each week in the selected month");
 
   const marathons = Object.values(dayTotals).sort((a, b) => b.count - a.count).slice(0, 5);
-  if (!hasWatchHistory || marathons.length === 0) {
+  if (!watchLog.length || marathons.length === 0) {
     marathonsCard.style.display = "none";
   } else {
     marathonsCard.style.display = "flex";
@@ -3981,7 +5323,7 @@ function attachCardEvents() {
 
   // Grid action overlay
   bindOnce(".grid-card", card => {
-    if (state.preferences.dashboardView !== "grid") return;
+    if (!dashboardUsesGridView()) return;
 
     let pressTimer = null;
     let longPressed = false;
@@ -4039,7 +5381,7 @@ function attachCardEvents() {
   bindOnce(".note-card", card => {
     if (rowActions === "tap-hold") {
       bindTapHold(card);
-    } else if (rowActions === "swipe") {
+    } else if (rowActions === "swipe" && card.querySelector(".note-row-content")) {
       bindSwipe(card);
     }
     // The row itself always opens the detail page. Edit/delete remain available
@@ -4053,7 +5395,7 @@ function attachCardEvents() {
   });
 
   bindOnce(".grid-card", card => {
-    if (state.preferences.dashboardView !== "grid") return;
+    if (!dashboardUsesGridView()) return;
     if (card.dataset.boundGridPress === "true") return;
     card.dataset.boundGridPress = "true";
 
@@ -4234,23 +5576,7 @@ function toggleCompletion(id, isChecked) {
   const item = state.items[itemIndex];
   
   if (isChecked) {
-    item.status = "Completed";
-    
-    // Set completion date to local time today
-    const now = new Date();
-    const offset = now.getTimezoneOffset();
-    const localDateStr = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
-    item.completionDate = localDateStr;
-    
-    // Max progress if numerical fields exist
-    if (item.category === "series" || item.category === "kdrama" || item.category === "cdrama" || item.category === "anime") {
-      const seasonTotal = getSeasonTotalEpisodes(item);
-      const seasonWatched = getSeasonWatchedEpisodes(item);
-      if (seasonTotal > 0) item.totalEpisodes = seasonTotal;
-    if (seasonWatched > 0) item.episodesDone = seasonWatched;
-  } else if (item.category === "manga" || item.category === "novel") {
-      if (parseInt(item.totalVolumes) > 0) item.volumesRead = item.totalVolumes;
-    }
+    markItemAsCompleted(item);
   } else {
     // Revert status to In Progress / Playing
     if (item.category === "game") {
@@ -4277,19 +5603,18 @@ function incrementProgress(id, type) {
   if (itemIndex === -1) return;
 
   const item = state.items[itemIndex];
+  const increment = Math.max(1, Number(state.preferences.progressIncrement) || 1);
   
   if (type === "ep") {
     let currentEp = parseInt(item.episodesDone) || 0;
     let totalEp = parseInt(item.totalEpisodes) || getSeasonTotalEpisodes(item) || 0;
-    const nextEpisode = nextEpisodeForDashboardItem(item);
-    if (nextEpisode) {
-      const watched = new Set(item.watchedEpisodeIds || []);
-      watched.add(nextEpisode.id);
-      item.watchedEpisodeIds = Array.from(watched);
-      currentEp = item.watchedEpisodeIds.length;
-    } else {
-      currentEp += 1;
+    const watched = new Set(item.watchedEpisodeIds || []);
+    for (let i = 0; i < increment; i += 1) {
+      const nextEpisode = nextEpisodeForDashboardItem({ ...item, watchedEpisodeIds: Array.from(watched) });
+      if (nextEpisode) watched.add(nextEpisode.id);
+      else currentEp += 1;
     }
+    if (watched.size) currentEp = watched.size;
     if (totalEp > 0 && currentEp >= totalEp) {
       currentEp = totalEp;
       toggleCompletion(id, true);
@@ -4301,7 +5626,7 @@ function incrementProgress(id, type) {
     let currentCh = parseInt(item[isChapter ? "chaptersRead" : "volumesRead"]) || 0;
     let totalCh = parseInt(item[isChapter ? "totalChapters" : "totalVolumes"]) || 0;
     
-    currentCh += 1;
+    currentCh += increment;
     if (totalCh > 0 && currentCh >= totalCh) {
       currentCh = totalCh;
       toggleCompletion(id, true);
@@ -4432,10 +5757,16 @@ function clearFormDraft() {
   localStorage.removeItem(SQUASHDB_FORM_DRAFT_KEY);
 }
 
+function getNotesTemplate() {
+  if (state.preferences.notesTemplate === "review") return "What I liked:\n\nWhat to remember:\n";
+  if (state.preferences.notesTemplate === "journal") return "Date:\n\nThoughts:\n";
+  return "";
+}
+
 function applyRememberedStatus(category) {
   const select = document.getElementById("field-status");
   if (!select) return;
-  const remembered = state.lastEntryStatusByCategory?.[category];
+  const remembered = state.lastEntryStatusByCategory?.[category] || state.preferences.defaultEntryStatus;
   if (remembered && Array.from(select.options).some(option => option.value === remembered)) {
     select.value = remembered;
   }
@@ -4447,10 +5778,11 @@ async function scanBarcodeOrQr() {
   if (!titleInput) return;
   const scanner = nativePlugin("BarcodeScanner") || nativePlugin("BarcodeReader");
   try {
-    const result = scanner?.scan ? await scanner.scan() : scanner?.startScan ? await scanner.startScan() : null;
+    let result = scanner?.scan ? await scanner.scan() : scanner?.startScan ? await scanner.startScan() : null;
+    if (!scanner) result = await scanWithWebCamera();
     const value = String(result?.content || result?.text || result?.barcode?.rawValue || "").trim();
     if (!value) {
-      if (!scanner) alert("Barcode scanning needs the Android Barcode Scanner plugin. You can still enter an ISBN or game code manually.");
+      if (!scanner) alert("Barcode scanning is not available on this device. You can still enter an ISBN or game code manually.");
       return;
     }
     titleInput.value = value;
@@ -4478,6 +5810,50 @@ async function scanBarcodeOrQr() {
     }
   } catch (err) {
     console.warn("Barcode/QR scan failed", err);
+  }
+}
+
+async function scanWithWebCamera() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.BarcodeDetector) return null;
+  const formats = ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code", "data_matrix", "itf"];
+  const detector = new BarcodeDetector({ formats: BarcodeDetector.getSupportedFormats ? (await BarcodeDetector.getSupportedFormats()).filter(format => formats.includes(format)) : formats });
+  if (!detector) return null;
+
+  const overlay = document.createElement("div");
+  overlay.className = "barcode-camera-overlay";
+  overlay.innerHTML = '<div class="barcode-camera-sheet"><button type="button" class="barcode-camera-close" aria-label="Close scanner">×</button><video autoplay playsinline muted></video><p>Point the camera at a barcode or QR code.</p></div>';
+  document.body.appendChild(overlay);
+  const video = overlay.querySelector("video");
+  const close = overlay.querySelector(".barcode-camera-close");
+  let stream = null;
+  let stopped = false;
+  const finish = value => {
+    stopped = true;
+    stream?.getTracks().forEach(track => track.stop());
+    overlay.remove();
+    return value;
+  };
+  close.addEventListener("click", () => finish(null));
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    return await new Promise(resolve => {
+      const scan = async () => {
+        if (stopped) return resolve(null);
+        try {
+          const results = await detector.detect(video);
+          if (results[0]?.rawValue) return resolve(finish({ content: results[0].rawValue }));
+        } catch (error) {
+          console.warn("Camera barcode detection failed", error);
+        }
+        requestAnimationFrame(scan);
+      };
+      requestAnimationFrame(scan);
+    });
+  } catch (error) {
+    finish(null);
+    throw error;
   }
 }
 
@@ -4600,6 +5976,7 @@ function openModal(editId = null) {
     state.lastEntryCategory = preferredCat;
     renderDynamicFormFields(preferredCat);
     applyRememberedStatus(preferredCat);
+    document.getElementById("entry-notes").value = getNotesTemplate();
     clearMetadataPreview();
     const draft = readFormDraft();
     if (draft && window.confirm("Restore your unfinished add-item draft?")) {
@@ -5161,6 +6538,7 @@ function handleFormSubmit(e) {
         thumbnail: thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || state.items[itemIndex].thumbnail || "") : "",
         ...extraData
       };
+      if (status === "Completed") markItemAsCompleted(state.items[itemIndex]);
     }
   } else {
     // Create new item
@@ -5177,6 +6555,7 @@ function handleFormSubmit(e) {
       thumbnail: thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || "") : "",
       ...extraData
     };
+    if (status === "Completed") markItemAsCompleted(newItem);
     state.items.push(newItem);
   }
 

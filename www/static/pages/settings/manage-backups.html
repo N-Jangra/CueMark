@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SquashDB - Backups</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="static/index.css">
+  <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
 </head>
 <body class="manage-screen">
@@ -19,36 +19,54 @@
     <main>
       <section class="tab-content active">
         <div class="segmented-tabs" id="backup-tabs" role="tablist">
-          <button type="button" class="segmented-tab active" data-backup-tab="manage" role="tab">Backup</button>
-          <button type="button" class="segmented-tab" data-backup-tab="status" role="tab">Status</button>
-          <button type="button" class="segmented-tab" data-backup-tab="cloud" role="tab">Cloud &amp; Recovery</button>
+          <button type="button" class="segmented-tab active" id="backup-tab-manage" data-backup-tab="manage" role="tab" aria-controls="backup-panel-manage" aria-selected="true">Backup</button>
+          <button type="button" class="segmented-tab" id="backup-tab-status" data-backup-tab="status" role="tab" aria-controls="backup-panel-status" aria-selected="false">Status</button>
+          <button type="button" class="segmented-tab" id="backup-tab-cloud" data-backup-tab="cloud" role="tab" aria-controls="backup-panel-cloud" aria-selected="false" aria-label="Cloud and recovery">Cloud</button>
         </div>
 
         <!-- Tab 1: Backup & Restore -->
-        <div class="backup-tab-panel active" data-backup-panel="manage">
-          <h4 class="settings-section-title">Manage backups and restore</h4>
-          <div class="settings-section">
-            <p class="settings-row-note" id="backup-folder-path-display">No backup folder selected yet.</p>
-            <p class="settings-row-note" id="backup-folder-status-notice" style="display:none; color: var(--danger);">
+        <div class="backup-tab-panel active" id="backup-panel-manage" data-backup-panel="manage" role="tabpanel" aria-labelledby="backup-tab-manage" tabindex="0">
+          <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="shield-check"></i></span><div><strong>Keep a safe copy of your library</strong><p>Create a backup before moving devices or making major changes.</p></div></div>
+          <section class="backup-action-group">
+            <h2>Backup files</h2>
+            <p class="backup-location-note" id="backup-folder-path-display"><i data-lucide="folder"></i><span data-backup-folder-label>No backup folder selected yet.</span></p>
+            <p class="backup-permission-note" id="backup-folder-status-notice" style="display:none; color: var(--danger);">
               Android storage permission for this folder is missing or revoked. Your local database is safe, but backups cannot run until you select the folder again.
             </p>
-            <div class="btn-group-vertical">
-              <button class="btn btn-secondary" id="backup-export"><i data-lucide="download"></i> Export Data (JSON)</button>
-              <button class="btn btn-secondary" id="backup-export-encrypted"><i data-lucide="shield-check"></i> Export Encrypted Backup</button>
-              <button class="btn btn-secondary" id="backup-import-trigger"><i data-lucide="upload"></i> Import Data (JSON/TAR)</button>
-              <button class="btn btn-secondary" id="backup-import-encrypted"><i data-lucide="shield"></i> Import Encrypted Backup</button>
+            <div class="backup-action-list">
+              <button class="backup-action" id="backup-export"><span class="manage-action-icon"><i data-lucide="download"></i></span><span><strong>Export backup</strong><small>Save a readable JSON copy of your data.</small></span><i data-lucide="chevron-right"></i></button>
+              <button class="backup-action" id="backup-export-encrypted"><span class="manage-action-icon"><i data-lucide="shield-check"></i></span><span><strong>Export encrypted backup</strong><small>Protect a complete backup with encryption.</small></span><i data-lucide="chevron-right"></i></button>
+            </div>
+          </section>
+          <section class="backup-action-group">
+            <h2>Restore from a file</h2>
+            <p class="backup-group-note">Choose a backup file to restore. Existing data may be replaced.</p>
+            <div class="backup-action-list">
+              <button class="backup-action" id="backup-import-trigger"><span class="manage-action-icon"><i data-lucide="upload"></i></span><span><strong>Restore JSON or TAR</strong><small>Restore a standard SquashDB backup.</small></span><i data-lucide="chevron-right"></i></button>
+              <button class="backup-action" id="backup-import-encrypted"><span class="manage-action-icon"><i data-lucide="shield"></i></span><span><strong>Restore encrypted backup</strong><small>Restore a protected .sqdbe backup file.</small></span><i data-lucide="chevron-right"></i></button>
               <input type="file" id="backup-import-file" style="display:none;" accept=".json,.tar,.sqdbe,.enc.json">
-              <button class="btn btn-secondary" id="backup-choose-folder"><i data-lucide="folder"></i> Change Backup Folder</button>
-              <button class="btn btn-secondary" id="backup-sync-folder-tree"><i data-lucide="folder-tree"></i> Sync to Folder Tree</button>
-              <button class="btn btn-secondary" id="db-reset" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);"><i data-lucide="trash-2"></i> Wipe All Data</button>
+            </div>
+          </section>
+          <section class="backup-action-group">
+            <h2>Backup location</h2>
+            <p class="backup-location-capability" id="backup-folder-capability-note" hidden>Folder backups are available in the Android app. You can still export and restore backup files here.</p>
+            <div class="backup-action-list" id="backup-folder-actions">
+              <button class="backup-action" id="backup-choose-folder"><span class="manage-action-icon"><i data-lucide="folder"></i></span><span><strong>Choose backup folder</strong><small>Select where device backups are saved.</small></span><i data-lucide="chevron-right"></i></button>
+              <button class="backup-action" id="backup-sync-folder-tree"><span class="manage-action-icon"><i data-lucide="folder-tree"></i></span><span><strong>Sync to folder tree</strong><small>Organize backups in your selected folder.</small></span><i data-lucide="chevron-right"></i></button>
             </div>
             <div class="backup-progress" id="backup-progress" style="display:none;" aria-live="polite"><div class="backup-progress-header"><span id="backup-progress-label">Preparing backup…</span><span id="backup-progress-value">0%</span></div><div class="backup-progress-track"><span id="backup-progress-bar"></span></div></div>
-          </div>
+          </section>
+          <section class="backup-action-group backup-danger-group">
+            <h2>Danger zone</h2>
+            <p class="backup-group-note">This permanently removes your tracked library from this device.</p>
+            <button class="backup-action storage-danger" id="db-reset"><span class="manage-action-icon"><i data-lucide="trash-2"></i></span><span><strong>Wipe all data</strong><small>Remove the local database and watch history.</small></span><i data-lucide="chevron-right"></i></button>
+          </section>
         </div>
 
         <!-- Tab 2: Status & Storage -->
-        <div class="backup-tab-panel" data-backup-panel="status" style="display:none;">
-          <h4 class="settings-section-title">Backup Status</h4>
+        <div class="backup-tab-panel" id="backup-panel-status" data-backup-panel="status" role="tabpanel" aria-labelledby="backup-tab-status" tabindex="0" style="display:none;">
+          <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="activity"></i></span><div><strong>Backup health at a glance</strong><p>Review your latest backup and available storage.</p></div></div>
+          <h4 class="settings-section-title">Backup status</h4>
           <div class="settings-section backup-status-card" id="backup-status-card">
             <div class="backup-status-grid">
               <div><span>Last backup</span><strong id="backup-last-date">Never</strong></div>
@@ -58,23 +76,24 @@
             </div>
             <div class="backup-health-row"><span id="backup-health-status">Health check not run.</span><button class="btn btn-secondary" id="backup-health-check"><i data-lucide="heart-pulse"></i> Check health</button></div>
           </div>
-          <h4 class="settings-section-title">Storage Usage</h4>
+          <h4 class="settings-section-title">Storage usage</h4>
           <div class="settings-section">
             <div class="backup-storage-usage"><div><span>Database</span><strong id="storage-database-size">Calculating…</strong></div><div><span>Image cache</span><strong id="storage-image-cache-size">Calculating…</strong></div><div><span>Metadata cache</span><strong id="storage-metadata-cache-size">Calculating…</strong></div></div>
           </div>
         </div>
 
         <!-- Tab 3: Cloud & Recovery -->
-        <div class="backup-tab-panel" data-backup-panel="cloud" style="display:none;">
-          <h4 class="settings-section-title">Backup Recovery Center</h4>
+        <div class="backup-tab-panel" id="backup-panel-cloud" data-backup-panel="cloud" role="tabpanel" aria-labelledby="backup-tab-cloud" tabindex="0" style="display:none;">
+          <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="cloud-cog"></i></span><div><strong>Cloud and recovery</strong><p>Find available backups or connect an optional WebDAV storage provider.</p></div></div>
+          <h4 class="settings-section-title">Available backups</h4>
           <div class="settings-section">
             <p class="settings-row-note" id="backup-recovery-status">Checking available backups...</p>
-            <button class="btn btn-secondary" id="backup-recovery-refresh"><i data-lucide="refresh-cw"></i> Refresh Backup List</button>
+            <button class="btn btn-secondary backup-refresh-action" id="backup-recovery-refresh"><i data-lucide="refresh-cw"></i> Refresh backup list</button>
             <div id="backup-recovery-list" class="settings-list"></div>
           </div>
-          <h4 class="settings-section-title">Optional Cloud Sync</h4>
+          <h4 class="settings-section-title">WebDAV sync <span class="optional-label">Optional</span></h4>
           <div class="settings-section">
-            <p class="settings-row-note">Uploads only encrypted <code>.sqdbe</code> backups to a WebDAV-compatible HTTPS URL. Your cloud provider must allow WebDAV requests from the app.</p>
+            <p class="settings-row-note cloud-security-note"><i data-lucide="lock-keyhole"></i><span>Only encrypted <code>.sqdbe</code> backups are uploaded. Your provider must support WebDAV over HTTPS.</span></p>
             <div class="form-group"><label for="cloud-endpoint">WebDAV file URL</label><input id="cloud-endpoint" class="form-control" type="url" placeholder="https://cloud.example.com/remote.php/dav/files/you/squashdb.sqdbe"></div>
             <div class="form-group"><label for="cloud-username">Username</label><input id="cloud-username" class="form-control" type="text" autocomplete="username"></div>
             <div class="form-group"><label for="cloud-password">Password / app password</label><input id="cloud-password" class="form-control" type="password" autocomplete="current-password"></div>
@@ -96,7 +115,11 @@
         tabs.forEach(tab => {
           tab.addEventListener("click", () => {
             const target = tab.dataset.backupTab;
-            tabs.forEach(t => t.classList.toggle("active", t === tab));
+            tabs.forEach(t => {
+              const selected = t === tab;
+              t.classList.toggle("active", selected);
+              t.setAttribute("aria-selected", String(selected));
+            });
             panels.forEach(p => {
               const on = p.dataset.backupPanel === target;
               p.classList.toggle("active", on);

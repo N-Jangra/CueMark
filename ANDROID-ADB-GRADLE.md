@@ -123,6 +123,7 @@ Log out and back in after changing the group. Prefer running `adb` as your norma
 From the project root:
 
 ```bash
+cd ..
 npm install
 npx cap sync android
 cd android

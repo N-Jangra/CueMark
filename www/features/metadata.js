@@ -4,6 +4,7 @@
 // renderSeasonEpisodeFields() (season fields are generic form logic, kept in app.js).
 
 let fetchedMetadataDraft = null;
+let metadataSourcesFilter = "all";
 let metadataSearchState = {
   kind: null,
   items: []
@@ -76,9 +77,17 @@ const BUILTIN_METADATA_SOURCES = {
 
 // Ensures state.preferences.metadataSources has the expected shape, filling in
 // defaults for fields missing from an older saved prefs blob.
+function metadataSourcesWithKeyProvidersLast(order) {
+  const validOrder = order.filter(key => BUILTIN_METADATA_SOURCES[key]);
+  return [
+    ...validOrder.filter(key => !BUILTIN_METADATA_SOURCES[key].needsApiKey),
+    ...validOrder.filter(key => BUILTIN_METADATA_SOURCES[key].needsApiKey)
+  ];
+}
+
 function normalizeMetadataSources() {
   const defaults = {
-    builtinOrder: ["tvmaze", "wikidata", "openlibrary", "rawg", "freetogame", "steamdb", "anilist", "jikan", "kitsu", "mangadex", "shikimori", "googlebooks", "omdb", "tmdb"],
+    builtinOrder: ["tvmaze", "wikidata", "openlibrary", "freetogame", "steamdb", "anilist", "jikan", "kitsu", "mangadex", "shikimori", "googlebooks", "rawg", "omdb", "tmdb"],
     builtinEnabled: {
       tvmaze: true, wikidata: true, openlibrary: true, rawg: false,
       freetogame: true, steamdb: true, anilist: true, jikan: true, kitsu: true, mangadex: true, shikimori: true, googlebooks: true, omdb: false, tmdb: false
@@ -101,6 +110,7 @@ function normalizeMetadataSources() {
   Object.keys(BUILTIN_METADATA_SOURCES).forEach(key => {
     if (!current.builtinOrder.includes(key)) current.builtinOrder.push(key);
   });
+  current.builtinOrder = metadataSourcesWithKeyProvidersLast(current.builtinOrder);
 
   if (!current.builtinEnabled || typeof current.builtinEnabled !== "object") {
     current.builtinEnabled = { ...defaults.builtinEnabled };
@@ -177,6 +187,20 @@ function renderMetadataSourcesSettings() {
   renderBuiltinMetadataSourcesList();
   renderCustomMetadataSourcesList();
 
+  document.querySelectorAll("[data-source-filter]").forEach(button => {
+    if (button.dataset.bound) return;
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      metadataSourcesFilter = button.dataset.sourceFilter;
+      document.querySelectorAll("[data-source-filter]").forEach(filterButton => {
+        const active = filterButton === button;
+        filterButton.classList.toggle("active", active);
+        filterButton.setAttribute("aria-pressed", String(active));
+      });
+      applyBuiltinMetadataSourceFilter();
+    });
+  });
+
   const createBtn = document.getElementById("create-metadata-source-btn");
   if (createBtn && !createBtn.dataset.bound) {
     createBtn.dataset.bound = "true";
@@ -187,27 +211,38 @@ function renderMetadataSourcesSettings() {
 // HTML5 drag events are not consistently emitted by Android WebView. Keep
 // those events for desktop browsers, but also support pointer dragging from
 // the grip handle so source ordering works with touch and mouse input.
-function bindMetadataSourceSorting(list, getKey, onSave) {
+function bindMetadataSourceSorting(list, getKey, onSave, normalizeOrder = order => order) {
   const items = () => Array.from(list.querySelectorAll(".sortable-item"));
   let dragged = null;
   let pointerId = null;
+  let captureTarget = null;
   let moved = false;
 
-  const saveOrder = () => onSave(items().map(item => getKey(item)));
-  const finishPointerDrag = () => {
-    if (!dragged) return;
-    dragged.classList.remove("dragging");
+  const saveOrder = () => onSave(normalizeOrder(items().map(item => getKey(item))));
+  const isKeyProvider = item => item?.dataset.requiresApiKey === "true";
+  const finishPointerDrag = event => {
+    if (!dragged || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
+    const finishedItem = dragged;
+    finishedItem.classList.remove("dragging");
     if (moved) saveOrder();
-    if (pointerId !== null && dragged.hasPointerCapture?.(pointerId)) {
-      dragged.releasePointerCapture(pointerId);
+    if (pointerId !== null && captureTarget?.hasPointerCapture?.(pointerId)) {
+      captureTarget.releasePointerCapture(pointerId);
     }
     dragged = null;
     pointerId = null;
+    captureTarget = null;
     moved = false;
   };
+  if (list._metadataPointerFinish) {
+    document.removeEventListener("pointerup", list._metadataPointerFinish, true);
+    document.removeEventListener("pointercancel", list._metadataPointerFinish, true);
+  }
+  list._metadataPointerFinish = finishPointerDrag;
+  document.addEventListener("pointerup", finishPointerDrag, true);
+  document.addEventListener("pointercancel", finishPointerDrag, true);
 
   items().forEach(item => {
-    item.draggable = true;
+    item.draggable = !window.matchMedia("(pointer: coarse)").matches;
 
     // Desktop HTML5 dragging.
     item.addEventListener("dragstart", () => {
@@ -221,7 +256,7 @@ function bindMetadataSourceSorting(list, getKey, onSave) {
     });
     item.addEventListener("dragover", (event) => {
       event.preventDefault();
-      if (!dragged || dragged === item) return;
+      if (!dragged || dragged === item || isKeyProvider(dragged) !== isKeyProvider(item)) return;
       const rect = item.getBoundingClientRect();
       const after = event.clientY > rect.top + rect.height / 2;
       list.insertBefore(dragged, after ? item.nextSibling : item);
@@ -234,6 +269,7 @@ function bindMetadataSourceSorting(list, getKey, onSave) {
       if (event.button !== undefined && event.button !== 0) return;
       dragged = item;
       pointerId = event.pointerId;
+      captureTarget = handle;
       moved = false;
       item.classList.add("dragging");
       handle.setPointerCapture?.(pointerId);
@@ -242,7 +278,7 @@ function bindMetadataSourceSorting(list, getKey, onSave) {
     handle.addEventListener("pointermove", (event) => {
       if (!dragged || event.pointerId !== pointerId) return;
       const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".sortable-item");
-      if (!target || target.parentElement !== list || target === dragged) return;
+      if (!target || target.parentElement !== list || target === dragged || isKeyProvider(target) !== isKeyProvider(dragged)) return;
       moved = true;
       const rect = target.getBoundingClientRect();
       const after = event.clientY > rect.top + rect.height / 2;
@@ -252,6 +288,29 @@ function bindMetadataSourceSorting(list, getKey, onSave) {
     handle.addEventListener("pointerup", finishPointerDrag);
     handle.addEventListener("pointercancel", finishPointerDrag);
   });
+}
+
+function applyBuiltinMetadataSourceFilter() {
+  const list = document.getElementById("builtin-metadata-sources-list");
+  if (!list) return;
+  let visibleCount = 0;
+  list.querySelectorAll(".metadata-source-row[data-source]").forEach(item => {
+    const enabled = state.preferences.metadataSources.builtinEnabled[item.dataset.source];
+    const visible = metadataSourcesFilter === "all" || (metadataSourcesFilter === "enabled" ? enabled : !enabled);
+    item.hidden = !visible;
+    if (visible) visibleCount++;
+  });
+  let empty = list.querySelector(".metadata-source-filter-empty");
+  if (visibleCount === 0) {
+    if (!empty) {
+      empty = document.createElement("p");
+      empty.className = "metadata-source-filter-empty";
+      list.appendChild(empty);
+    }
+    empty.textContent = metadataSourcesFilter === "enabled" ? "No enabled sources." : "No disabled sources.";
+  } else if (empty) {
+    empty.remove();
+  }
 }
 
 function renderBuiltinMetadataSourcesList() {
@@ -265,8 +324,8 @@ function renderBuiltinMetadataSourcesList() {
     if (!info) return;
     const item = document.createElement("div");
     item.className = "sortable-item metadata-source-row";
-    item.draggable = true;
     item.dataset.source = key;
+    item.dataset.requiresApiKey = String(Boolean(info.needsApiKey));
     const apiKeyRowHTML = info.needsApiKey ? `
       <div class="form-group metadata-source-apikey-row">
         <label for="builtin-apikey-${key}">${info.name} API Key</label>
@@ -286,6 +345,8 @@ function renderBuiltinMetadataSourcesList() {
       </label>
       ${apiKeyRowHTML}
     `;
+    const apiKeyRow = item.querySelector(".metadata-source-apikey-row");
+    if (apiKeyRow && !state.preferences.metadataSources.builtinEnabled[key]) apiKeyRow.hidden = true;
     list.appendChild(item);
   });
 
@@ -293,15 +354,20 @@ function renderBuiltinMetadataSourcesList() {
     list,
     item => item.dataset.source,
     newOrder => {
-      state.preferences.metadataSources.builtinOrder = newOrder;
+      state.preferences.metadataSources.builtinOrder = metadataSourcesWithKeyProvidersLast(newOrder);
       saveData();
-    }
+    },
+    metadataSourcesWithKeyProvidersLast
   );
+  applyBuiltinMetadataSourceFilter();
 
   list.querySelectorAll("input[data-builtin-source]").forEach(checkbox => {
     checkbox.addEventListener("change", (e) => {
       const key = e.target.dataset.builtinSource;
       state.preferences.metadataSources.builtinEnabled[key] = e.target.checked;
+      const apiKeyRow = e.target.closest(".metadata-source-row")?.querySelector(".metadata-source-apikey-row");
+      if (apiKeyRow) apiKeyRow.hidden = !e.target.checked;
+      applyBuiltinMetadataSourceFilter();
       saveData();
     });
   });

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SquashDB - Import Status</title>
+<link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
+<script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
+</head>
+<body class="manage-screen import-status-screen">
+  <div id="app-container">
+    <header class="settings-ios-header"><button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button><h1>Import Status</h1><span class="settings-ios-header-spacer" aria-hidden="true"></span></header>
+    <main><section class="tab-content active">
+      <p class="manage-intro">Your titles are saved locally. Metadata continues syncing gradually and will resume when the app is opened again.</p>
+      <div id="import-status-summary" class="import-status-summary" aria-live="polite"></div>
+      <div class="form-actions import-status-actions">
+        <button type="button" class="btn btn-secondary" id="import-status-pause">Pause syncing</button>
+        <button type="button" class="btn btn-secondary" id="import-status-retry">Retry failed</button>
+        <button type="button" class="btn btn-secondary" id="import-status-clear-failed">Clear failed</button>
+        <button type="button" class="btn btn-secondary" id="import-status-clear">Clear completed</button>
+        <button type="button" class="btn btn-secondary" id="import-status-clear-all">Clear all</button>
+      </div>
+      <div id="import-status-list" class="import-status-list" aria-live="polite"></div>
+      <div class="form-actions"><a class="btn btn-primary" href="static/pages/main/dashboard.html">View Dashboard</a><a class="btn btn-secondary" href="static/pages/settings/manage-import.html">Import More</a></div>
+    </section></main>
+  </div>
+  <script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="features/import-list.js"></script><script defer src="features/import-status.js"></script>
+</body>
+</html>

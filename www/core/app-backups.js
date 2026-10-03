@@ -792,7 +792,8 @@ function updateBackupFolderStatusUI() {
   const pathEl = document.getElementById("backup-folder-path-display");
   if (pathEl) {
     const uri = localStorage.getItem("squashdb_backup_folder_uri");
-    pathEl.textContent = uri ? `Current folder: ${friendlyFolderPathFromUri(uri)}` : "No backup folder selected yet.";
+    const label = pathEl.querySelector("[data-backup-folder-label]") || pathEl;
+    label.textContent = uri ? `Current folder: ${friendlyFolderPathFromUri(uri)}` : "No backup folder selected yet.";
   }
 }
 

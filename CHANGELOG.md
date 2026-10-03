@@ -2,6 +2,61 @@
 
 All notable changes to SquashDB are documented in this file.
 
+## [0.0.7]
+
+### UI and navigation
+- Refreshed the Dashboard layout with improved collection cards, category controls, search, filters, insights, loading states, and empty states.
+- Renewed the top and bottom navigation bars with improved spacing, active-state styling, solid/translucent backgrounds, and better mobile behavior.
+- Added draggable mobile ordering for bottom navigation items and navigation settings improvements; Dashboard and Settings remain available.
+- Improved page headers, back navigation, popup behavior, alignment, responsive layouts, and theme-aware styling across the app.
+- Added pull-to-refresh feedback on the Dashboard and ensured Android Back closes an open popup before navigating away.
+
+### Settings and personalization
+- Expanded Appearance settings with accessibility presets, reduced motion, text size, font, theme, main color, animation speed, bottom-bar styling, transparency, and scrollbar visibility controls.
+- Refined Settings subpages and moved network behavior controls into Privacy & Network.
+- Added or improved controls for Dashboard & Navigation, Metadata, Backup & Sync, Data, Notifications, Security, and About.
+- Removed obsolete Advanced and Information settings pages and consolidated their useful destinations into the main Settings page.
+- Improved theme consistency, contrast, modal surfaces, switches, icons, and mobile drag-and-drop interactions.
+
+### Detail pages and metadata
+- Improved show-detail artwork backgrounds using thumbnail colors and refined episode presentation, rating controls, and circular episode checkboxes.
+- Fixed saved show metadata so all seasons, episodes, and thumbnails are retained instead of only Season 1.
+- Improved metadata source and Explore page title alignment and source navigation.
+
+### Icons and Android resources
+- Removed obsolete alternate app icons and their unused Android resources.
+- Improved the remaining app icon/name configuration and related settings presentation.
+
+### Import and export
+- Added dedicated Settings pages for importing and exporting lists instead of using a popup workflow.
+- Added CSV, TSV, and TXT import support with category-aware status handling, duplicate policies, previews, and configurable metadata sources.
+- Added background metadata syncing with a persistent queue, retry and pause/resume controls, import status tracking, and a beta worker-count setting.
+- Added category-specific export with CSV, TSV, and TXT output and timestamped filenames such as `squashdb-anime-YYYYMMDD-HHmmss.csv`.
+
+### Storage and data management
+- Added a Settings → Storage page with total usage, library category usage, metadata cache, thumbnail cache, preferences, watch history, and backup size breakdowns.
+- Added controls to clear metadata cache, thumbnail cache, all temporary caches, tracked data, and perform a factory reset with in-app confirmation.
+- Added local example and planning-note patterns to `.gitignore`.
+
+### Dashboard and progress
+- Added complete Dashboard sections for On hold, Dropped, and other statuses without limiting each section to four items.
+- Added Statistics totals for all tracked status groups, including On Hold and Dropped.
+- Movies and games now show ratings and status pills instead of misleading percentage progress indicators.
+- Fixed completion handling so episodes, seasons, chapters, and volumes are marked complete when an item is completed.
+- Improved manga and novel progress calculation using chapter or volume totals.
+- Improved Statistics time-left estimates using cached episode runtimes and watched episode data.
+- Fixed Statistics activity charts to use real watch history and provide useful fallback activity for imported items.
+- Updated show-detail completion handling to keep completed item progress consistent.
+
+### Settings and detail presentation
+- Reordered Settings sections and options alphabetically, moved Information to the bottom, and grouped Metadata & Storage together.
+- Added clearer spacing between Settings groups and the new Storage entry.
+- Improved show-detail navigation and completion behavior.
+- Added configurable dashboard defaults, recently-added limits, card corner styles, progress increments, automatic completion behavior, rating reminders, and notes templates.
+- Added metadata refresh/retry controls, offline fallback behavior, scheduled thumbnail cleanup, and configurable import/export defaults.
+- Added backup safety, notification, security, data maintenance, and advanced preference controls, including storage limits, cache cleanup, retry policies, auto-lock options, duplicate detection, and network tuning.
+- Added Settings → Storage usage warnings and expanded storage breakdown and cleanup controls.
+
 ## [0.0.6]
 
 ### Performance and persistence

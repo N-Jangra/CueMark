@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="../../../">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SquashDB - Storage</title>
+<link rel="manifest" href="manifest.json"><script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
+<script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
+</head>
+<body class="manage-screen storage-screen">
+  <div id="app-container">
+    <header class="settings-ios-header"><button class="settings-ios-back page-back-btn" type="button" data-back-fallback="static/pages/settings/settings.html">‹ Back</button><h1>Storage</h1><span class="settings-ios-header-spacer" aria-hidden="true"></span></header>
+    <main><section class="tab-content active" id="storage-page">
+      <div class="manage-intro-card"><span class="manage-intro-icon"><i data-lucide="hard-drive"></i></span><div><strong>Storage on this device</strong><p>Review your library and cache usage. Sizes refresh when this page opens.</p></div></div>
+      <p id="storage-warning" class="storage-warning" hidden></p>
+
+      <section class="storage-total-card" aria-live="polite">
+        <span class="storage-total-icon"><i data-lucide="database"></i></span>
+        <span class="storage-total-copy"><span class="storage-total-label">Total used</span><strong id="storage-total">Calculating…</strong><span id="storage-updated" class="storage-muted">Updating storage details</span></span>
+      </section>
+
+      <section class="storage-card" aria-labelledby="storage-breakdown-title">
+        <h2 id="storage-breakdown-title">Storage breakdown</h2>
+        <div id="storage-breakdown" class="storage-breakdown"></div>
+      </section>
+
+      <section class="storage-card" aria-labelledby="storage-categories-title">
+        <h2 id="storage-categories-title">Library by category</h2>
+        <div id="storage-categories" class="storage-breakdown"></div>
+      </section>
+
+      <section class="storage-card storage-actions" aria-labelledby="storage-actions-title">
+        <h2 id="storage-actions-title">Cache management</h2>
+        <button type="button" class="storage-action" id="storage-clear-metadata"><span><strong>Clear metadata cache</strong><small>Remove saved online responses. Your library stays untouched.</small></span><i data-lucide="trash-2"></i></button>
+        <button type="button" class="storage-action" id="storage-clear-images"><span><strong>Clear thumbnail cache</strong><small>Remove cached thumbnails and fonts.</small></span><i data-lucide="trash-2"></i></button>
+        <button type="button" class="storage-action" id="storage-clear-temporary"><span><strong>Clear all temporary cache</strong><small>Remove metadata, thumbnails, and temporary files.</small></span><i data-lucide="trash-2"></i></button>
+        <div class="storage-danger-zone">
+          <h3>Delete saved data</h3>
+          <p>These actions remove your tracked library from this device.</p>
+          <div class="storage-action-list">
+            <button type="button" class="storage-action storage-danger" id="storage-clear-data"><span><strong>Clear all tracked data</strong><small>Remove items, watch history, and pending imports.</small></span><i data-lucide="database-zap"></i></button>
+            <button type="button" class="storage-action storage-danger" id="storage-factory-reset"><span><strong>Factory reset</strong><small>Remove all SquashDB data and restore a clean install.</small></span><i data-lucide="triangle-alert"></i></button>
+          </div>
+        </div>
+      </section>
+    </section></main>
+  </div>
+  <script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="features/storage.js"></script>
+</body>
+</html>

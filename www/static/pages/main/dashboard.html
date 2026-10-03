@@ -7,23 +7,27 @@
   <title>SquashDB - Dashboard</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="squashdb-logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="static/index.css">
+  <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
 </head>
 <body class="dashboard-screen">
   <div id="app-container">
-    <div class="chips-container" id="category-chips"></div>
-    <div id="search-container" class="search-container">
-      <i data-lucide="search"></i>
-      <input type="text" id="global-search" class="search-input" placeholder="Search title, notes, genres, tags..." autocomplete="off">
-      <button type="button" id="dashboard-sort-btn" class="timeline-filter-icon-btn" title="Sort list"><i data-lucide="arrow-down-up"></i></button>
-      <button type="button" id="dashboard-filter-btn" class="timeline-filter-icon-btn" title="Filter list"><i data-lucide="sliders-horizontal"></i></button>
-    </div>
-    <div id="dashboard-search-history" class="dashboard-search-history" style="display:none;"></div>
-    <div id="dashboard-filter-chips" class="dashboard-filter-chips" aria-label="Dashboard filters"></div>
-
     <main>
       <section id="tab-dashboard" class="tab-content active">
+        <header class="dashboard-header">
+          <div class="dashboard-heading-row">
+            <div><h1>My collection</h1></div>
+            <button type="button" id="dashboard-filter-btn" class="dashboard-refine-btn" title="Sort and filter your library" aria-label="Sort and filter your library"><i data-lucide="list-filter"></i><span>Refine</span><b id="dashboard-filter-count" hidden>0</b></button>
+          </div>
+          <div id="category-chips" class="chips-container" aria-label="Library categories"></div>
+          <div id="search-container" class="search-container">
+            <i data-lucide="search"></i>
+            <input type="text" id="global-search" class="search-input" placeholder="Search your collection" autocomplete="off">
+            <button type="button" id="dashboard-search-clear" class="dashboard-search-clear" title="Clear search" aria-label="Clear search" hidden><i data-lucide="x"></i></button>
+          </div>
+        </header>
+        <div id="dashboard-search-history" class="dashboard-search-history" style="display:none;"></div>
+        <div id="dashboard-filter-chips" class="dashboard-filter-chips" aria-label="Active library filters"></div>
         <div id="dashboard-refresh-status" class="dashboard-refresh-status" aria-live="polite"></div>
         <div id="dashboard-insights" class="dashboard-insights"></div>
         <div id="notes-container" class="notes-container"></div>
@@ -58,7 +62,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h3 id="modal-title" class="modal-title">Add Tracking Entry</h3>
-          <button class="modal-close" id="modal-close-btn">&times;</button>
+          <button type="button" class="modal-close" id="modal-close-btn" aria-label="Close add entry"><i data-lucide="x"></i></button>
         </div>
         <form id="tracker-form">
           <input type="hidden" id="entry-id">
@@ -87,16 +91,16 @@
       </div>
     </div>
 
-    <div id="picker-modal" class="modal-overlay">
-      <div class="modal-content picker-sheet">
+    <div id="picker-modal" class="modal-overlay dashboard-refine-overlay">
+      <div class="modal-content picker-sheet dashboard-refine-sheet">
         <div class="modal-header">
           <h3 id="picker-modal-title" class="modal-title">Options</h3>
-          <button class="modal-close" id="picker-modal-close">&times;</button>
+          <button type="button" class="modal-close" id="picker-modal-close" aria-label="Close options"><i data-lucide="x"></i></button>
         </div>
         <div id="picker-options-list" class="picker-options-list"></div>
       </div>
     </div>
   </div>
-  <script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script>
+  <script defer src="core/applock.js"></script><script defer src="features/metadata.js"></script><script defer src="core/cache-manager.js"></script><script defer src="core/app-navigation.js"></script><script defer src="core/app-backups.js"></script><script defer src="core/app-search.js"></script><script defer src="app.js"></script><script defer src="core/fonts.js"></script><script defer src="features/import-list.js"></script>
 </body>
 </html>
