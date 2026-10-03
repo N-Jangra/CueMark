@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -30,15 +30,15 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
-/** Stores the main SquashDB state encrypted with an Android Keystore key. */
+/** Stores the main CueMark state encrypted with an Android Keystore key. */
 @CapacitorPlugin(name = "EncryptedStore")
 public class EncryptedStorePlugin extends Plugin {
-    private static final String PREFS = "squashdb_encrypted_store";
+    private static final String PREFS = "cuemark_encrypted_store";
     private static final String VALUE = "state";
     private static final String ITEM_PREFIX = "item_";
     private static final String META_VALUE = "meta";
-    private static final String KEY_ALIAS = "squashdb_state_key";
-    private static final String LEGACY_RSA_ALIAS = "squashdb_state_rsa_key";
+    private static final String KEY_ALIAS = "cuemark_state_key";
+    private static final String LEGACY_RSA_ALIAS = "cuemark_state_rsa_key";
     private static final String LEGACY_WRAPPED_KEY = "legacy_wrapped_key";
 
     public static String readPackedState(Context context) {
@@ -221,7 +221,7 @@ public class EncryptedStorePlugin extends Plugin {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "AndroidKeyStore");
             generator.initialize(new KeyPairGeneratorSpec.Builder(getContext())
                 .setAlias(LEGACY_RSA_ALIAS)
-                .setSubject(new X500Principal("CN=SquashDB Local State"))
+                .setSubject(new X500Principal("CN=CueMark Local State"))
                 .setSerialNumber(BigInteger.ONE)
                 .setStartDate(start.getTime())
                 .setEndDate(end.getTime())

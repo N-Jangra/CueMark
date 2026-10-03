@@ -1,4 +1,4 @@
-// SquashDB - Online metadata lookup (TVmaze, Wikidata, Open Library)
+// CueMark - Online metadata lookup (TVmaze, Wikidata, Open Library)
 // Fetches and applies metadata (thumbnails, seasons/episodes, runtime, etc.) for tracked items.
 // Depends on globals from app.js: state, CATEGORIES, thumbnailsEnabled(), applySeriesMetadata(),
 // renderSeasonEpisodeFields() (season fields are generic form logic, kept in app.js).
@@ -10,11 +10,11 @@ let metadataSearchState = {
   items: []
 };
 
-const SQUASHDB_METADATA_QUEUE_KEY = "squashdb_metadata_update_queue";
+const CUEMARK_METADATA_QUEUE_KEY = "cuemark_metadata_update_queue";
 
 function readMetadataUpdateQueue() {
   try {
-    const queue = JSON.parse(localStorage.getItem(SQUASHDB_METADATA_QUEUE_KEY) || "[]");
+    const queue = JSON.parse(localStorage.getItem(CUEMARK_METADATA_QUEUE_KEY) || "[]");
     return Array.isArray(queue) ? queue : [];
   } catch (err) {
     return [];
@@ -25,7 +25,7 @@ function queueMetadataUpdate(category, title, itemId = "") {
   if (!category || !title) return;
   const queue = readMetadataUpdateQueue().filter(entry => !(entry.category === category && entry.title.toLowerCase() === title.toLowerCase()));
   queue.push({ category, title, itemId, queuedAt: Date.now() });
-  localStorage.setItem(SQUASHDB_METADATA_QUEUE_KEY, JSON.stringify(queue.slice(-25)));
+  localStorage.setItem(CUEMARK_METADATA_QUEUE_KEY, JSON.stringify(queue.slice(-25)));
   window.dispatchEvent(new CustomEvent("metadata-queue-updated", { detail: { count: queue.length } }));
 }
 
@@ -36,7 +36,7 @@ function removeQueuedMetadataUpdate(category, title, itemId = "") {
     const sameTitle = entry.category === category && String(entry.title || "").toLowerCase() === normalizedTitle;
     return !(sameItem || sameTitle);
   });
-  localStorage.setItem(SQUASHDB_METADATA_QUEUE_KEY, JSON.stringify(next));
+  localStorage.setItem(CUEMARK_METADATA_QUEUE_KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent("metadata-queue-updated", { detail: { count: next.length } }));
 }
 
@@ -50,7 +50,7 @@ window.addEventListener("online", () => {
 });
 
 async function retryVisibleMetadataUpdate() {
-  if ((typeof squashDbIsOffline === "function" && squashDbIsOffline()) || typeof fetchAndApplyMetadataFromTitle !== "function") return;
+  if ((typeof cueMarkIsOffline === "function" && cueMarkIsOffline()) || typeof fetchAndApplyMetadataFromTitle !== "function") return;
   const category = document.getElementById("entry-category")?.value || state.activeCategoryChip;
   const title = document.getElementById("entry-title")?.value.trim() || "";
   const queued = readMetadataUpdateQueue().find(entry => entry.category === category && String(entry.title).toLowerCase() === title.toLowerCase());
@@ -571,7 +571,7 @@ async function openJsonFieldMapperModal(urlTemplate, apiKey, draftPaths, onSaved
         <h3>Map Fields</h3>
         <button type="button" class="modal-close-btn" id="json-mapper-close"><i data-lucide="x"></i></button>
       </div>
-      <p class="setting-desc" id="json-mapper-status">Fetching a sample response using "squash" as the test query...</p>
+      <p class="setting-desc" id="json-mapper-status">Fetching a sample response using "cue" as the test query...</p>
       <div id="json-mapper-tree" class="json-mapper-tree"></div>
     </div>
   `;
@@ -584,7 +584,7 @@ async function openJsonFieldMapperModal(urlTemplate, apiKey, draftPaths, onSaved
 
   let sample;
   try {
-    const url = urlTemplate.replace("{query}", encodeURIComponent("squash")).replace("{apiKey}", encodeURIComponent(apiKey));
+    const url = urlTemplate.replace("{query}", encodeURIComponent("cue")).replace("{apiKey}", encodeURIComponent(apiKey));
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     sample = await res.json();
@@ -748,7 +748,7 @@ async function fetchAndApplyMetadataFromTitle() {
   const title = document.getElementById("entry-title")?.value.trim();
   if (!title || !category || state.preferences.metadataMode !== "online") return;
   if (!["series", "kdrama", "cdrama", "anime", "movie", "game", "manga", "novel"].includes(category)) return;
-  if (typeof squashDbIsOffline === "function" ? squashDbIsOffline() : navigator.onLine === false) {
+  if (typeof cueMarkIsOffline === "function" ? cueMarkIsOffline() : navigator.onLine === false) {
     queueMetadataUpdate(category, title);
     return;
   }

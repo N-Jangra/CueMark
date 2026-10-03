@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.content.Intent;
 import android.net.Uri;

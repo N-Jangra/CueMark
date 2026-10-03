@@ -67,5 +67,5 @@
     render();
   }
 
-  window.addEventListener("squashdb-app-ready", init, { once: true });
+  window.addEventListener("cuemark-app-ready", init, { once: true });
 })();

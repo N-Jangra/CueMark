@@ -123,7 +123,7 @@ function startServer(port) {
 server.on("listening", () => {
   const address = server.address();
   const port = address && typeof address === "object" ? address.port : currentPort;
-  console.log(`SquashDB server listening on http://127.0.0.1:${port}`);
+  console.log(`CueMark server listening on http://127.0.0.1:${port}`);
 });
 
 server.on("error", (err) => {

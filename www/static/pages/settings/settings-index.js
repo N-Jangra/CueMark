@@ -1,5 +1,5 @@
 (() => {
-  const HISTORY_KEY = "squashdb_settings_search_history";
+  const HISTORY_KEY = "cuemark_settings_search_history";
   const CATEGORY_FILES = Array.from({ length: 14 }, (_, index) => `static/pages/settings/category-${index + 1}.html`);
   let indexPromise;
 

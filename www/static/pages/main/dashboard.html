@@ -4,9 +4,9 @@
 <base href="../../../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquashDB - Dashboard</title>
+  <title>CueMark - Dashboard</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="squashdb-logo.svg" type="image/svg+xml">
+  <link rel="icon" href="cuemark-logo.svg" type="image/svg+xml">
   <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
 </head>
@@ -70,7 +70,10 @@
             <label for="entry-title">Title / Name</label>
             <div class="entry-title-input-row">
               <input type="text" id="entry-title" class="form-control" placeholder="e.g., Elden Ring, Naruto, Dune" required>
-              <button type="button" class="icon-btn" id="scan-code-btn" title="Scan barcode or QR code"><i data-lucide="scan-line"></i></button>
+              <button type="button" class="icon-btn" id="upload-thumbnail-btn" title="Upload thumbnail" aria-label="Upload thumbnail"><i data-lucide="image-up"></i></button>
+              <button type="button" class="icon-btn" id="camera-thumbnail-btn" title="Take thumbnail photo" aria-label="Take thumbnail photo"><i data-lucide="camera"></i></button>
+              <input type="file" id="thumbnail-upload-input" accept="image/*" hidden>
+              <input type="file" id="thumbnail-camera-input" accept="image/*" capture="environment" hidden>
             </div>
           </div>
           <div class="form-group">

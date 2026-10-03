@@ -1,13 +1,13 @@
-// SquashDB - Logcat: captures console.log/warn/error/info and uncaught errors
+// CueMark - Logcat: captures console.log/warn/error/info and uncaught errors
 // into a bounded ring buffer in localStorage, since every page here is a full
 // navigation (not an SPA) — an in-memory buffer would reset on every page
 // load. Must load before any other script on every page so nothing is missed.
 // Read by logcat.html (Settings → App Data → Logcat).
 
 (function () {
-  const LEGACY_STORAGE_KEY = "squashdb_logcat";
-  const DAYS_KEY = "squashdb_logcat_days";
-  const DAILY_KEY_PREFIX = "squashdb_logcat_day_";
+  const LEGACY_STORAGE_KEY = "cuemark_logcat";
+  const DAYS_KEY = "cuemark_logcat_days";
+  const DAILY_KEY_PREFIX = "cuemark_logcat_day_";
   const MAX_ENTRIES_PER_DAY = 500;
   const RECENT_DAYS = 3;
 
@@ -126,7 +126,7 @@
     appendEntry("error", ["Unhandled promise rejection:", event.reason]);
   });
 
-  window.squashdbLogcat = {
+  window.cuemarkLogcat = {
     // The main Logcat page intentionally shows only today's file.
     getEntries: () => entriesForDays([dayKey()]),
     getRecentEntries: (days = RECENT_DAYS) => entriesForDays(recentDays(days)),

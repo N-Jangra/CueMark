@@ -1,11 +1,11 @@
-# SquashDB Documentation
+# CueMark Documentation
 
-SquashDB is a Capacitor-based watchlist/media-progress tracker that runs as an Android app (and can be opened as a plain web page). The app is a static multi-page site (`www/*.html` + `app.js` + `metadata.js` + `applock.js`) backed by an Android Keystore-encrypted state store on native Android, with browser `localStorage` as the web fallback and an optional file-based mirror via a custom native plugin.
+**CueMark** means “bookmarking where you left off.” It is a Capacitor-based watchlist and media-progress tracker that runs as an Android app and can also be opened as a plain web page. The app is a static multi-page site (`www/*.html` + `app.js` + `metadata.js` + `applock.js`) backed by an Android Keystore-encrypted state store on native Android, with browser `localStorage` as the web fallback and an optional file-based mirror via a custom native plugin.
 
 ## Contents
 
 - [db-schema.md](db-schema.md) — the state schema: `state.items`, `state.preferences`, watch history, and the remaining browser-only keys.
-- [file-schema.md](file-schema.md) — the app's source directory layout, plus the on-device `squash-db/` folder tree and backup `.tar`/`.json`/`.sqdbe`/`.sqdb` formats.
+- [file-schema.md](file-schema.md) — the app's source directory layout, plus the on-device `cuemark-db/` folder tree and backup `.tar`/`.json`/`.sqdbe`/`.sqdb` formats.
 - [metadata.md](metadata.md) — how online metadata lookup works: built-in sources (TVmaze/Wikidata/Open Library) and the custom-source JSON-path mapping system.
 - [storage.md](storage.md) — where data actually lives (localStorage vs. SAF folder vs. WebView HTTP cache vs. sessionStorage), persistence/eviction behavior, the backup/export/import/sync pipeline, and fresh-install auto-restore.
 - [app-lock.md](app-lock.md) — the App Password feature: PIN/pattern/alphanumeric methods, PBKDF2 hashing, rate limiting, and the security-question recovery flow (with an explicit threat-model caveat).

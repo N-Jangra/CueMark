@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.os.Build;
 
@@ -62,7 +62,7 @@ public class BiometricPlugin extends Plugin {
                 return;
             }
 
-            String reason = call.getString("reason", "Unlock SquashDB");
+            String reason = call.getString("reason", "Unlock CueMark");
             BiometricPrompt prompt = new BiometricPrompt(activity,
                 ContextCompat.getMainExecutor(activity),
                 new BiometricPrompt.AuthenticationCallback() {
@@ -86,7 +86,7 @@ public class BiometricPlugin extends Plugin {
                 }
             );
             BiometricPrompt.PromptInfo.Builder builder = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock SquashDB")
+                .setTitle("Unlock CueMark")
                 .setSubtitle(reason)
                 .setAllowedAuthenticators(authenticators);
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {

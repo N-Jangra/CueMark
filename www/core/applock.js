@@ -1,4 +1,4 @@
-// SquashDB - App lock (PIN / pattern / alphanumeric password + security-question reset)
+// CueMark - App lock (PIN / pattern / alphanumeric password + security-question reset)
 //
 // Threat model: this deters casual snooping (someone picking up the phone), not a
 // determined attacker with adb/root — the underlying data in localStorage is not
@@ -112,19 +112,19 @@ async function verifySecurityAnswers(answers) {
 }
 
 function getFailedAttempts() {
-  return parseInt(localStorage.getItem("squashdb_lock_failed_attempts") || "0", 10) || 0;
+  return parseInt(localStorage.getItem("cuemark_lock_failed_attempts") || "0", 10) || 0;
 }
 
 function setFailedAttempts(count) {
-  localStorage.setItem("squashdb_lock_failed_attempts", String(count));
+  localStorage.setItem("cuemark_lock_failed_attempts", String(count));
 }
 
 function isSessionUnlocked() {
-  return sessionStorage.getItem("squashdb_lock_unlocked") === "true";
+  return sessionStorage.getItem("cuemark_lock_unlocked") === "true";
 }
 
 function markSessionUnlocked() {
-  sessionStorage.setItem("squashdb_lock_unlocked", "true");
+  sessionStorage.setItem("cuemark_lock_unlocked", "true");
   setFailedAttempts(0);
 }
 
@@ -152,7 +152,7 @@ function renderAppLockOverlay() {
   overlay.innerHTML = `
     <div class="app-lock-card">
       <i data-lucide="lock" class="app-lock-icon"></i>
-      <h2>SquashDB Locked</h2>
+      <h2>CueMark Locked</h2>
       <div id="app-lock-input-area"></div>
       <p class="app-lock-error" id="app-lock-error" style="display:none;"></p>
       ${showForgot ? `<button type="button" class="btn btn-secondary" id="app-lock-forgot-btn" style="width:100%;margin-top:12px;">Forgot password?</button>` : ""}
@@ -178,7 +178,7 @@ async function handleBiometricUnlock() {
   const button = document.getElementById("app-lock-biometric-btn");
   if (button) button.disabled = true;
   try {
-    const result = await biometric.authenticate({ reason: "Unlock your SquashDB library" });
+    const result = await biometric.authenticate({ reason: "Unlock your CueMark library" });
     if (!result?.success) {
       showAppLockError("Authentication did not complete. Try again or use your device screen lock.");
       return;

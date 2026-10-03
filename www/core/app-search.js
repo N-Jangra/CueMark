@@ -1,7 +1,7 @@
 // In-memory full-text index for the local watchlist.
 // This keeps dashboard searches off repeated full-array string scans while
 // remaining compatible with the current multi-page/local-storage data model.
-let squashDbSearchIndex = new Map();
+let cueMarkSearchIndex = new Map();
 
 function searchIndexText(item) {
   return [
@@ -17,12 +17,12 @@ function searchIndexText(item) {
 }
 
 function rebuildSearchIndex(items = state.items) {
-  squashDbSearchIndex = new Map();
-  (items || []).forEach(item => squashDbSearchIndex.set(item.id, searchIndexText(item)));
+  cueMarkSearchIndex = new Map();
+  (items || []).forEach(item => cueMarkSearchIndex.set(item.id, searchIndexText(item)));
 }
 
 function searchIndexMatches(item, query) {
   if (!query) return true;
-  const text = squashDbSearchIndex.get(item.id) || searchIndexText(item);
+  const text = cueMarkSearchIndex.get(item.id) || searchIndexText(item);
   return query.split(/\s+/).filter(Boolean).every(term => text.includes(term));
 }

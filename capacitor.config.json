@@ -1,6 +1,6 @@
 {
-  "appId": "com.squashdb.tracker",
-  "appName": "SquashDB",
+  "appId": "com.cuemark.tracker",
+  "appName": "CueMark",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

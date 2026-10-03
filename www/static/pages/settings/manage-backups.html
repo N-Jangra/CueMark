@@ -4,7 +4,7 @@
 <base href="../../../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquashDB - Backups</title>
+  <title>CueMark - Backups</title>
   <link rel="manifest" href="manifest.json">
   <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
@@ -42,7 +42,7 @@
             <h2>Restore from a file</h2>
             <p class="backup-group-note">Choose a backup file to restore. Existing data may be replaced.</p>
             <div class="backup-action-list">
-              <button class="backup-action" id="backup-import-trigger"><span class="manage-action-icon"><i data-lucide="upload"></i></span><span><strong>Restore JSON or TAR</strong><small>Restore a standard SquashDB backup.</small></span><i data-lucide="chevron-right"></i></button>
+              <button class="backup-action" id="backup-import-trigger"><span class="manage-action-icon"><i data-lucide="upload"></i></span><span><strong>Restore JSON or TAR</strong><small>Restore a standard CueMark backup.</small></span><i data-lucide="chevron-right"></i></button>
               <button class="backup-action" id="backup-import-encrypted"><span class="manage-action-icon"><i data-lucide="shield"></i></span><span><strong>Restore encrypted backup</strong><small>Restore a protected .sqdbe backup file.</small></span><i data-lucide="chevron-right"></i></button>
               <input type="file" id="backup-import-file" style="display:none;" accept=".json,.tar,.sqdbe,.enc.json">
             </div>
@@ -94,7 +94,7 @@
           <h4 class="settings-section-title">WebDAV sync <span class="optional-label">Optional</span></h4>
           <div class="settings-section">
             <p class="settings-row-note cloud-security-note"><i data-lucide="lock-keyhole"></i><span>Only encrypted <code>.sqdbe</code> backups are uploaded. Your provider must support WebDAV over HTTPS.</span></p>
-            <div class="form-group"><label for="cloud-endpoint">WebDAV file URL</label><input id="cloud-endpoint" class="form-control" type="url" placeholder="https://cloud.example.com/remote.php/dav/files/you/squashdb.sqdbe"></div>
+            <div class="form-group"><label for="cloud-endpoint">WebDAV file URL</label><input id="cloud-endpoint" class="form-control" type="url" placeholder="https://cloud.example.com/remote.php/dav/files/you/cuemark.sqdbe"></div>
             <div class="form-group"><label for="cloud-username">Username</label><input id="cloud-username" class="form-control" type="text" autocomplete="username"></div>
             <div class="form-group"><label for="cloud-password">Password / app password</label><input id="cloud-password" class="form-control" type="password" autocomplete="current-password"></div>
             <div class="btn-group-vertical">

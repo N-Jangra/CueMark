@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.content.Context;
 import android.net.Uri;
@@ -25,14 +25,14 @@ public class EncryptedBackupWorker extends Worker {
     public Result doWork() {
         try {
             Context context = getApplicationContext();
-            String treeUriString = context.getSharedPreferences("squashdb_backup_location", Context.MODE_PRIVATE).getString("uri", null);
+            String treeUriString = context.getSharedPreferences("cuemark_backup_location", Context.MODE_PRIVATE).getString("uri", null);
             String packedState = EncryptedStorePlugin.readPackedState(context);
             if (treeUriString == null || packedState == null || packedState.isEmpty()) return Result.success();
 
             Uri treeUri = Uri.parse(treeUriString);
             Uri root = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri));
             String date = new SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.US).format(new Date());
-            String fileName = "squashdb_background_" + date + ".sqdb";
+            String fileName = "cuemark_background_" + date + ".sqdb";
             Uri target = DocumentsContract.createDocument(
                 context.getContentResolver(), root, "application/octet-stream", fileName
             );

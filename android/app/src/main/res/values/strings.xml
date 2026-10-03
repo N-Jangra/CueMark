@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">SquashDB</string>
-    <string name="title_activity_main">SquashDB</string>
-    <string name="package_name">com.squashdb.tracker</string>
-    <string name="custom_url_scheme">com.squashdb.tracker</string>
-    <string name="look_name_default">SquashDB</string>
-    <string name="look_name_fire">SquashDB</string>
-    <string name="look_name_pinklogo">SquashDB</string>
-    <string name="look_name_purple">SquashDB</string>
+    <string name="app_name">CueMark</string>
+    <string name="title_activity_main">CueMark</string>
+    <string name="package_name">com.cuemark.tracker</string>
+    <string name="custom_url_scheme">com.cuemark.tracker</string>
+    <string name="look_name_default">CueMark</string>
+    <string name="look_name_fire">CueMark</string>
+    <string name="look_name_pinklogo">CueMark</string>
+    <string name="look_name_purple">CueMark</string>
     <string name="look_name_capacitor">Capacitor</string>
     <string name="look_name_calculator">Calculator</string>
     <string name="look_name_freeotp">FreeOTP</string>

@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -37,8 +37,8 @@ public class NotificationReceiver extends BroadcastReceiver {
             context, id, launch, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationPlugin.CHANNEL_ID)
-            .setSmallIcon(com.squashdb.tracker.R.mipmap.ic_launcher)
-            .setContentTitle(title == null ? "SquashDB" : title)
+            .setSmallIcon(com.cuemark.tracker.R.mipmap.ic_launcher)
+            .setContentTitle(title == null ? "CueMark" : title)
             .setContentText(body == null ? "You have a reminder." : body)
             .setAutoCancel(true);
         if (pending != null) builder.setContentIntent(pending);

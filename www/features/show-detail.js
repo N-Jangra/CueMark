@@ -1,4 +1,4 @@
-// SquashDB - Show Details: shared detail page for both the Discover (online, not
+// CueMark - Show Details: shared detail page for both the Discover (online, not
 // yet tracked) flow and the Dashboard (already-tracked local item) flow. Renders
 // thumbnail/name/metadata, a season dropdown, and a per-episode list (thumbnail,
 // name, air date, runtime, TVmaze rating, watched checkbox).
@@ -106,7 +106,7 @@ function formatRuntimeHM(minutes) {
 }
 
 function showDetailIsOnline() {
-  return typeof squashDbIsOffline !== "function" || !squashDbIsOffline();
+  return typeof cueMarkIsOffline !== "function" || !cueMarkIsOffline();
 }
 
 function getNativeHttpPlugin() {
@@ -967,7 +967,7 @@ function renderShowDetailHeader(show) {
   const hasCachedMetadata = Boolean(localItem && (localItem.summary || localItem.thumbnail || localItem.metadataSource || localItem.episodesCache?.length));
   if (cacheBadge) {
     cacheBadge.style.display = hasCachedMetadata ? "inline-flex" : "none";
-    const offline = typeof squashDbIsOffline === "function" ? squashDbIsOffline() : navigator.onLine === false;
+    const offline = typeof cueMarkIsOffline === "function" ? cueMarkIsOffline() : navigator.onLine === false;
     cacheBadge.title = offline ? "Showing saved metadata while offline" : "Metadata saved on this device";
     cacheBadge.innerHTML = `<i data-lucide="${offline ? "wifi-off" : "database"}"></i> ${offline ? "Offline cache" : "Cached metadata"}`;
   }
@@ -987,9 +987,14 @@ function showDetailProgress(item) {
 function renderShowDetailProgress(show, localItem) {
   const bar = document.getElementById("show-detail-progress-bar");
   const label = document.getElementById("show-detail-progress-label");
+  const wrapper = bar?.closest(".show-detail-progress-wrap");
+  const category = localItem?.category || show?.category || showDetailState.category;
+  const isCompletedMovie = category === "movie" && localItem?.status === "Completed";
+  const showProgress = category !== "movie" || isCompletedMovie;
+  if (wrapper) wrapper.style.display = showProgress ? "" : "none";
   const progress = showDetailProgress(localItem || show);
   if (bar) bar.style.width = `${progress}%`;
-  if (label) label.textContent = localItem ? `${progress}% complete` : "Not tracked yet";
+  if (label) label.textContent = showProgress && localItem ? `${progress}% complete` : "";
 }
 
 function nextDetailEpisode() {
@@ -1063,7 +1068,7 @@ function renderPrimaryDetailActions() {
 }
 
 async function downloadCurrentItemForOffline() {
-  if (typeof squashDbIsOffline === "function" ? squashDbIsOffline() : navigator.onLine === false) {
+  if (typeof cueMarkIsOffline === "function" ? cueMarkIsOffline() : navigator.onLine === false) {
     if (showDetailState.show?.title) queueMetadataUpdate(showDetailState.category, showDetailState.show.title, showDetailState.itemId || "");
     const notice = document.getElementById("show-detail-offline-notice");
     if (notice) { notice.textContent = "You are offline. This title will be queued for download when you reconnect."; notice.style.display = "block"; }
@@ -1759,7 +1764,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // app.js declares state before restoring the encrypted/local database.
         // Wait for that restore to finish or a local item can appear missing
         // briefly and incorrectly redirect this page to Dashboard.
-        Promise.resolve(window.squashDbAppReady)
+        Promise.resolve(window.cueMarkAppReady)
           .then(() => initShowDetail())
           .catch(err => {
             console.error("Could not initialize show details", err);

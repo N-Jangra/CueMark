@@ -16,7 +16,7 @@
     const dateTime = [
       now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")
     ].join("") + "-" + [String(now.getHours()).padStart(2, "0"), String(now.getMinutes()).padStart(2, "0"), String(now.getSeconds()).padStart(2, "0")].join("");
-    link.href = url; link.download = `squashdb-${category}-${dateTime}.${extension}`;
+    link.href = url; link.download = `cuemark-${category}-${dateTime}.${extension}`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -60,5 +60,5 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  window.addEventListener("squashdb-app-ready", init, { once: true });
+  window.addEventListener("cuemark-app-ready", init, { once: true });
 })();

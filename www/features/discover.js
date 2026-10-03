@@ -1,4 +1,4 @@
-// SquashDB - Discover: category-first online search. Pick a tracking category
+// CueMark - Discover: category-first online search. Pick a tracking category
 // (same enabled-categories chip row as Dashboard), see its top-rated
 // suggestions immediately, then search scoped to just that category across
 // every enabled metadata source for it, merged into one result list.
@@ -24,20 +24,20 @@ function getDiscoverSourceFilter() {
 
 function saveDiscoverSessionState(category, query) {
   try {
-    sessionStorage.setItem("squashdb_discover_state", JSON.stringify({ category, query }));
+    sessionStorage.setItem("cuemark_discover_state", JSON.stringify({ category, query }));
   } catch (e) { /* sessionStorage unavailable — non-fatal */ }
 }
 
 function loadDiscoverSessionState() {
   try {
-    return JSON.parse(sessionStorage.getItem("squashdb_discover_state") || "null") || {};
+    return JSON.parse(sessionStorage.getItem("cuemark_discover_state") || "null") || {};
   } catch (e) {
     return {};
   }
 }
 
 function discoverIsOnline() {
-  return typeof squashDbIsOffline !== "function" || !squashDbIsOffline();
+  return typeof cueMarkIsOffline !== "function" || !cueMarkIsOffline();
 }
 
 function getNativeHttpPlugin() {
