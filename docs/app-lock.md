@@ -31,14 +31,14 @@ This relies on `crypto.subtle`, which requires a secure context. Capacitor's And
 
 Every page (`www/*.html`) loads `applock.js` before `metadata.js`/`app.js`. In `app.js`'s `DOMContentLoaded` handler, `guardAppLock()` runs immediately after `loadData()` and before anything else:
 
-- If `state.preferences.appLock.method !== "none"` **and** the current session hasn't been unlocked yet (`sessionStorage.squashdb_lock_unlocked !== "true"`), the rest of that page's init is deferred and a full-screen lock overlay (`#app-lock-overlay`, z-index 500 — above every other modal) is shown instead.
+- If `state.preferences.appLock.method !== "none"` **and** the current session hasn't been unlocked yet (`sessionStorage.cuemark_lock_unlocked !== "true"`), the rest of that page's init is deferred and a full-screen lock overlay (`#app-lock-overlay`, z-index 500 — above every other modal) is shown instead.
 - On a correct entry, `markSessionUnlocked()` sets that session flag, the overlay is removed, and a custom `app-unlocked` event fires so the page's deferred init (`runAppInit()`) resumes.
 
 Using `sessionStorage` (not `localStorage`) for the unlocked flag is deliberate: it must reset whenever the app process is actually killed and reopened, not just when navigating between pages within one open session.
 
 ## Rate limiting and recovery
 
-Failed attempts are tracked in `localStorage.squashdb_lock_failed_attempts` (survives app restarts, unlike the session-scoped unlock flag). At **5 failed attempts**, a "Forgot password?" button appears on the lock screen.
+Failed attempts are tracked in `localStorage.cuemark_lock_failed_attempts` (survives app restarts, unlike the session-scoped unlock flag). At **5 failed attempts**, a "Forgot password?" button appears on the lock screen.
 
 There is **no hard lockout** — retrying the password itself is never blocked by a timer. On a fully client-side app with no server, a real lockout would just be a self-inflicted denial-of-service for a user who mistyped and has no other device; the failed-attempt count only exists to gate when the recovery option appears.
 
@@ -50,7 +50,7 @@ See [db-schema.md](db-schema.md) for the full `state.preferences.appLock` struct
 
 ## Backup/export exposure
 
-`buildBackupPayload()` includes the entire `state.preferences` object — including `appLock` — whenever a backup is exported **with preferences included** (the export flow asks "restore settings too?" and the equivalent applies on export). This means a `.tar`/`.json` backup file carries the password/security-answer **hashes and salts**, not plaintext secrets, but a leaked backup could still be brute-forced offline against a weak PIN/pattern. `appLock` is **not** written to the `squash-db/settings/metadata-sources.json` mirror — only `metadataSources` goes there (see [file-schema.md](file-schema.md)).
+`buildBackupPayload()` includes the entire `state.preferences` object — including `appLock` — whenever a backup is exported **with preferences included** (the export flow asks "restore settings too?" and the equivalent applies on export). This means a `.tar`/`.json` backup file carries the password/security-answer **hashes and salts**, not plaintext secrets, but a leaked backup could still be brute-forced offline against a weak PIN/pattern. `appLock` is **not** written to the `cuemark-db/settings/metadata-sources.json` mirror — only `metadataSources` goes there (see [file-schema.md](file-schema.md)).
 
 ## What's not built
 

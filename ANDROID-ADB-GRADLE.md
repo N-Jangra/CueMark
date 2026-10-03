@@ -1,6 +1,6 @@
 # Android, ADB, and Gradle setup
 
-This guide explains how to build and install SquashDB on a connected Android phone from the project root.
+This guide explains how to build and install CueMark on a connected Android phone from the project root.
 
 ## Official downloads
 
@@ -81,7 +81,7 @@ java -version
 
 ## Tell Gradle where the SDK is
 
-Run this from the SquashDB project root. Do not use `sudo` for the redirect; the project directory should be writable by your user:
+Run this from the CueMark project root. Do not use `sudo` for the redirect; the project directory should be writable by your user:
 
 ```bash
 printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > android/local.properties
@@ -123,7 +123,6 @@ Log out and back in after changing the group. Prefer running `adb` as your norma
 From the project root:
 
 ```bash
-cd ..
 npm install
 npx cap sync android
 cd android
@@ -159,29 +158,29 @@ adb devices -l
 # Install or replace the debug APK
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 
-# Open SquashDB
-adb shell monkey -p com.squashdb.tracker 1
+# Open CueMark
+adb shell monkey -p com.cuemark.tracker 1
 
 # Stream Android logs
 adb logcat
 
-# Show only SquashDB-related Android logs
-adb logcat | grep -i squash
+# Show only CueMark-related Android logs
+adb logcat | grep -i cue
 
 # Capture logs to a file
-adb logcat -d > squashdb-logcat.txt
+adb logcat -d > cuemark-logcat.txt
 
 # Clear the Android log buffer
 adb logcat -c
 
 # Check the installed package
-adb shell pm path com.squashdb.tracker
+adb shell pm path com.cuemark.tracker
 ```
 
 The following removes the app and its app-private data. Use it only when you intentionally want a clean install:
 
 ```bash
-adb uninstall com.squashdb.tracker
+adb uninstall com.cuemark.tracker
 ```
 
 ## Common errors

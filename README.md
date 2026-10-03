@@ -1,6 +1,8 @@
-# SquashDB
+# CueMark
 
-A watchlist and media progress tracker for games, movies, TV series, anime, manga, and novels — packaged as an Android app with [Capacitor](https://capacitorjs.com/).
+**CueMark** — bookmarking where you left off.
+
+CueMark is a personal watchlist and media progress tracker for games, movies, TV series, anime, manga, and novels. The name combines a viewing or reading *cue* with a *mark* that remembers your place, so you can return to exactly where you left off. It is packaged as an Android app with [Capacitor](https://capacitorjs.com/).
 
 ## Features
 
@@ -26,7 +28,7 @@ www/                 Web app source (HTML/CSS/JS) — loaded into the Capacitor 
   index.css          Styles
   *.html             Dashboard, timeline, stats, and settings pages
 android/             Native Android project (Capacitor)
-  app/src/main/java/com/squashdb/tracker/
+  app/src/main/java/com/cuemark/tracker/
     AppIconPlugin.java   Native plugin for switching the app icon/name at runtime
 compile_apk.py       Local APK build helper script
 .github/workflows/   CI build workflow
@@ -69,7 +71,7 @@ What it does, in order:
 3. Updates `versionName` and `versionCode` in `android/app/build.gradle` from `--version` (e.g. `1.2.3` → versionCode `10203`)
 4. Runs `npm install` and `npx cap sync`
 5. Runs `./gradlew assembleDebug`
-6. Copies the resulting APK to the project root as `SquashDB-<version>.apk`
+6. Copies the resulting APK to the project root as `CueMark-<version>.apk`
 
 `--version` defaults to `1.0` if omitted.
 

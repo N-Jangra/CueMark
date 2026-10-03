@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 @CapacitorPlugin(name = "BackupScheduler")
 public class BackupSchedulerPlugin extends Plugin {
-    private static final String WORK_NAME = "squashdb-encrypted-background-backup";
+    private static final String WORK_NAME = "cuemark-encrypted-background-backup";
 
     @PluginMethod
     public void schedule(PluginCall call) {

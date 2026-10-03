@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -10,7 +10,7 @@ import android.widget.RemoteViews;
 
 public class ProgressWidgetProvider extends AppWidgetProvider {
     public static void updateAll(Context context, int total, int completed, int inProgress) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences("squashdb_widget", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = context.getSharedPreferences("cuemark_widget", Context.MODE_PRIVATE);
         prefs.edit().putInt("total", total).putInt("completed", completed).putInt("inProgress", inProgress).apply();
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         ComponentName component = new ComponentName(context, ProgressWidgetProvider.class);
@@ -23,7 +23,7 @@ public class ProgressWidgetProvider extends AppWidgetProvider {
     }
 
     private static void updateWidgets(Context context, AppWidgetManager manager, int[] ids) {
-        android.content.SharedPreferences prefs = context.getSharedPreferences("squashdb_widget", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = context.getSharedPreferences("cuemark_widget", Context.MODE_PRIVATE);
         int total = prefs.getInt("total", 0);
         int completed = prefs.getInt("completed", 0);
         int inProgress = prefs.getInt("inProgress", 0);

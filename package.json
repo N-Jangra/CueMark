@@ -1,7 +1,7 @@
 {
-  "name": "squashdb",
+  "name": "cuemark",
   "version": "1.0.0",
-  "description": "SquashDB - Watchlist & Media Progress Tracker",
+  "description": "CueMark - bookmarking where you left off",
   "main": "app.js",
   "scripts": {
     "build": "cp CHANGELOG.md www/CHANGELOG.md && echo \"Building static web assets...\"",
@@ -19,6 +19,6 @@
   "devDependencies": {
     "@capacitor/cli": "^6.2.1"
   },
-  "author": "SquashDB Team",
+  "author": "CueMark Team",
   "license": "Apache-2.0"
 }

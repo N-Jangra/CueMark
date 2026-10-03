@@ -1,4 +1,4 @@
-// SquashDB backup and Storage Access Framework integration.
+// CueMark backup and Storage Access Framework integration.
 // Loaded as a feature module before app.js; functions remain global for the
 // existing settings and backup page event handlers.
 
@@ -91,8 +91,8 @@ async function decryptBackupText(encryptedText, passphrase) {
 
 function cloudSyncConfig() {
   return {
-    endpoint: localStorage.getItem("squashdb_cloud_endpoint") || "",
-    username: localStorage.getItem("squashdb_cloud_username") || ""
+    endpoint: localStorage.getItem("cuemark_cloud_endpoint") || "",
+    username: localStorage.getItem("cuemark_cloud_username") || ""
   };
 }
 
@@ -115,7 +115,7 @@ async function exportEncryptedBackup() {
   if (passphrase === null) return;
   const encrypted = await encryptBackupText(JSON.stringify(buildBackupPayload(true), null, 2), passphrase);
   const dateStr = new Date().toISOString().split("T")[0];
-  const fileName = `squashdb_backup_${dateStr}.sqdbe`;
+  const fileName = `cuemark_backup_${dateStr}.sqdbe`;
 
   if (backupFolderPluginAvailable()) {
     const folderUri = await getOrPickBackupFolderUri();
@@ -151,12 +151,12 @@ async function syncEncryptedBackupToCloud() {
   const passphrase = prompt("Enter the encryption passphrase for this cloud backup:");
   if (passphrase === null) return;
 
-  localStorage.setItem("squashdb_cloud_endpoint", endpoint);
-  localStorage.setItem("squashdb_cloud_username", username);
+  localStorage.setItem("cuemark_cloud_endpoint", endpoint);
+  localStorage.setItem("cuemark_cloud_username", username);
   const encrypted = await encryptBackupText(JSON.stringify(buildBackupPayload(true), null, 2), passphrase);
   const response = await fetch(endpoint, { method: "PUT", headers: cloudSyncHeaders(username, password), body: encrypted });
   if (!response.ok) throw new Error(`Cloud upload failed: HTTP ${response.status}`);
-  localStorage.setItem("squashdb_cloud_last_sync", `Synced ${new Date().toLocaleString()}`);
+  localStorage.setItem("cuemark_cloud_last_sync", `Synced ${new Date().toLocaleString()}`);
   alert("Encrypted backup uploaded successfully.");
 }
 
@@ -178,7 +178,7 @@ async function restoreEncryptedBackupFromCloud() {
     const conflicts = incoming.length - additions;
     if (!confirm(`Cloud backup comparison:\n\n${additions} new item(s)\n${conflicts} existing item(s)\n\nRestore and merge the cloud backup? Existing local items will be kept.`)) return;
     applyImportedBackupJson(parsed, { skipConfirm: true });
-    localStorage.setItem("squashdb_cloud_last_sync", `Restored ${new Date().toLocaleString()}`);
+    localStorage.setItem("cuemark_cloud_last_sync", `Restored ${new Date().toLocaleString()}`);
   } catch (err) {
     console.warn("Cloud conflict resolution failed", err);
     alert("Could not decrypt or compare the cloud backup. Check the passphrase and file.");
@@ -193,7 +193,7 @@ async function refreshBackupRecoveryCenter() {
     status.textContent = "Backup recovery details are available in the Android app.";
     return;
   }
-  const uri = localStorage.getItem("squashdb_backup_folder_uri");
+  const uri = localStorage.getItem("cuemark_backup_folder_uri");
   if (!uri) {
     updateBackupStatusCard([], "");
     status.textContent = "Select a backup folder to see recovery files.";
@@ -202,7 +202,7 @@ async function refreshBackupRecoveryCenter() {
   }
   try {
     const result = await window.Capacitor.Plugins.BackupFolder.listFiles({ uri });
-    const files = (result?.files || []).filter(file => /^squashdb_(backup|background)_.*\.(tar|json|sqdbe|sqdb)$/.test(file.name));
+    const files = (result?.files || []).filter(file => /^cuemark_(backup|background)_.*\.(tar|json|sqdbe|sqdb)$/.test(file.name));
     files.sort((a, b) => b.name.localeCompare(a.name));
     updateBackupStatusCard(files, uri);
     status.textContent = files.length ? `${files.length} backup file(s) available.` : "No dated backups found in this folder.";
@@ -222,10 +222,10 @@ function updateBackupStatusCard(files, uri) {
   const totalSize = document.getElementById("backup-total-size");
   const location = document.getElementById("backup-storage-location");
   const cloud = document.getElementById("backup-cloud-status");
-  if (lastDate) lastDate.textContent = last ? (last.lastModified ? new Date(last.lastModified).toLocaleString() : last.name.replace(/^squashdb_(backup|background)_/, "").replace(/\.(tar|json|sqdbe|sqdb)$/, "")) : "Never";
+  if (lastDate) lastDate.textContent = last ? (last.lastModified ? new Date(last.lastModified).toLocaleString() : last.name.replace(/^cuemark_(backup|background)_/, "").replace(/\.(tar|json|sqdbe|sqdb)$/, "")) : "Never";
   if (totalSize) totalSize.textContent = files.length ? formatBackupBytes(size) : "—";
   if (location) location.textContent = uri ? friendlyFolderPathFromUri(uri) : "Not selected";
-  if (cloud) cloud.textContent = cloudSyncConfig().endpoint ? (localStorage.getItem("squashdb_cloud_last_sync") || "Configured") : "Not configured";
+  if (cloud) cloud.textContent = cloudSyncConfig().endpoint ? (localStorage.getItem("cuemark_cloud_last_sync") || "Configured") : "Not configured";
 }
 
 async function updateBackupStorageUsage() {
@@ -235,7 +235,7 @@ async function updateBackupStorageUsage() {
   if (!database || !images || !metadata) return;
   database.textContent = formatBackupBytes(new Blob([JSON.stringify({ items: state.items, watchLog: state.watchLog || [], preferences: state.preferences })]).size);
   try {
-    const stats = await window.SquashDBCache?.stats?.();
+    const stats = await window.CueMarkCache?.stats?.();
     images.textContent = formatBackupBytes(stats?.imageBytes || 0);
     metadata.textContent = formatBackupBytes(stats?.metadataBytes || 0);
   } catch (err) {
@@ -248,7 +248,7 @@ async function runBackupHealthCheck() {
   const output = document.getElementById("backup-health-status");
   if (!output) return;
   output.textContent = "Checking storage permission and latest backup…";
-  const uri = localStorage.getItem("squashdb_backup_folder_uri");
+  const uri = localStorage.getItem("cuemark_backup_folder_uri");
   if (!backupFolderPluginAvailable() || !uri) {
     output.textContent = "Select an Android backup folder to run a health check.";
     return;
@@ -257,7 +257,7 @@ async function runBackupHealthCheck() {
     const valid = await window.Capacitor.Plugins.BackupFolder.hasPersistedFolder({ uri });
     if (!valid?.valid) throw new Error("Android storage permission is missing or revoked.");
     const result = await window.Capacitor.Plugins.BackupFolder.listFiles({ uri });
-    const latest = (result?.files || []).filter(file => /^squashdb_(backup|background)_.*\.(tar|json|sqdbe|sqdb)$/.test(file.name)).sort((a, b) => b.name.localeCompare(a.name))[0];
+    const latest = (result?.files || []).filter(file => /^cuemark_(backup|background)_.*\.(tar|json|sqdbe|sqdb)$/.test(file.name)).sort((a, b) => b.name.localeCompare(a.name))[0];
     if (!latest) throw new Error("No backup snapshot was found.");
     if (latest.name.endsWith(".tar")) await window.Capacitor.Plugins.BackupFolder.readBinaryFile({ uri: latest.uri });
     else await window.Capacitor.Plugins.BackupFolder.readFile({ uri: latest.uri });
@@ -277,7 +277,7 @@ async function restoreNativeBackupFile(uri, name) {
   let preview = `${name}\n\nExisting items will be kept and incoming items will be merged.`;
   try {
     const plugin = window.Capacitor.Plugins.BackupFolder;
-    const fileInfo = (await plugin.listFiles({ uri: localStorage.getItem("squashdb_backup_folder_uri") })).files?.find(file => file.uri === uri);
+    const fileInfo = (await plugin.listFiles({ uri: localStorage.getItem("cuemark_backup_folder_uri") })).files?.find(file => file.uri === uri);
     if (fileInfo?.size) preview += `\nSize: ${formatBackupBytes(fileInfo.size)}`;
     if (name.endsWith(".json")) {
       const parsed = JSON.parse((await plugin.readFile({ uri })).content);
@@ -330,7 +330,7 @@ async function restoreNativeBackupFile(uri, name) {
 function buildBackupPayload(includePreferences = true) {
   const payload = {
     version: "1.0",
-    appName: "SquashDB",
+    appName: "CueMark",
     exportDate: new Date().toISOString(),
     items: state.items
   };
@@ -345,8 +345,8 @@ function buildBackupPayload(includePreferences = true) {
 }
 
 function restoreBackupData(parsedData, includePreferences = true) {
-  if (!parsedData || parsedData.appName !== "SquashDB" || !Array.isArray(parsedData.items)) {
-    alert("Invalid file format. Please select a valid SquashDB JSON backup file.");
+  if (!parsedData || parsedData.appName !== "CueMark" || !Array.isArray(parsedData.items)) {
+    alert("Invalid file format. Please select a valid CueMark JSON backup file.");
     return false;
   }
 
@@ -475,7 +475,7 @@ async function thumbnailUrlToWebpBase64(url) {
   }
 }
 
-// Mirrors state.items into squash-db/<category>/<item_slug>/index.json (+ .thumbnail)
+// Mirrors state.items into cuemark-db/<category>/<item_slug>/index.json (+ .thumbnail)
 // on the chosen backup folder. Additive only: never deletes or moves existing folders,
 // so items removed/recategorized in-app leave their old folder behind.
 async function syncFolderTreeMirror() {
@@ -490,24 +490,24 @@ async function syncFolderTreeMirror() {
     return;
   }
 
-  // Drop a .nomedia marker in squash-db/ so Android's media scanner skips every
+  // Drop a .nomedia marker in cuemark-db/ so Android's media scanner skips every
   // .thumbnail under it — otherwise each show/movie poster shows up in the
   // device's photo gallery, which nobody wants for app-internal cache images.
-  if (!localStorage.getItem("squashdb_nomedia_written")) {
+  if (!localStorage.getItem("cuemark_nomedia_written")) {
     try {
       await plugin.writeNestedFile({
         uri: folderUri,
-        dirPath: ["squash-db"],
+        dirPath: ["cuemark-db"],
         fileName: ".nomedia",
         content: ""
       });
-      localStorage.setItem("squashdb_nomedia_written", "true");
+      localStorage.setItem("cuemark_nomedia_written", "true");
     } catch (err) {
       console.warn("Could not write .nomedia marker", err);
     }
   }
 
-  const syncedHashes = JSON.parse(localStorage.getItem("squashdb_synced_item_hashes") || "{}");
+  const syncedHashes = JSON.parse(localStorage.getItem("cuemark_synced_item_hashes") || "{}");
   const usedSlugsByCategory = {};
   const syncErrors = [];
   let syncedCount = 0;
@@ -527,7 +527,7 @@ async function syncFolderTreeMirror() {
     }
 
     const itemSlug = uniqueItemSlug(item, usedSlugsByCategory[categorySlug]);
-    const dirPath = ["squash-db", categorySlug, itemSlug];
+    const dirPath = ["cuemark-db", categorySlug, itemSlug];
 
     try {
       await plugin.writeNestedFile({
@@ -558,7 +558,7 @@ async function syncFolderTreeMirror() {
     setBackupProgress(`Syncing item ${itemIndex + 1} of ${totalItems}…`, totalItems ? ((itemIndex + 1) / totalItems) * 75 : 75);
   }
 
-  localStorage.setItem("squashdb_synced_item_hashes", JSON.stringify(syncedHashes));
+  localStorage.setItem("cuemark_synced_item_hashes", JSON.stringify(syncedHashes));
 
   console.log(`Folder tree sync: ${syncedCount} written, ${skippedUnchangedCount} unchanged/skipped, ${syncErrors.length} failed (of ${state.items.length} total items)`);
   if (syncErrors.length > 0) {
@@ -576,7 +576,7 @@ async function syncFolderTreeMirror() {
     };
     await plugin.writeNestedFile({
       uri: folderUri,
-      dirPath: ["squash-db", "settings"],
+      dirPath: ["cuemark-db", "settings"],
       fileName: "metadata-sources.json",
       content: JSON.stringify(redactedSources, null, 2)
     });
@@ -593,7 +593,7 @@ async function syncFolderTreeMirror() {
 // stored index.json by item.id before deleting the row's folder contents.
 async function pruneDeletedItemFromFolderTree(item) {
   if (!item || !backupFolderPluginAvailable()) return;
-  if (!localStorage.getItem("squashdb_backup_folder_uri")) return;
+  if (!localStorage.getItem("cuemark_backup_folder_uri")) return;
 
   const plugin = window.Capacitor.Plugins.BackupFolder;
   let folderUri;
@@ -605,10 +605,10 @@ async function pruneDeletedItemFromFolderTree(item) {
 
   try {
     const root = await plugin.listFiles({ uri: folderUri });
-    const squashDbFolder = (root?.files || []).find(f => f.name === "squash-db");
-    if (!squashDbFolder) return;
+    const cueMarkFolder = (root?.files || []).find(f => f.name === "cuemark-db");
+    if (!cueMarkFolder) return;
 
-    const categories = await plugin.listFiles({ uri: squashDbFolder.uri });
+    const categories = await plugin.listFiles({ uri: cueMarkFolder.uri });
     for (const categoryFolder of categories?.files || []) {
       if (categoryFolder.name === "settings") continue;
 
@@ -636,9 +636,9 @@ async function pruneDeletedItemFromFolderTree(item) {
             console.warn(`Could not delete mirror folder for item "${item.title}"`, err);
           }
 
-          const syncedHashes = JSON.parse(localStorage.getItem("squashdb_synced_item_hashes") || "{}");
+          const syncedHashes = JSON.parse(localStorage.getItem("cuemark_synced_item_hashes") || "{}");
           delete syncedHashes[item.id];
-          localStorage.setItem("squashdb_synced_item_hashes", JSON.stringify(syncedHashes));
+          localStorage.setItem("cuemark_synced_item_hashes", JSON.stringify(syncedHashes));
           return;
         } catch (err) {
           console.warn(`Could not inspect folder-tree mirror for item "${item.title}"`, err);
@@ -653,7 +653,7 @@ async function pruneDeletedItemFromFolderTree(item) {
 let folderSyncIdleTimer = null;
 function scheduleFolderTreeAutoSync() {
   if (!backupFolderPluginAvailable()) return;
-  if (!localStorage.getItem("squashdb_backup_folder_uri")) return;
+  if (!localStorage.getItem("cuemark_backup_folder_uri")) return;
   if (folderSyncIdleTimer) clearTimeout(folderSyncIdleTimer);
 
   const delay = parseInt(state.preferences.folderSyncDelay, 10) || 0;
@@ -682,11 +682,11 @@ function rememberNativeBackupFolder(uri) {
 async function checkBackupFolderOnStartup() {
   if (!backupFolderPluginAvailable()) return;
 
-  const savedUri = localStorage.getItem("squashdb_backup_folder_uri");
+  const savedUri = localStorage.getItem("cuemark_backup_folder_uri");
   if (!savedUri) {
-    localStorage.setItem("squashdb_backup_folder_invalid", "true");
+    localStorage.setItem("cuemark_backup_folder_invalid", "true");
     updateBackupFolderStatusUI();
-    await promptForBackupFolderOnStartup("No backup storage folder is configured. Select a folder to store your SquashDB data and backups.");
+    await promptForBackupFolderOnStartup("No backup storage folder is configured. Select a folder to store your CueMark data and backups.");
     return;
   }
 
@@ -694,10 +694,10 @@ async function checkBackupFolderOnStartup() {
   try {
     const check = await window.Capacitor.Plugins.BackupFolder.hasPersistedFolder({ uri: savedUri });
     valid = Boolean(check?.valid);
-    localStorage.setItem("squashdb_backup_folder_invalid", valid ? "false" : "true");
+    localStorage.setItem("cuemark_backup_folder_invalid", valid ? "false" : "true");
   } catch (err) {
     console.warn("Could not validate saved backup folder on startup", err);
-    localStorage.setItem("squashdb_backup_folder_invalid", "true");
+    localStorage.setItem("cuemark_backup_folder_invalid", "true");
   }
 
   updateBackupFolderStatusUI();
@@ -706,7 +706,7 @@ async function checkBackupFolderOnStartup() {
     rememberNativeBackupFolder(savedUri);
     runAutoBackupIfDue(savedUri);
   } else {
-    await promptForBackupFolderOnStartup("SquashDB cannot access its storage folder. Select the folder again to keep local storage and backups available.");
+    await promptForBackupFolderOnStartup("CueMark cannot access its storage folder. Select the folder again to keep local storage and backups available.");
   }
 }
 
@@ -730,14 +730,14 @@ const AUTO_BACKUP_KEEP_COUNT = 3;
 // process while the app is closed, so "every 24 hours" means "on the next app open
 // that happens 24h+ after the last auto-backup" rather than a literal daily timer.
 async function runAutoBackupIfDue(folderUri) {
-  const lastRun = parseInt(localStorage.getItem("squashdb_last_auto_backup_at") || "0", 10);
+  const lastRun = parseInt(localStorage.getItem("cuemark_last_auto_backup_at") || "0", 10);
   if (Date.now() - lastRun < AUTO_BACKUP_INTERVAL_MS) return;
   if (state.items.length === 0) return; // nothing worth backing up yet
 
   try {
     const dateStr = new Date().toISOString().split("T")[0];
     await writeTarBackup(folderUri, dateStr);
-    localStorage.setItem("squashdb_last_auto_backup_at", String(Date.now()));
+    localStorage.setItem("cuemark_last_auto_backup_at", String(Date.now()));
     await pruneOldAutoBackups(folderUri);
     await pruneOldBackgroundSnapshots(folderUri);
     console.log("Auto-backup completed:", dateStr);
@@ -746,15 +746,15 @@ async function runAutoBackupIfDue(folderUri) {
   }
 }
 
-// Keeps only the newest AUTO_BACKUP_KEEP_COUNT squashdb_backup_*.tar files at the
+// Keeps only the newest AUTO_BACKUP_KEEP_COUNT cuemark_backup_*.tar files at the
 // folder root (plus their same-dated .json sibling, written alongside each tar),
-// deleting older ones. Only touches dated backup archives — never squash-db/
+// deleting older ones. Only touches dated backup archives — never cuemark-db/
 // itself or anything else in the folder.
 async function pruneOldAutoBackups(folderUri) {
   const plugin = window.Capacitor.Plugins.BackupFolder;
   const { files } = await plugin.listFiles({ uri: folderUri });
 
-  const backupFileRe = /^squashdb_backup_(\d{4}-\d{2}-\d{2})\.(tar|json)$/;
+  const backupFileRe = /^cuemark_backup_(\d{4}-\d{2}-\d{2})\.(tar|json)$/;
   const matched = (files || [])
     .map(f => ({ ...f, match: f.name.match(backupFileRe) }))
     .filter(f => f.match);
@@ -775,7 +775,7 @@ async function pruneOldAutoBackups(folderUri) {
 async function pruneOldBackgroundSnapshots(folderUri) {
   const plugin = window.Capacitor.Plugins.BackupFolder;
   const result = await plugin.listFiles({ uri: folderUri });
-  const snapshots = (result?.files || []).filter(file => /^squashdb_background_.*\.sqdb$/.test(file.name)).sort((a, b) => b.name.localeCompare(a.name));
+  const snapshots = (result?.files || []).filter(file => /^cuemark_background_.*\.sqdb$/.test(file.name)).sort((a, b) => b.name.localeCompare(a.name));
   for (const file of snapshots.slice(3)) {
     try { await plugin.deleteFile({ uri: file.uri }); }
     catch (err) { console.warn(`Could not delete old background snapshot "${file.name}"`, err); }
@@ -785,13 +785,13 @@ async function pruneOldBackgroundSnapshots(folderUri) {
 function updateBackupFolderStatusUI() {
   const notice = document.getElementById("backup-folder-status-notice");
   if (notice) {
-    const invalid = localStorage.getItem("squashdb_backup_folder_invalid") === "true";
+    const invalid = localStorage.getItem("cuemark_backup_folder_invalid") === "true";
     notice.style.display = invalid ? "block" : "none";
   }
 
   const pathEl = document.getElementById("backup-folder-path-display");
   if (pathEl) {
-    const uri = localStorage.getItem("squashdb_backup_folder_uri");
+    const uri = localStorage.getItem("cuemark_backup_folder_uri");
     const label = pathEl.querySelector("[data-backup-folder-label]") || pathEl;
     label.textContent = uri ? `Current folder: ${friendlyFolderPathFromUri(uri)}` : "No backup folder selected yet.";
   }
@@ -799,7 +799,7 @@ function updateBackupFolderStatusUI() {
 
 // Best-effort human-readable path from a SAF tree content:// URI, so the user can
 // visually confirm Sync/Export/Import are targeting the folder they expect —
-// e.g. "content://...tree/primary%3ADocuments%2FSquashBackups" -> "/Documents/SquashBackups".
+// e.g. "content://...tree/primary%3ADocuments%2FCueMarkBackups" -> "/Documents/CueMarkBackups".
 function friendlyFolderPathFromUri(uri) {
   try {
     const decoded = decodeURIComponent(uri);
@@ -815,7 +815,7 @@ function friendlyFolderPathFromUri(uri) {
 // picker only if none is saved yet or the previously saved one is no longer valid.
 async function getOrPickBackupFolderUri() {
   const plugin = window.Capacitor.Plugins.BackupFolder;
-  const savedUri = localStorage.getItem("squashdb_backup_folder_uri");
+  const savedUri = localStorage.getItem("cuemark_backup_folder_uri");
 
   if (savedUri) {
     try {
@@ -828,28 +828,28 @@ async function getOrPickBackupFolderUri() {
 
   const picked = await plugin.pickFolder();
   if (!picked || !picked.uri) throw new Error("No folder selected");
-  localStorage.setItem("squashdb_backup_folder_uri", picked.uri);
+  localStorage.setItem("cuemark_backup_folder_uri", picked.uri);
   rememberNativeBackupFolder(picked.uri);
-  localStorage.setItem("squashdb_backup_folder_invalid", "false");
+  localStorage.setItem("cuemark_backup_folder_invalid", "false");
   updateBackupFolderStatusUI();
   await checkForExistingBackupToRestore(picked.uri);
   return picked.uri;
 }
 
-// Writes a full tar snapshot (squash-db/ tree + the current state JSON) into
-// folderUri, named squashdb_backup_<YYYY-MM-DD>.tar / .json. Shared by the manual
+// Writes a full tar snapshot (cuemark-db/ tree + the current state JSON) into
+// folderUri, named cuemark_backup_<YYYY-MM-DD>.tar / .json. Shared by the manual
 // Export button and the daily auto-backup, so both produce identical archives.
 async function writeTarBackup(folderUri, dateStr) {
   const dataStr = JSON.stringify(buildBackupPayload(true), null, 2);
-  const jsonName = `squashdb_backup_${dateStr}.json`;
-  const tarName = `squashdb_backup_${dateStr}.tar`;
+  const jsonName = `cuemark_backup_${dateStr}.json`;
+  const tarName = `cuemark_backup_${dateStr}.tar`;
 
   setBackupProgress("Preparing backup…", 2);
   await syncFolderTreeMirror();
   setBackupProgress("Creating backup archive…", 88);
   await window.Capacitor.Plugins.BackupFolder.exportTarArchive({
     uri: folderUri,
-    sourceDirPath: ["squash-db"],
+    sourceDirPath: ["cuemark-db"],
     tarFileName: tarName,
     extraJsonFileName: jsonName,
     extraJsonContent: dataStr
@@ -874,7 +874,7 @@ async function exportData() {
   }
 
   const dataStr = JSON.stringify(buildBackupPayload(true), null, 2);
-  const exportFileDefaultName = `squashdb_backup_${dateStr}.json`;
+  const exportFileDefaultName = `cuemark_backup_${dateStr}.json`;
 
   if (window.showSaveFilePicker) {
     try {
@@ -912,9 +912,9 @@ async function chooseBackupFolder() {
   try {
     const picked = await window.Capacitor.Plugins.BackupFolder.pickFolder();
     if (picked && picked.uri) {
-      localStorage.setItem("squashdb_backup_folder_uri", picked.uri);
+      localStorage.setItem("cuemark_backup_folder_uri", picked.uri);
       rememberNativeBackupFolder(picked.uri);
-      localStorage.setItem("squashdb_backup_folder_invalid", "false");
+      localStorage.setItem("cuemark_backup_folder_invalid", "false");
       updateBackupFolderStatusUI();
       await checkForExistingBackupToRestore(picked.uri);
       await refreshBackupRecoveryCenter();
@@ -956,7 +956,7 @@ async function checkForExistingBackupToRestore(folderUri) {
     return;
   }
 
-  const backupFileRe = /^squashdb_backup_(\d{4}-\d{2}-\d{2})\.(tar|json|sqdbe)$/;
+  const backupFileRe = /^cuemark_backup_(\d{4}-\d{2}-\d{2})\.(tar|json|sqdbe)$/;
   const candidates = files
     .map(f => ({ ...f, match: f.name.match(backupFileRe) }))
     .filter(f => f.match)
@@ -1002,40 +1002,40 @@ async function checkForExistingBackupToRestore(folderUri) {
   }
 
   // No dated backup archive at the folder root — fall back to reconstructing
-  // items directly from an existing squash-db/<category>/<item>/index.json tree
+  // items directly from an existing cuemark-db/<category>/<item>/index.json tree
   // (e.g. left behind by a previous install that only ever auto-synced, and
   // never had a manual Export produce a .tar/.json file).
-  const squashDbFolder = files.find(f => f.name === "squash-db");
-  if (!squashDbFolder) return;
+  const cueMarkFolder = files.find(f => f.name === "cuemark-db");
+  if (!cueMarkFolder) return;
 
   let reconstructedItems;
   try {
-    reconstructedItems = await reconstructItemsFromFolderTree(squashDbFolder.uri);
+    reconstructedItems = await reconstructItemsFromFolderTree(cueMarkFolder.uri);
   } catch (err) {
-    console.warn("Could not read squash-db/ tree for auto-restore check", err);
+    console.warn("Could not read cuemark-db/ tree for auto-restore check", err);
     return;
   }
 
   if (reconstructedItems.length === 0) return;
 
   if (!confirm(
-    `Found ${reconstructedItems.length} item(s) synced from a previous install in this folder's squash-db/ tree.\n\n` +
+    `Found ${reconstructedItems.length} item(s) synced from a previous install in this folder's cuemark-db/ tree.\n\n` +
     `Your app has no items yet — restore them now?`
   )) {
     return;
   }
 
-  applyImportedBackupJson({ appName: "SquashDB", items: reconstructedItems });
+  applyImportedBackupJson({ appName: "CueMark", items: reconstructedItems });
 }
 
-// Walks squash-db/<category>/<item>/index.json (2 levels deep under the given
-// squash-db/ folder URI) and returns every parsed Item found. Best-effort: a
+// Walks cuemark-db/<category>/<item>/index.json (2 levels deep under the given
+// cuemark-db/ folder URI) and returns every parsed Item found. Best-effort: a
 // single unreadable/corrupt index.json is skipped, not fatal to the whole scan.
-async function reconstructItemsFromFolderTree(squashDbUri) {
+async function reconstructItemsFromFolderTree(cueMarkUri) {
   const plugin = window.Capacitor.Plugins.BackupFolder;
   const items = [];
 
-  const { files: categoryFolders } = await plugin.listFiles({ uri: squashDbUri });
+  const { files: categoryFolders } = await plugin.listFiles({ uri: cueMarkUri });
   for (const categoryFolder of categoryFolders || []) {
     if (categoryFolder.name === "settings") continue; // metadata-sources.json lives here, not items
 
@@ -1098,8 +1098,8 @@ function parseTarArchive(buffer) {
 }
 
 function applyImportedBackupJson(parsedData, options = {}) {
-  if (!parsedData || parsedData.appName !== "SquashDB" || !Array.isArray(parsedData.items)) {
-    alert("Invalid file format. Please select a valid SquashDB backup file.");
+  if (!parsedData || parsedData.appName !== "CueMark" || !Array.isArray(parsedData.items)) {
+    alert("Invalid file format. Please select a valid CueMark backup file.");
     return;
   }
 
@@ -1135,11 +1135,11 @@ function importData(e) {
     fileReader.onload = function (event) {
       try {
         const entries = parseTarArchive(event.target.result);
-        // The writer places the state JSON at the tar root (e.g. squashdb_backup_2026-07-09.json),
-        // separate from the squash-db/ folder tree entries.
+        // The writer places the state JSON at the tar root (e.g. cuemark_backup_2026-07-09.json),
+        // separate from the cuemark-db/ folder tree entries.
         const jsonEntry = entries.find(entry => !entry.name.includes("/") && entry.name.endsWith(".json"));
         if (!jsonEntry) {
-          alert("Could not find a SquashDB backup JSON inside this tar file.");
+          alert("Could not find a CueMark backup JSON inside this tar file.");
           return;
         }
         const jsonText = new TextDecoder("utf-8").decode(jsonEntry.content);

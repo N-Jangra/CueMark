@@ -1,4 +1,4 @@
-// SquashDB - App logic
+// CueMark - App logic
 
 // Feature modules are loaded separately so the large application file does not
 // own navigation and backup implementation. The promise is awaited before
@@ -22,7 +22,7 @@ const appFeatureModulesReady = Promise.resolve();
 // Full-page detail screens load their own scripts while this app bootstrap is
 // still restoring encrypted/local data. Expose the restore promise so those
 // screens never inspect an empty state and redirect back to Dashboard.
-window.squashDbAppReady = Promise.resolve();
+window.cueMarkAppReady = Promise.resolve();
 
 function nativePlugin(name) {
   return window.Capacitor?.Plugins?.[name] || null;
@@ -45,8 +45,8 @@ async function handleIncomingShareIntent() {
   try {
     const result = await share.getInitialShare();
     const text = String(result?.text || "").trim();
-    if (!text || sessionStorage.getItem(`squashdb_shared_${text}`) === "true") return;
-    sessionStorage.setItem(`squashdb_shared_${text}`, "true");
+    if (!text || sessionStorage.getItem(`cuemark_shared_${text}`) === "true") return;
+    sessionStorage.setItem(`cuemark_shared_${text}`, "true");
     openModal();
     const titleInput = document.getElementById("entry-title");
     const notesInput = document.getElementById("entry-notes");
@@ -76,6 +76,14 @@ async function handleNotificationAction() {
         watched.add(next.id);
         item.watchedEpisodeIds = Array.from(watched);
         item.episodesDone = item.watchedEpisodeIds.length;
+        if (!Array.isArray(state.watchLog)) state.watchLog = [];
+        state.watchLog.push({
+          itemId: item.id,
+          title: item.title || "",
+          episodeId: next.id,
+          runtime: Number(item.episodeRuntime || item.playtime) || 0,
+          watchedAt: Date.now()
+        });
         if (episodes.length && item.episodesDone >= episodes.length) item.status = "Completed";
         saveData();
       } else if (!episodes.length) {
@@ -376,7 +384,7 @@ let state = {
     },
     bottomBarTransparency: 100,
     bottomBarActiveStyle: "box",
-    bottomBarSurface: "translucent",
+    bottomBarSurface: "solid",
     showScrollbars: false,
     appLook: "default",
     appLock: {
@@ -410,14 +418,14 @@ function thumbnailsEnabled() {
 
 function showToast(message, type = "info", duration = 3200) {
   if (!document.body) return;
-  let toast = document.getElementById("squashdb-toast");
+  let toast = document.getElementById("cuemark-toast");
   if (!toast) {
     toast = document.createElement("div");
-    toast.id = "squashdb-toast";
-    toast.className = "squashdb-toast";
+    toast.id = "cuemark-toast";
+    toast.className = "cuemark-toast";
     document.body.appendChild(toast);
   }
-  toast.className = `squashdb-toast ${type}`;
+  toast.className = `cuemark-toast ${type}`;
   toast.innerHTML = `<i data-lucide="${type === "error" ? "circle-alert" : type === "success" ? "circle-check" : "info"}"></i><span></span>`;
   toast.querySelector("span").textContent = String(message || "");
   toast.classList.add("active");
@@ -427,8 +435,8 @@ function showToast(message, type = "info", duration = 3200) {
 }
 
 function setupVisualPolish() {
-  if (!window.__squashdbAlertPatched) {
-    window.__squashdbAlertPatched = true;
+  if (!window.__cuemarkAlertPatched) {
+    window.__cuemarkAlertPatched = true;
     window.alert = message => showToast(message, "info");
   }
   document.addEventListener("click", event => {
@@ -441,22 +449,22 @@ function setupVisualPolish() {
   document.getElementById("category-colors-picker")?.addEventListener("click", openCategoryColorsPicker);
 }
 
-let squashDbNetworkProbeOnline = false;
+let cueMarkNetworkProbeOnline = false;
 
-function squashDbIsOffline() {
-  return typeof navigator !== "undefined" && navigator.onLine === false && !squashDbNetworkProbeOnline;
+function cueMarkIsOffline() {
+  return typeof navigator !== "undefined" && navigator.onLine === false && !cueMarkNetworkProbeOnline;
 }
 
 function setupOfflineIndicator() {
-  let indicator = document.getElementById("squashdb-offline-indicator");
+  let indicator = document.getElementById("cuemark-offline-indicator");
   if (!indicator) {
     indicator = document.createElement("div");
-    indicator.id = "squashdb-offline-indicator";
-    indicator.className = "squashdb-offline-indicator";
+    indicator.id = "cuemark-offline-indicator";
+    indicator.className = "cuemark-offline-indicator";
     document.body.appendChild(indicator);
   }
   const update = () => {
-    const offline = squashDbIsOffline();
+    const offline = cueMarkIsOffline();
     const queueCount = typeof metadataQueueCount === "function" ? metadataQueueCount() : 0;
     indicator.classList.toggle("active", offline || queueCount > 0);
     indicator.innerHTML = offline
@@ -467,8 +475,8 @@ function setupOfflineIndicator() {
     if (window.lucide) lucide.createIcons();
   };
   window.addEventListener("online", update);
-  window.addEventListener("online", () => { squashDbNetworkProbeOnline = true; update(); });
-  window.addEventListener("offline", () => { squashDbNetworkProbeOnline = false; update(); });
+  window.addEventListener("online", () => { cueMarkNetworkProbeOnline = true; update(); });
+  window.addEventListener("offline", () => { cueMarkNetworkProbeOnline = false; update(); });
   window.addEventListener("metadata-queue-updated", update);
   update();
 
@@ -477,7 +485,7 @@ function setupOfflineIndicator() {
   // by metadata search before displaying Offline mode.
   if (navigator.onLine === false && typeof fetchJsonPortable === "function") {
     fetchJsonPortable("https://api.tvmaze.com/shows/1")
-      .then(() => { squashDbNetworkProbeOnline = true; update(); })
+      .then(() => { cueMarkNetworkProbeOnline = true; update(); })
       .catch(() => {});
   }
 }
@@ -503,8 +511,8 @@ function itemSourceName(item) {
 document.addEventListener("DOMContentLoaded", async () => {
   await appFeatureModulesReady;
   renderDashboardSkeleton();
-  window.squashDbAppReady = loadData();
-  await window.squashDbAppReady;
+  window.cueMarkAppReady = loadData();
+  await window.cueMarkAppReady;
 
   // If a lock method is set and this session hasn't been unlocked yet, block all
   // further rendering until a correct PIN/pattern/password (or a security-question
@@ -536,17 +544,17 @@ function runAppInit() {
   renderNavIconPickers();
   renderAppIconPicker();
   lucide.createIcons();
-  if (window.SquashDBCache?.trimImages && state.preferences.thumbnailCleanup !== "never") {
+  if (window.CueMarkCache?.trimImages && state.preferences.thumbnailCleanup !== "never") {
     const interval = state.preferences.thumbnailCleanup === "daily" ? 86400000 : 604800000;
-    const lastCleanup = Number(localStorage.getItem("squashdb_thumbnail_cleanup_at") || 0);
+    const lastCleanup = Number(localStorage.getItem("cuemark_thumbnail_cleanup_at") || 0);
     if (Date.now() - lastCleanup >= interval) {
-      window.SquashDBCache.trimImages(state.preferences.imageCacheMaxEntries).then(() => {
-        localStorage.setItem("squashdb_thumbnail_cleanup_at", String(Date.now()));
+      window.CueMarkCache.trimImages(state.preferences.imageCacheMaxEntries).then(() => {
+        localStorage.setItem("cuemark_thumbnail_cleanup_at", String(Date.now()));
       }).catch(error => console.warn("Thumbnail cleanup failed", error));
     }
   }
   updateProgressWidget();
-  window.dispatchEvent(new Event("squashdb-app-ready"));
+  window.dispatchEvent(new Event("cuemark-app-ready"));
   handleIncomingShareIntent();
   handleNotificationAction();
   scheduleUnfinishedItemReminder();
@@ -567,9 +575,9 @@ async function loadData() {
   // The readable local mirror is intentionally the fast startup path. On
   // Android it lets the dashboard render immediately instead of waiting for
   // Keystore decryption before any cards can be shown.
-  const localItems = localStorage.getItem("squashdb_items");
-  const localWatchLog = localStorage.getItem("squashdb_watch_log");
-  const localPrefs = localStorage.getItem("squashdb_prefs");
+  const localItems = localStorage.getItem("cuemark_items");
+  const localWatchLog = localStorage.getItem("cuemark_watch_log");
+  const localPrefs = localStorage.getItem("cuemark_prefs");
   const encryptedStore = nativePlugin("EncryptedStore");
   const hasLocalMirror = Boolean(localItems || localWatchLog || localPrefs);
   if (encryptedStore?.getItems && !hasLocalMirror) {
@@ -679,10 +687,10 @@ async function loadData() {
   if (typeof state.preferences.dashboardShowThumbnails !== "boolean") state.preferences.dashboardShowThumbnails = true;
   if (typeof state.preferences.dashboardShowRatings !== "boolean") state.preferences.dashboardShowRatings = true;
   if (typeof state.preferences.dashboardShowProgress !== "boolean") state.preferences.dashboardShowProgress = true;
-  if (localStorage.getItem("squashdb_dashboard_status_groups_v2") !== "true") {
+  if (localStorage.getItem("cuemark_dashboard_status_groups_v2") !== "true") {
     const migratedGrouping = ["none", "category"].includes(state.preferences.dashboardGroupBy);
     if (migratedGrouping) state.preferences.dashboardGroupBy = "status";
-    localStorage.setItem("squashdb_dashboard_status_groups_v2", "true");
+    localStorage.setItem("cuemark_dashboard_status_groups_v2", "true");
     if (migratedGrouping) saveData();
   }
   if (!["none", "status", "release"].includes(state.preferences.dashboardGroupBy)) state.preferences.dashboardGroupBy = "status";
@@ -796,29 +804,29 @@ async function loadData() {
   state.preferences.navBar.visible.dashboard = true;
   state.preferences.navBar.visible.settings = true;
 
-  const savedTheme = localStorage.getItem("squashdb_theme");
+  const savedTheme = localStorage.getItem("cuemark_theme");
   if (savedTheme) {
     state.theme = savedTheme;
   }
   state.theme = state.preferences.uiTheme || state.theme;
-  state.preferences.uiTheme = localStorage.getItem("squashdb_ui_theme") || state.preferences.uiTheme;
-  state.preferences.mainColor = localStorage.getItem("squashdb_main_color") || state.preferences.mainColor;
-  state.preferences.ratingFormat = localStorage.getItem("squashdb_rating_format") || state.preferences.ratingFormat;
+  state.preferences.uiTheme = localStorage.getItem("cuemark_ui_theme") || state.preferences.uiTheme;
+  state.preferences.mainColor = localStorage.getItem("cuemark_main_color") || state.preferences.mainColor;
+  state.preferences.ratingFormat = localStorage.getItem("cuemark_rating_format") || state.preferences.ratingFormat;
   applyPreferenceAttributes();
 
-  const savedSort = localStorage.getItem("squashdb_sort");
+  const savedSort = localStorage.getItem("cuemark_sort");
   if (savedSort) {
     state.currentSort = savedSort;
   }
 
   try {
-    const savedHistory = JSON.parse(localStorage.getItem("squashdb_search_history") || "[]");
+    const savedHistory = JSON.parse(localStorage.getItem("cuemark_search_history") || "[]");
     state.searchHistory = Array.isArray(savedHistory) ? savedHistory.filter(Boolean).slice(0, 8) : [];
   } catch (err) {
     state.searchHistory = [];
   }
   try {
-    const savedDashboardFilters = JSON.parse(localStorage.getItem("squashdb_dashboard_filters") || "{}");
+    const savedDashboardFilters = JSON.parse(localStorage.getItem("cuemark_dashboard_filters") || "{}");
     state.dashboardFilters = {
       ...state.dashboardFilters,
       ...(savedDashboardFilters && typeof savedDashboardFilters === "object" ? savedDashboardFilters : {})
@@ -832,12 +840,12 @@ async function loadData() {
     state.dashboardFilters[key] = Boolean(state.dashboardFilters[key]);
   });
 
-  const savedChip = localStorage.getItem("squashdb_category_chip");
+  const savedChip = localStorage.getItem("cuemark_category_chip");
   if (savedChip) {
     state.activeCategoryChip = savedChip;
   }
 
-  const savedTimelineFilter = localStorage.getItem("squashdb_timeline_filter");
+  const savedTimelineFilter = localStorage.getItem("cuemark_timeline_filter");
   if (savedTimelineFilter) {
     state.timelineFilter = savedTimelineFilter;
   }
@@ -845,18 +853,18 @@ async function loadData() {
     state.timelineFilter = "all";
   }
 
-  const savedLastCategory = localStorage.getItem("squashdb_last_entry_category");
+  const savedLastCategory = localStorage.getItem("cuemark_last_entry_category");
   if (savedLastCategory) {
     state.lastEntryCategory = savedLastCategory;
   }
   try {
-    const savedStatuses = JSON.parse(localStorage.getItem("squashdb_last_entry_statuses") || "{}");
+    const savedStatuses = JSON.parse(localStorage.getItem("cuemark_last_entry_statuses") || "{}");
     if (savedStatuses && typeof savedStatuses === "object") state.lastEntryStatusByCategory = savedStatuses;
   } catch (err) {
     state.lastEntryStatusByCategory = {};
   }
 
-  const savedLastTab = localStorage.getItem("squashdb_last_tab");
+  const savedLastTab = localStorage.getItem("cuemark_last_tab");
   if (savedLastTab && document.querySelector(`.nav-item[data-tab="${savedLastTab}"]`)) {
     state.currentTab = savedLastTab;
   } else if (state.preferences.defaultStartPage && state.preferences.defaultStartPage !== "remember-last") {
@@ -877,7 +885,7 @@ async function loadData() {
   const needsItemMigration = encryptedStore?.setItem
     && (forceEncryptedItemMigration || (!encryptedState && !encryptedItems))
     && (savedItems || savedWatchLog || savedPrefs)
-    && localStorage.getItem("squashdb_encrypted_items_migrated") !== "1";
+    && localStorage.getItem("cuemark_encrypted_items_migrated") !== "1";
   if (needsItemMigration) {
     try {
       await Promise.all(state.items.map(item => encryptedStore.setItem({
@@ -889,7 +897,7 @@ async function loadData() {
         });
       }
       if (encryptedStore.clearLegacyState) await encryptedStore.clearLegacyState();
-      localStorage.setItem("squashdb_encrypted_items_migrated", "1");
+      localStorage.setItem("cuemark_encrypted_items_migrated", "1");
       forceEncryptedItemMigration = false;
     } catch (err) {
       console.warn("Could not migrate local data into encrypted storage", err);
@@ -913,17 +921,17 @@ async function loadData() {
   // it must not delete the mirror because it contains item metadata and any
   // locally embedded thumbnail data URLs.
   if (encryptedState) {
-    localStorage.setItem("squashdb_items", JSON.stringify(state.items));
-    localStorage.setItem("squashdb_watch_log", JSON.stringify(state.watchLog || []));
-    localStorage.setItem("squashdb_prefs", JSON.stringify(state.preferences));
+    localStorage.setItem("cuemark_items", JSON.stringify(state.items));
+    localStorage.setItem("cuemark_watch_log", JSON.stringify(state.watchLog || []));
+    localStorage.setItem("cuemark_prefs", JSON.stringify(state.preferences));
   }
   if (encryptedItems) {
     // The item-level store is already current; use the readable mirror for
     // fast subsequent WebView starts and never run the migration again.
-    localStorage.setItem("squashdb_items", JSON.stringify(state.items));
-    localStorage.setItem("squashdb_watch_log", JSON.stringify(state.watchLog || []));
-    localStorage.setItem("squashdb_prefs", JSON.stringify(state.preferences));
-    localStorage.setItem("squashdb_encrypted_items_migrated", "1");
+    localStorage.setItem("cuemark_items", JSON.stringify(state.items));
+    localStorage.setItem("cuemark_watch_log", JSON.stringify(state.watchLog || []));
+    localStorage.setItem("cuemark_prefs", JSON.stringify(state.preferences));
+    localStorage.setItem("cuemark_encrypted_items_migrated", "1");
   }
 
   // Seed the in-memory comparison cache without serializing the complete
@@ -975,27 +983,27 @@ function flushPendingSave() {
   }
   if (persistenceDirtyDomains.has("items") || !persistedJson.items) {
     persistedJson.items = JSON.stringify(state.items);
-    localStorage.setItem("squashdb_items", persistedJson.items);
+    localStorage.setItem("cuemark_items", persistedJson.items);
   }
   if (persistenceDirtyDomains.has("watchLog") || !persistedJson.watchLog) {
     persistedJson.watchLog = JSON.stringify(state.watchLog || []);
-    localStorage.setItem("squashdb_watch_log", persistedJson.watchLog);
+    localStorage.setItem("cuemark_watch_log", persistedJson.watchLog);
   }
   if (persistenceDirtyDomains.has("preferences") || !persistedJson.preferences) {
     persistedJson.preferences = JSON.stringify(state.preferences);
-    localStorage.setItem("squashdb_prefs", persistedJson.preferences);
+    localStorage.setItem("cuemark_prefs", persistedJson.preferences);
   }
-  localStorage.setItem("squashdb_theme", state.theme);
-  localStorage.setItem("squashdb_sort", state.currentSort);
-  localStorage.setItem("squashdb_search_history", JSON.stringify(state.searchHistory || []));
-  localStorage.setItem("squashdb_dashboard_filters", JSON.stringify(state.dashboardFilters || {}));
-  localStorage.setItem("squashdb_category_chip", state.activeCategoryChip);
-  localStorage.setItem("squashdb_timeline_filter", state.timelineFilter);
-  localStorage.setItem("squashdb_last_entry_category", state.lastEntryCategory);
-  localStorage.setItem("squashdb_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory || {}));
-  localStorage.setItem("squashdb_ui_theme", state.preferences.uiTheme);
-  localStorage.setItem("squashdb_main_color", state.preferences.mainColor);
-  localStorage.setItem("squashdb_rating_format", state.preferences.ratingFormat);
+  localStorage.setItem("cuemark_theme", state.theme);
+  localStorage.setItem("cuemark_sort", state.currentSort);
+  localStorage.setItem("cuemark_search_history", JSON.stringify(state.searchHistory || []));
+  localStorage.setItem("cuemark_dashboard_filters", JSON.stringify(state.dashboardFilters || {}));
+  localStorage.setItem("cuemark_category_chip", state.activeCategoryChip);
+  localStorage.setItem("cuemark_timeline_filter", state.timelineFilter);
+  localStorage.setItem("cuemark_last_entry_category", state.lastEntryCategory);
+  localStorage.setItem("cuemark_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory || {}));
+  localStorage.setItem("cuemark_ui_theme", state.preferences.uiTheme);
+  localStorage.setItem("cuemark_main_color", state.preferences.mainColor);
+  localStorage.setItem("cuemark_rating_format", state.preferences.ratingFormat);
   rebuildSearchIndex();
   const encryptedStore = nativePlugin("EncryptedStore");
   if (encryptedStore?.setItem) {
@@ -1136,7 +1144,7 @@ function applyPreferenceAttributes() {
   const bottomBarTransparency = Math.max(0, Math.min(100, Number(state.preferences.bottomBarTransparency ?? 100)));
   document.documentElement.style.setProperty("--bottom-bar-alpha", String(bottomBarTransparency / 100));
   document.body.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
-  document.body.setAttribute("data-bottom-bar-surface", state.preferences.bottomBarSurface || "translucent");
+  document.body.setAttribute("data-bottom-bar-surface", state.preferences.bottomBarSurface || "solid");
   document.documentElement.setAttribute("data-show-scrollbars", state.preferences.showScrollbars === true ? "true" : "false");
   document.documentElement.setAttribute("data-bottom-bar-active-style", state.preferences.bottomBarActiveStyle || "box");
   document.documentElement.lang = state.preferences.language === "en" ? "en" : (navigator.language || "en").split("-")[0];
@@ -1219,6 +1227,29 @@ function markItemAsCompleted(item) {
     if (Number(item.totalChapters) > 0) item.chaptersRead = Number(item.totalChapters);
   }
   return item;
+}
+
+function logCompletedItemEpisodes(item, previousWatchedIds = []) {
+  if (!item || !Array.isArray(item.episodesCache) || !item.episodesCache.length) return;
+  if (!Array.isArray(state.watchLog)) state.watchLog = [];
+  const previous = new Set(previousWatchedIds || []);
+  const logged = new Set(
+    state.watchLog
+      .filter(entry => entry.itemId === item.id && entry.episodeId)
+      .map(entry => entry.episodeId)
+  );
+  const now = Date.now();
+  const runtime = Number(item.episodeRuntime || item.playtime) || 0;
+  item.episodesCache.forEach(episode => {
+    if (previous.has(episode.id) || logged.has(episode.id)) return;
+    state.watchLog.push({
+      itemId: item.id,
+      title: item.title || "",
+      episodeId: episode.id,
+      runtime,
+      watchedAt: now
+    });
+  });
 }
 
 function ratingToStoredValue(value) {
@@ -1379,6 +1410,14 @@ function setupEventListeners() {
   }
   const scanCodeBtn = document.getElementById("scan-code-btn");
   if (scanCodeBtn) scanCodeBtn.addEventListener("click", scanBarcodeOrQr);
+  const uploadThumbnailBtn = document.getElementById("upload-thumbnail-btn");
+  const cameraThumbnailBtn = document.getElementById("camera-thumbnail-btn");
+  const thumbnailUploadInput = document.getElementById("thumbnail-upload-input");
+  const thumbnailCameraInput = document.getElementById("thumbnail-camera-input");
+  uploadThumbnailBtn?.addEventListener("click", () => thumbnailUploadInput?.click());
+  cameraThumbnailBtn?.addEventListener("click", () => thumbnailCameraInput?.click());
+  thumbnailUploadInput?.addEventListener("change", event => readManualThumbnail(event.target));
+  thumbnailCameraInput?.addEventListener("change", event => readManualThumbnail(event.target));
 
   // Category switch dynamically adjusts fields in modal
   const entryCategory = document.getElementById("entry-category");
@@ -1439,13 +1478,13 @@ function setupEventListeners() {
   if (cloudUsernameInput) cloudUsernameInput.value = savedCloud.username;
   if (cloudSave) cloudSave.addEventListener("click", async () => {
     try { await syncEncryptedBackupToCloud(); }
-    catch (err) { console.warn("Cloud upload failed", err); localStorage.setItem("squashdb_cloud_last_sync", "Failed"); sendConfiguredNotification("notificationCloudFailures", "Cloud sync failed", err.message || "Could not upload encrypted backup."); alert(err.message || "Could not upload encrypted backup."); }
+    catch (err) { console.warn("Cloud upload failed", err); localStorage.setItem("cuemark_cloud_last_sync", "Failed"); sendConfiguredNotification("notificationCloudFailures", "Cloud sync failed", err.message || "Could not upload encrypted backup."); alert(err.message || "Could not upload encrypted backup."); }
   });
 
   const cloudRestore = document.getElementById("cloud-sync-download");
   if (cloudRestore) cloudRestore.addEventListener("click", async () => {
     try { await restoreEncryptedBackupFromCloud(); }
-    catch (err) { console.warn("Cloud download failed", err); localStorage.setItem("squashdb_cloud_last_sync", "Failed"); sendConfiguredNotification("notificationCloudFailures", "Cloud sync failed", err.message || "Could not download encrypted backup."); alert(err.message || "Could not download encrypted backup."); }
+    catch (err) { console.warn("Cloud download failed", err); localStorage.setItem("cuemark_cloud_last_sync", "Failed"); sendConfiguredNotification("notificationCloudFailures", "Cloud sync failed", err.message || "Could not download encrypted backup."); alert(err.message || "Could not download encrypted backup."); }
   });
 
   const recoveryRefresh = document.getElementById("backup-recovery-refresh");
@@ -1471,7 +1510,7 @@ function setupEventListeners() {
     }
   }
 
-  // Sync to Folder Tree (squash-db/<category>/<item>/index.json + .thumbnail)
+  // Sync to Folder Tree (cuemark-db/<category>/<item>/index.json + .thumbnail)
   const syncFolderTreeBtn = document.getElementById("backup-sync-folder-tree");
   if (syncFolderTreeBtn) {
     if (backupFolderPluginAvailable()) {
@@ -1524,7 +1563,7 @@ function setupEventListeners() {
         renderDashboard();
         renderTimeline();
         renderStats();
-        if (typeof showToast === "function") showToast("All SquashDB data has been wiped.", "success");
+        if (typeof showToast === "function") showToast("All CueMark data has been wiped.", "success");
         if (document.getElementById("notes-container")) {
           switchTab("tab-dashboard");
         } else {
@@ -1544,22 +1583,22 @@ function setupEventListeners() {
   ];
   cacheControls.forEach(([id, type, message]) => {
     const button = document.getElementById(id);
-    if (!button || !window.SquashDBCache) return;
+    if (!button || !window.CueMarkCache) return;
     button.addEventListener("click", () => openActionPopup(
       button.querySelector("label")?.textContent || "Clear cache",
       `${message} Your tracked items and backups will not be changed.`,
       "Clear now",
       async () => {
-        if (type === "metadata") await window.SquashDBCache.clearMetadata();
-        else if (type === "images") await window.SquashDBCache.clearImages();
-        else await window.SquashDBCache.clearTemporary();
+        if (type === "metadata") await window.CueMarkCache.clearMetadata();
+        else if (type === "images") await window.CueMarkCache.clearImages();
+        else await window.CueMarkCache.clearTemporary();
         const status = document.getElementById("metadata-cache-status");
         if (status) status.textContent = "Cleared";
       }
     ));
   });
   const trimImageCache = document.getElementById("trim-image-cache");
-  if (trimImageCache && window.SquashDBCache?.trimImages) {
+  if (trimImageCache && window.CueMarkCache?.trimImages) {
     const imageCacheLimitStatus = document.getElementById("image-cache-limit-status");
     const imageCacheLabel = value => Number(value) === 0 ? "Unlimited" : `${value} images`;
     if (imageCacheLimitStatus) imageCacheLimitStatus.textContent = imageCacheLabel(state.preferences.imageCacheMaxEntries);
@@ -1575,7 +1614,7 @@ function setupEventListeners() {
       state.preferences.imageCacheMaxEntries,
       async value => {
         state.preferences.imageCacheMaxEntries = Number(value);
-        await window.SquashDBCache.trimImages(state.preferences.imageCacheMaxEntries);
+        await window.CueMarkCache.trimImages(state.preferences.imageCacheMaxEntries);
         saveData();
         if (imageCacheLimitStatus) imageCacheLimitStatus.textContent = imageCacheLabel(value);
       }
@@ -1682,7 +1721,7 @@ function setupEventListeners() {
         const requested = await notifications.requestPermission();
         if (!requested?.granted) throw new Error("Please allow notifications in Android settings.");
       }
-      await notifications.notify({ title: "SquashDB test", body: "Notifications are working.", id: Date.now() & 0x7fffffff });
+      await notifications.notify({ title: "CueMark test", body: "Notifications are working.", id: Date.now() & 0x7fffffff });
     }
     ));
   }
@@ -1837,7 +1876,7 @@ async function scheduleUnfinishedItemReminder() {
 // Switch between active navigation tabs
 function switchTab(tabId) {
   state.currentTab = tabId;
-  localStorage.setItem("squashdb_last_tab", tabId);
+  localStorage.setItem("cuemark_last_tab", tabId);
   updateFabVisibility();
   updateSearchVisibility();
   updateCategoryChipVisibility();
@@ -2089,10 +2128,10 @@ function renderNavIconPickers() {
 // Each look bakes in both an icon and a matching name as a single pre-declared
 // alias (see AndroidManifest.xml: Look_<key>), so there's one flat list to pick from.
 const APP_LOOK_CHOICES = [
-  { value: "default", label: "SquashDB", style: "Classic", preview: "icons/previews/ic_launcher.png" },
-  { value: "fire", label: "SquashDB", style: "Flame", preview: "icons/previews/ic_launcher_fire.png" },
-  { value: "pinklogo", label: "SquashDB", style: "Rose", preview: "icons/previews/ic_launcher_pinklogo.png" },
-  { value: "purple", label: "SquashDB", style: "Violet", preview: "icons/previews/ic_launcher_purple.png" },
+  { value: "default", label: "CueMark", style: "Classic", preview: "icons/previews/ic_launcher.png" },
+  { value: "fire", label: "CueMark", style: "Flame", preview: "icons/previews/ic_launcher_fire.png" },
+  { value: "pinklogo", label: "CueMark", style: "Rose", preview: "icons/previews/ic_launcher_pinklogo.png" },
+  { value: "purple", label: "CueMark", style: "Violet", preview: "icons/previews/ic_launcher_purple.png" },
   { value: "capacitor", label: "Capacitor", preview: "icons/previews/ic_launcher_capacitor.png" },
   { value: "calculator", label: "Calculator", preview: "icons/previews/ic_launcher_calculator.png" },
   { value: "freeotp", label: "FreeOTP", preview: "icons/previews/ic_launcher_freeotp.png" },
@@ -2208,9 +2247,9 @@ const SETTINGS_PICKERS = {
     default: "dark",
     options: [
       { value: "light", label: "Light", description: "Clean white surfaces with indigo accents.", colors: ["#f8fafc", "#4f46e5", "#0f172a"] },
-      { value: "dark", label: "Dark", description: "Deep navy surfaces with violet accents.", colors: ["#0b0f19", "#6366f1", "#f8fafc"] },
+      { value: "dark", label: "Dark", description: "Neutral charcoal surfaces with violet accents.", colors: ["#111111", "#8b5cf6", "#f5f5f7"] },
       { value: "grey", label: "Grey", description: "Soft graphite surfaces with slate accents.", colors: ["#111827", "#64748b", "#f9fafb"] },
-      { value: "amoled", label: "AMOLED", description: "True black surfaces with vivid violet accents.", colors: ["#000000", "#8b5cf6", "#f8fafc"] },
+      { value: "amoled", label: "AMOLED", description: "Pure black background with raised charcoal surfaces.", colors: ["#000000", "#a78bfa", "#f8fafc"] },
       { value: "flashbang", label: "Flashbang", description: "Bright white surfaces with bold charcoal accents.", colors: ["#f8fafc", "#111827", "#0f172a"] },
       { value: "material-you", label: "Material You", description: "Layered charcoal surfaces with purple accents.", colors: ["#10131d", "#8b5cf6", "#f8fafc"] },
       { value: "ocean", label: "Ocean", description: "Midnight blue surfaces with clear aqua accents.", colors: ["#081b2b", "#38bdf8", "#e0f2fe"] },
@@ -2621,6 +2660,80 @@ const FONT_PREVIEW_FAMILIES = {
 
 function getSettingsPickerPresentation(pref, option) {
   if (pref === "uiTheme") return { kind: "theme", description: option.description, colors: option.colors };
+  const dashboardPresentations = {
+    dashboardView: {
+      list: ["Rows with artwork and useful details.", "list"],
+      "compact-list": ["Tighter rows to see more titles.", "compact-list"],
+      grid: ["Posters in a balanced grid.", "grid"],
+      "compact-grid": ["Small posters in a dense grid.", "compact-grid"],
+      "detailed-grid": ["Posters with titles and progress.", "detailed-grid"],
+      table: ["Titles, status, rating, and progress.", "table"],
+      "minimal-list": ["Simple, text-first rows.", "minimal-list"],
+      "large-grid": ["Large posters with more room.", "large-grid"],
+      kanban: ["Columns arranged by status.", "kanban"],
+      timeline: ["Items arranged by release date.", "timeline"]
+    },
+    dashboardDefaultCategory: {
+      "remember-last": ["Return to the category you last viewed.", "history", "Last"],
+      series: ["Open the TV Series collection.", "tv", "TV"],
+      movie: ["Open the Movies collection.", "film", "Film"],
+      anime: ["Open the Anime collection.", "clapperboard", "Anime"],
+      manga: ["Open the Manga collection.", "book-open", "Manga"],
+      novel: ["Open the Novels collection.", "book", "Books"],
+      game: ["Open the Games collection.", "gamepad-2", "Games"]
+    },
+    recentlyAddedLimit: {
+      5: ["Show the five newest additions.", "clock-3", "5 items"],
+      10: ["Show the ten newest additions.", "clock-3", "10 items"],
+      20: ["Show the twenty newest additions.", "clock-3", "20 items"],
+      50: ["Show the fifty newest additions.", "clock-3", "50 items"]
+    },
+    dashboardCardCorners: {
+      rounded: ["Softly rounded card corners.", "square", "Rounded"],
+      soft: ["Subtle corners with a calmer shape.", "square", "Soft"],
+      square: ["Straight edges for a crisp layout.", "square", "Square"]
+    },
+    dashboardDensity: {
+      comfortable: ["More breathing room between cards.", "rows-3", "Relaxed"],
+      compact: ["Less spacing to fit more on screen.", "rows-3", "Tight"]
+    },
+    dashboardGroupBy: {
+      none: ["Keep all titles in one continuous list.", "list", "All items"],
+      status: ["Separate items into status sections.", "layers-2", "By status"],
+      release: ["Separate items by release date.", "calendar-days", "By date"]
+    },
+    dashboardSort: {
+      "updated-desc": ["Recently updated titles first.", "clock-3", "Recent"],
+      "created-desc": ["Newest additions first.", "calendar-plus", "New"],
+      "progress-desc": ["Most progress first.", "arrow-up-wide-narrow", "Most"],
+      "progress-asc": ["Least progress first.", "arrow-down-wide-narrow", "Least"],
+      "rating-desc": ["Highest rated titles first.", "star", "Top rated"],
+      "release-desc": ["Newest releases first.", "calendar-arrow-up", "Newest"],
+      "alphabetical-asc": ["Titles from A to Z.", "arrow-down-a-z", "A–Z"],
+      "alphabetical-desc": ["Titles from Z to A.", "arrow-up-z-a", "Z–A"]
+    },
+    oneHandedMode: {
+      off: ["Use the full screen width.", "smartphone", "Full width"],
+      left: ["Keep controls within left-hand reach.", "hand", "Left"],
+      right: ["Keep controls within right-hand reach.", "hand", "Right"]
+    },
+    ratingFormat: {
+      "5-stars": ["Rate titles from one to five stars.", "star", "5 ★"],
+      "10-points": ["Use a whole-number score out of ten.", "star", "10 / 10"],
+      "10-decimal": ["Use a decimal score out of ten.", "star", "8.5 / 10"],
+      "100-points": ["Use a score out of one hundred.", "star", "85 / 100"]
+    },
+    dashboardRowActions: {
+      menu: ["Open actions from the row menu.", "ellipsis", "Menu"],
+      "tap-hold": ["Touch and hold a row for actions.", "pointer", "Hold"],
+      swipe: ["Swipe a row to reveal actions.", "move-horizontal", "Swipe"]
+    }
+  };
+  const dashboardSetting = dashboardPresentations[pref]?.[String(option.value)];
+  if (dashboardSetting) {
+    if (pref === "dashboardView") return { kind: "dashboard-layout", description: dashboardSetting[0], layout: dashboardSetting[1] };
+    return { kind: "dashboard-choice", description: dashboardSetting[0], icon: dashboardSetting[1], sample: dashboardSetting[2], value: String(option.value), setting: pref };
+  }
   if (pref === "accessibleTextSize") {
     const choices = {
       normal: ["Default text size throughout the app.", "15px"],
@@ -2714,6 +2827,34 @@ function createSettingsPickerPreview(presentation) {
   } else if (kind === "nav-surface") {
     preview.classList.add(`picker-surface-mode-${presentation.mode}`);
     preview.innerHTML = '<span class="picker-surface-line"></span><span class="picker-surface-line short"></span><span class="picker-surface-nav"><i></i><i></i><i></i></span>';
+  } else if (kind === "dashboard-layout") {
+    preview.classList.add("picker-dashboard-layout");
+    preview.dataset.layout = presentation.layout;
+    for (let index = 0; index < 6; index += 1) {
+      const tile = document.createElement("i");
+      tile.className = "picker-dashboard-layout-tile";
+      preview.appendChild(tile);
+    }
+  } else if (kind === "dashboard-choice") {
+    preview.classList.add("picker-dashboard-choice", `picker-dashboard-choice-${presentation.setting}`);
+    preview.dataset.value = presentation.value;
+    if (presentation.setting === "dashboardCardCorners") {
+      const card = document.createElement("i");
+      card.className = "picker-dashboard-corner-sample";
+      preview.appendChild(card);
+    } else if (presentation.setting === "dashboardDensity") {
+      for (let index = 0; index < 3; index += 1) {
+        const row = document.createElement("i");
+        row.className = "picker-dashboard-density-row";
+        preview.appendChild(row);
+      }
+    } else {
+      const icon = document.createElement("i");
+      icon.dataset.lucide = presentation.icon;
+      const sample = document.createElement("small");
+      sample.textContent = presentation.sample;
+      preview.append(icon, sample);
+    }
   }
   return preview;
 }
@@ -2829,13 +2970,15 @@ function openSettingsPicker(pref, title) {
       if (pref === "uiTheme") {
         btn.classList.add("theme-picker-option");
         btn.dataset.themeOption = opt.value;
+      } else if (pref.startsWith("dashboard") || pref === "recentlyAddedLimit" || pref === "ratingFormat" || pref === "oneHandedMode") {
+        btn.classList.add("dashboard-picker-option");
       }
       const radio = document.createElement("span");
       radio.className = "choice-radio";
       radio.setAttribute("aria-hidden", "true");
       const preview = createSettingsPickerPreview(presentation);
       const copy = document.createElement("span");
-      copy.className = "theme-picker-copy";
+      copy.className = "picker-option-copy";
       const name = document.createElement("strong");
       name.textContent = opt.label;
       const description = document.createElement("small");
@@ -2952,7 +3095,7 @@ function openActionPopup(title, message, actionLabel, action) {
 function requestInAppConfirmation(title, message, actionLabel = "Continue") {
   return new Promise(resolve => {
     const overlay = document.createElement("div");
-    overlay.className = "modal-overlay active squashdb-confirm-modal";
+    overlay.className = "modal-overlay active cuemark-confirm-modal";
     overlay.innerHTML = `
       <div class="modal-content" role="dialog" aria-modal="true">
         <div class="modal-header"><h3 class="modal-title"></h3><button type="button" class="modal-close" aria-label="Close">&times;</button></div>
@@ -2971,8 +3114,8 @@ function requestInAppConfirmation(title, message, actionLabel = "Continue") {
   });
 }
 
-async function clearSquashDbData({ factoryReset = false } = {}) {
-  const title = factoryReset ? "Factory reset SquashDB?" : "Clear all tracked data?";
+async function clearCueMarkData({ factoryReset = false } = {}) {
+  const title = factoryReset ? "Factory reset CueMark?" : "Clear all tracked data?";
   const message = factoryReset
     ? "This removes tracked items, watch history, preferences, pending imports, and temporary caches. This cannot be undone."
     : "This removes all tracked items, watch history, and pending imports. Preferences and backups will be kept.";
@@ -2992,16 +3135,16 @@ async function clearSquashDbData({ factoryReset = false } = {}) {
   saveData();
   await Promise.allSettled(writes);
 
-  if (window.SquashDBCache) await window.SquashDBCache.clearTemporary();
+  if (window.CueMarkCache) await window.CueMarkCache.clearTemporary();
   if (factoryReset) {
-    Object.keys(localStorage).filter(key => key.startsWith("squashdb_")).forEach(key => localStorage.removeItem(key));
+    Object.keys(localStorage).filter(key => key.startsWith("cuemark_")).forEach(key => localStorage.removeItem(key));
   }
-  if (typeof showToast === "function") showToast(factoryReset ? "SquashDB was reset." : "All tracked data was cleared.", "success");
+  if (typeof showToast === "function") showToast(factoryReset ? "CueMark was reset." : "All tracked data was cleared.", "success");
   setTimeout(() => window.location.reload(), 350);
   return true;
 }
 
-window.clearSquashDbData = clearSquashDbData;
+window.clearCueMarkData = clearCueMarkData;
 
 function openChoicePopup(title, message, options, currentValue, onSelect) {
   const modal = document.getElementById("picker-modal");
@@ -3311,10 +3454,10 @@ function renderStatsCategoryChips() {
   if (!container) return;
   container.replaceChildren();
   const enabledCategories = getEnabledOrderedCategories();
-  let selected = localStorage.getItem("squashdb_stats_category") || "all";
+  let selected = localStorage.getItem("cuemark_stats_category") || "all";
   if (selected !== "all" && !enabledCategories.includes(selected)) {
     selected = "all";
-    localStorage.setItem("squashdb_stats_category", selected);
+    localStorage.setItem("cuemark_stats_category", selected);
   }
   const choices = [{ key: "all", label: "All categories", icon: "layers-3" },
     ...enabledCategories.map(key => ({ key, label: CATEGORIES[key].label, icon: CATEGORIES[key].icon }))];
@@ -3327,7 +3470,7 @@ function renderStatsCategoryChips() {
     button.setAttribute("aria-pressed", String(active));
     button.innerHTML = `<i data-lucide="${choice.icon}" aria-hidden="true"></i><span>${choice.label}</span>`;
     button.addEventListener("click", () => {
-      localStorage.setItem("squashdb_stats_category", choice.key);
+      localStorage.setItem("cuemark_stats_category", choice.key);
       renderStatsCategoryChips();
       renderStats();
     });
@@ -3545,15 +3688,15 @@ function dashboardFiltersActive() {
 }
 
 function saveDashboardViewState() {
-  localStorage.setItem("squashdb_dashboard_filters", JSON.stringify(state.dashboardFilters));
-  localStorage.setItem("squashdb_sort", state.currentSort);
+  localStorage.setItem("cuemark_dashboard_filters", JSON.stringify(state.dashboardFilters));
+  localStorage.setItem("cuemark_sort", state.currentSort);
 }
 
 function recordSearchHistory(value) {
   const query = String(value || "").trim().toLowerCase();
   if (query.length < 2) return;
   state.searchHistory = [query, ...(state.searchHistory || []).filter(entry => entry !== query)].slice(0, 8);
-  localStorage.setItem("squashdb_search_history", JSON.stringify(state.searchHistory));
+  localStorage.setItem("cuemark_search_history", JSON.stringify(state.searchHistory));
   renderSearchHistory();
 }
 
@@ -3585,7 +3728,7 @@ function renderSearchHistory() {
   }));
   root.querySelector("[data-clear-history]")?.addEventListener("click", () => {
     state.searchHistory = [];
-    localStorage.removeItem("squashdb_search_history");
+    localStorage.removeItem("cuemark_search_history");
     renderSearchHistory();
   });
   if (window.lucide) lucide.createIcons();
@@ -4362,8 +4505,9 @@ function setupDashboardGroupedView(container, filtered) {
     groups.get(key).push(item);
   });
 
-  const filtersNarrowResults = Boolean(state.searchQuery || dashboardFiltersActive() || dashboardStatusFilterActive());
-  const entries = [...groups.entries()].filter(([, items]) => items.length || !filtersNarrowResults);
+  // Empty status groups add disclosure rows that contain no useful content.
+  // Hide them consistently, whether or not a search/filter is active.
+  const entries = [...groups.entries()].filter(([, items]) => items.length > 0);
   if (groupBy === "status") {
     entries.sort(([a], [b]) => dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b));
   }
@@ -4411,19 +4555,20 @@ function buildGridCard(item) {
   card.dataset.id = item.id;
 
   const progress = calculateProgress(item);
+  const movieProgressVisible = item.category !== "movie" || item.status === "Completed";
   const isCompleted = item.status === "Completed";
   const activeStatuses = new Set(["In Progress", "Playing", "Reading", "On Hold"]);
   const started = progress > 0 || activeStatuses.has(item.status);
   let barHTML = "";
   if (isCompleted) {
     barHTML = `<div class="grid-card-bar grid-card-bar-complete"></div>`;
-  } else if (started) {
+  } else if (started && movieProgressVisible) {
     barHTML = `<div class="grid-card-bar grid-card-bar-progress" style="width:${Math.max(progress, 6)}%"></div>`;
   }
 
   card.innerHTML = `
     ${dashboardThumbnail(item, "grid-card-thumb")}
-    ${state.preferences.dashboardShowProgress ? `<div class="grid-card-progress">${progressRingHTML(progress)}</div>` : ""}
+    ${state.preferences.dashboardShowProgress && movieProgressVisible ? `<div class="grid-card-progress">${progressRingHTML(progress)}</div>` : ""}
     ${barHTML ? `<div class="grid-card-bar-track">${barHTML}</div>` : ""}
     <div class="grid-card-select-overlay">
       <div class="grid-card-select-check"><i data-lucide="check"></i></div>
@@ -4495,17 +4640,19 @@ function buildTableCard(item) {
 function buildNoteCard(item) {
   const card = document.createElement("div");
   const isCompleted = item.status === "Completed";
-  card.className = `note-card dashboard-insight-card ${isCompleted ? "completed" : ""}`;
+  const movieStatusOnly = item.category === "movie" && !isCompleted;
+  card.className = `note-card dashboard-insight-card ${isCompleted ? "completed" : ""}${movieStatusOnly ? " movie-status-only" : ""}`;
   if (state.preferences.dashboardView === "minimal-list") card.classList.add("minimal-list-card");
   card.dataset.id = item.id;
 
   const progress = calculateProgress(item);
+  const movieProgressVisible = item.category !== "movie" || isCompleted;
   const subtitle = isCompleted ? (item.completionDate || "Completed") : item.status;
 
   card.innerHTML = `
     ${dashboardThumbnail(item, "dashboard-insight-thumb")}
     <span class="dashboard-insight-body"><strong>${item.title}</strong><small>${subtitle}</small></span>
-    ${state.preferences.dashboardShowProgress ? progressRingHTML(progress) : ""}
+    ${state.preferences.dashboardShowProgress && movieProgressVisible ? progressRingHTML(progress) : ""}
   `;
   return card;
 }
@@ -4784,7 +4931,7 @@ function renderTimeline() {
 
   container.innerHTML = "";
 
-  const activeCategory = state.activeCategoryChip || localStorage.getItem("squashdb_category_chip");
+  const activeCategory = state.activeCategoryChip || localStorage.getItem("cuemark_category_chip");
 
   // 1. Gather and filter only completed items with a date
   let completedItems = state.items.filter(item => {
@@ -4937,7 +5084,7 @@ function renderStats() {
   if (!totalEl) return;
 
   renderStatsCategoryChips();
-  const activeCategory = localStorage.getItem("squashdb_stats_category") || "all";
+  const activeCategory = localStorage.getItem("cuemark_stats_category") || "all";
 
   // Filter items in enabled categories and selected category
   const activeItems = state.items.filter(item => state.preferences[item.category] && (activeCategory === "all" || item.category === activeCategory));
@@ -4952,7 +5099,12 @@ function renderStats() {
   const completedCount = completedItems.length;
   const activeCount = inProgressItems.length;
   const queuedCount = queuedItems.length;
-  const rate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  // Completion rate reflects actual progress across the tracked collection,
+  // not only the number of items whose status is fully Completed. This keeps
+  // the overview consistent with the progress bars shown for each item.
+  const rate = totalCount > 0
+    ? Math.round(activeItems.reduce((sum, item) => sum + calculateProgress(item), 0) / totalCount)
+    : 0;
   const otherCount = Math.max(0, totalCount - completedCount - activeCount - queuedCount - onHoldItems.length - droppedItems.length);
 
   totalEl.textContent = totalCount;
@@ -5136,13 +5288,20 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
   // update as a lightweight activity event until real watch events exist.
   const log = watchLog.length ? watchLog : activeItems
     .filter(item => activeItemIds.has(item.id) && Number(item.updated || item.created) > 0)
-    .map(item => ({
-      itemId: item.id,
-      title: item.title,
-      watchedAt: item.updated || item.created,
-      runtime: Number(item.episodeRuntime || item.playtime) || 1,
-      derived: true
-    }));
+    .flatMap(item => {
+      const watchedCount = Array.isArray(item.watchedEpisodeIds)
+        ? item.watchedEpisodeIds.length
+        : Math.max(0, Number(item.episodesDone) || 0);
+      const count = watchedCount || 1;
+      return Array.from({ length: count }, (_, index) => ({
+        itemId: item.id,
+        title: item.title,
+        episodeId: item.watchedEpisodeIds?.[index],
+        watchedAt: item.updated || item.created,
+        runtime: Number(item.episodeRuntime || item.playtime) || 1,
+        derived: true
+      }));
+    });
   const hasActivity = log.length > 0;
   const weeklyTimeCaption = document.getElementById("stats-weekly-time-caption");
   if (weeklyTimeCaption) weeklyTimeCaption.textContent = watchLog.length
@@ -5214,7 +5373,7 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
     })
   ])].sort().reverse();
   const monthSelect = document.getElementById("stats-month-select");
-  const savedMonth = localStorage.getItem("squashdb_stats_month") || monthKeys[0];
+  const savedMonth = localStorage.getItem("cuemark_stats_month") || monthKeys[0];
   const selectedMonth = monthKeys.includes(savedMonth) ? savedMonth : monthKeys[0];
   if (monthSelect) {
     monthSelect.innerHTML = monthKeys.map(key => {
@@ -5225,7 +5384,7 @@ function renderStatsWatchCharts(activeItemIds, activeItems = []) {
     if (monthSelect.dataset.bound !== "true") {
       monthSelect.dataset.bound = "true";
       monthSelect.addEventListener("change", () => {
-        localStorage.setItem("squashdb_stats_month", monthSelect.value);
+        localStorage.setItem("cuemark_stats_month", monthSelect.value);
         renderStats();
       });
     }
@@ -5576,7 +5735,9 @@ function toggleCompletion(id, isChecked) {
   const item = state.items[itemIndex];
   
   if (isChecked) {
+    const previousWatchedIds = [...(item.watchedEpisodeIds || [])];
     markItemAsCompleted(item);
+    logCompletedItemEpisodes(item, previousWatchedIds);
   } else {
     // Revert status to In Progress / Playing
     if (item.category === "game") {
@@ -5723,12 +5884,12 @@ function openItemForCategory(id) {
 }
 
 // Open Form Modal (Add / Edit)
-const SQUASHDB_FORM_DRAFT_KEY = "squashdb_form_draft";
+const CUEMARK_FORM_DRAFT_KEY = "cuemark_form_draft";
 let formDraftTimer = null;
 
 function readFormDraft() {
   try {
-    const draft = JSON.parse(localStorage.getItem(SQUASHDB_FORM_DRAFT_KEY) || "null");
+    const draft = JSON.parse(localStorage.getItem(CUEMARK_FORM_DRAFT_KEY) || "null");
     return draft && Date.now() - Number(draft.savedAt || 0) < 7 * 24 * 60 * 60 * 1000 ? draft : null;
   } catch (err) {
     return null;
@@ -5744,7 +5905,7 @@ function saveFormDraft() {
   const category = document.getElementById("entry-category")?.value || "";
   const status = document.getElementById("field-status")?.value || "";
   if (!title.trim() && !notes.trim()) return;
-  localStorage.setItem(SQUASHDB_FORM_DRAFT_KEY, JSON.stringify({ title, notes, category, status, savedAt: Date.now() }));
+  localStorage.setItem(CUEMARK_FORM_DRAFT_KEY, JSON.stringify({ title, notes, category, status, savedAt: Date.now() }));
 }
 
 function scheduleFormDraftSave() {
@@ -5754,7 +5915,7 @@ function scheduleFormDraftSave() {
 
 function clearFormDraft() {
   clearTimeout(formDraftTimer);
-  localStorage.removeItem(SQUASHDB_FORM_DRAFT_KEY);
+  localStorage.removeItem(CUEMARK_FORM_DRAFT_KEY);
 }
 
 function getNotesTemplate() {
@@ -5857,6 +6018,23 @@ async function scanWithWebCamera() {
   }
 }
 
+let manualThumbnailDraft = "";
+
+function readManualThumbnail(input) {
+  const file = input?.files?.[0];
+  if (!file || !file.type.startsWith("image/")) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    manualThumbnailDraft = String(reader.result || "");
+    if (typeof showToast === "function") showToast("Thumbnail added", "success");
+  };
+  reader.onerror = () => {
+    if (typeof showToast === "function") showToast("Could not read that image", "error");
+  };
+  reader.readAsDataURL(file);
+  input.value = "";
+}
+
 function openModal(editId = null) {
   const modal = document.getElementById("item-modal");
   const modalTitle = document.getElementById("modal-title");
@@ -5865,6 +6043,7 @@ function openModal(editId = null) {
   form.reset();
   state.activeRating = 0;
   fetchedMetadataDraft = null;
+  manualThumbnailDraft = "";
   hideMetadataResults();
 
   // Clear inputs
@@ -5891,6 +6070,7 @@ function openModal(editId = null) {
     if (categoryLabel) categoryLabel.textContent = CATEGORIES[item.category].label;
     state.lastEntryCategory = item.category;
     document.getElementById("entry-notes").value = item.notes || "";
+    manualThumbnailDraft = item.thumbnail || "";
     
     state.activeRating = item.rating || 0;
 
@@ -6230,7 +6410,7 @@ function renderDynamicFormFields(category) {
   applyRememberedStatus(category);
   statusSelect.addEventListener("change", (e) => {
     state.lastEntryStatusByCategory[category] = e.target.value;
-    localStorage.setItem("squashdb_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory));
+    localStorage.setItem("cuemark_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory));
     toggleCompletionDateVisibility(e.target.value);
     syncStatusPills();
     scheduleFormDraftSave();
@@ -6535,10 +6715,14 @@ function handleFormSubmit(e) {
         completionDate,
         notes,
         updated: Date.now(),
-        thumbnail: thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || state.items[itemIndex].thumbnail || "") : "",
+        thumbnail: manualThumbnailDraft || (thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || state.items[itemIndex].thumbnail || "") : ""),
         ...extraData
       };
-      if (status === "Completed") markItemAsCompleted(state.items[itemIndex]);
+      if (status === "Completed") {
+        const previousWatchedIds = [...(state.items[itemIndex].watchedEpisodeIds || [])];
+        markItemAsCompleted(state.items[itemIndex]);
+        logCompletedItemEpisodes(state.items[itemIndex], previousWatchedIds);
+      }
     }
   } else {
     // Create new item
@@ -6552,16 +6736,19 @@ function handleFormSubmit(e) {
       notes,
       created: Date.now(),
       updated: Date.now(),
-      thumbnail: thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || "") : "",
+      thumbnail: manualThumbnailDraft || (thumbnailsEnabled() ? (fetchedMetadataDraft?.thumbnail || "") : ""),
       ...extraData
     };
-    if (status === "Completed") markItemAsCompleted(newItem);
+    if (status === "Completed") {
+      markItemAsCompleted(newItem);
+      logCompletedItemEpisodes(newItem);
+    }
     state.items.push(newItem);
   }
 
   state.lastEntryCategory = category;
   state.lastEntryStatusByCategory[category] = status;
-  localStorage.setItem("squashdb_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory));
+  localStorage.setItem("cuemark_last_entry_statuses", JSON.stringify(state.lastEntryStatusByCategory));
   clearFormDraft();
   saveData();
   closeModal();

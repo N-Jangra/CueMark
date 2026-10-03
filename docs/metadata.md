@@ -29,7 +29,7 @@ Added/edited/deleted via **Settings → Metadata Sources → Add custom source**
 
 - `categories` — which tracking categories this source applies to.
 - `searchUrlTemplate` — a URL containing `{query}` (URL-encoded search title) and optionally `{apiKey}`.
-- `apiKey` — substituted into the template; stored locally, redacted to `"***REDACTED***"` whenever the config is mirrored to `squash-db/settings/metadata-sources.json`.
+- `apiKey` — substituted into the template; stored locally, redacted to `"***REDACTED***"` whenever the config is mirrored to `cuemark-db/settings/metadata-sources.json`.
 - `resultsPath`, `titlePath`, `thumbnailPath`, `subtitlePath` — dot-notation JSON paths (e.g. `"data.results"`, `"image.medium"`) used to pull fields out of the live response.
 
 At fetch time, `fetchCustomMetadataSource()`:
@@ -45,7 +45,7 @@ Custom-source results carry no follow-up detail endpoint — unlike TVmaze/Wikid
 
 Rather than asking the user to hand-write `resultsPath`/`titlePath` strings, **manage-metadata-sources.html**'s "Fetch Sample & Map Fields" button:
 
-1. Calls the configured URL once with `"squash"` as a test query.
+1. Calls the configured URL once with `"cue"` as a test query.
 2. Renders the JSON response as an indented, clickable tree (`renderJsonNode()` in `metadata.js`) — arrays are labeled `<key> [array]`, objects recurse, leaves show `key: value`.
 3. Walks the user through 4 clicks in order: click the results array → click the title field (inside the first sample item) → optionally click a thumbnail field → optionally click a subtitle field.
 4. Each click computes a path relative to the previously-picked array (`advance()` in `openJsonFieldMapperModal()`), and stores it into the draft source config.
@@ -58,4 +58,4 @@ TVmaze/Wikidata/Open Library each need parsing logic that doesn't fit a generic 
 
 ## Thumbnails are always remote URLs
 
-Everything above only ever produces a `thumbnail` **URL** (TVmaze CDN, Wikimedia Commons, Open Library covers, or whatever a custom source's `thumbnailPath` resolves to). No image bytes are downloaded or embedded into `state.items` — see [storage.md](storage.md) for what that means for offline access, and [file-schema.md](file-schema.md) for the one place actual thumbnail bytes *are* saved (the `squash-db/` folder-tree mirror, which fetches the URL and re-encodes to WebP at sync time only).
+Everything above only ever produces a `thumbnail` **URL** (TVmaze CDN, Wikimedia Commons, Open Library covers, or whatever a custom source's `thumbnailPath` resolves to). No image bytes are downloaded or embedded into `state.items` — see [storage.md](storage.md) for what that means for offline access, and [file-schema.md](file-schema.md) for the one place actual thumbnail bytes *are* saved (the `cuemark-db/` folder-tree mirror, which fetches the URL and re-encodes to WebP at sync time only).

@@ -1,12 +1,12 @@
-# SquashDB requirements
+# CueMark requirements
 
-This document describes the minimum requirements for developing, building, and running SquashDB.
+This document describes the minimum requirements for developing, building, and running CueMark.
 
 ## Application specifications
 
 | Specification | Current value |
 |---|---|
-| Application ID | `com.squashdb.tracker` |
+| Application ID | `com.cuemark.tracker` |
 | Application type | Capacitor web application with a native Android shell |
 | Web directory | `www/` |
 | Android minimum SDK | API 22 / Android 5.1 Lollipop |
@@ -115,7 +115,7 @@ The app should remain usable for local tracking when optional online services, n
 
 ## Storage expectations
 
-SquashDB stores or may create:
+CueMark stores or may create:
 
 - Local tracked-item data and watch progress.
 - Encrypted Android local state when running in the APK.

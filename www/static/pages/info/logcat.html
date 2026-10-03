@@ -4,7 +4,7 @@
 <base href="../../../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquashDB - Logcat</title>
+  <title>CueMark - Logcat</title>
   <link rel="manifest" href="manifest.json">
   <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script>
@@ -57,7 +57,7 @@
       const emptyEl = document.getElementById("logcat-empty");
       if (!list || !emptyEl) return;
 
-      const entries = (window.squashdbLogcat ? window.squashdbLogcat.getEntries() : [])
+      const entries = (window.cuemarkLogcat ? window.cuemarkLogcat.getEntries() : [])
         .filter(e => logcatFilter === "all" || e.level === logcatFilter)
         .slice()
         .reverse();
@@ -122,7 +122,7 @@
         // are gone from localStorage the moment this runs (see clear() in
         // logcat.js), not just hidden from the current render.
         clearBtn.addEventListener("click", () => {
-          if (window.squashdbLogcat) window.squashdbLogcat.clear();
+          if (window.cuemarkLogcat) window.cuemarkLogcat.clear();
           logcatFilter = "all";
           document.querySelectorAll("#logcat-filter-chips .chip").forEach(c => {
             const active = c.dataset.level === "all";

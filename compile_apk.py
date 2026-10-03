@@ -241,13 +241,17 @@ def build_app(env, version_name="1.0"):
     except Exception:
         pass
     
-    subprocess.run(["./gradlew", "assembleDebug"], check=True, env=env, cwd=android_dir)
+    # A previous interrupted build can leave Gradle's project execution-history
+    # cache locked by a daemon. Stop old daemons and use a one-shot build so the
+    # compiler never reuses that stale lock.
+    subprocess.run(["./gradlew", "--stop"], check=False, env=env, cwd=android_dir)
+    subprocess.run(["./gradlew", "--no-daemon", "assembleDebug"], check=True, env=env, cwd=android_dir)
     log("Gradle compilation completed successfully.")
 
     # Locate APK
     apk_src = os.path.join(android_dir, "app", "build", "outputs", "apk", "debug", "app-debug.apk")
     safe_version = re.sub(r"[^0-9A-Za-z._-]+", "-", version_name).strip("-") or "1.0"
-    apk_dest = os.path.join(BASE_DIR, f"SquashDB-{safe_version}.apk")
+    apk_dest = os.path.join(BASE_DIR, f"CueMark-{safe_version}.apk")
     
     if os.path.exists(apk_src):
         shutil.copyfile(apk_src, apk_dest)
@@ -257,7 +261,7 @@ def build_app(env, version_name="1.0"):
 
 def main():
     try:
-        parser = argparse.ArgumentParser(description="Build SquashDB APK")
+        parser = argparse.ArgumentParser(description="Build CueMark APK")
         parser.add_argument("--version", default="1.0", help="APK version name, e.g. 1.2.3")
         args = parser.parse_args()
 

@@ -4,7 +4,7 @@
 <base href="../../../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SquashDB - Older Logs</title>
+  <title>CueMark - Older Logs</title>
   <link rel="manifest" href="manifest.json">
   <script src="core/theme-bootstrap.js"></script><link rel="stylesheet" href="static/index.css">
   <script defer src="core/logcat.js"></script><script defer src="lucide.min.js"></script>
@@ -80,7 +80,7 @@
       const empty = document.getElementById("log-history-empty");
       const count = document.getElementById("log-history-count");
       if (!list || !empty) return;
-      const archived = window.squashdbLogcat?.getArchivedEntries?.() || [];
+      const archived = window.cuemarkLogcat?.getArchivedEntries?.() || [];
       const entries = historyFilterEntries(archived).sort((a, b) => b.time - a.time);
       if (count) count.textContent = `${entries.length} archived log${entries.length === 1 ? "" : "s"}`;
       empty.style.display = entries.length ? "none" : "flex";

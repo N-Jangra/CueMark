@@ -5,10 +5,10 @@ Two separate things are covered here: (1) the app's own source tree, and (2) the
 ## Source tree
 
 ```
-Squash/
+CueMark/
 ├── android/                                Capacitor Android native shell
 │   ├── app/src/main/
-│   │   ├── java/com/squashdb/tracker/
+│   │   ├── java/com/cuemark/tracker/
 │   │   │   ├── MainActivity.java           registers the two custom plugins
 │   │   │   ├── AppIconPlugin.java          launcher icon/name switching (activity-alias)
 │   │   │   └── BackupFolderPlugin.java     SAF folder picker, file I/O, tar writer/reader
@@ -52,13 +52,13 @@ Squash/
 │   │                                       every transition/animation duration
 │   ├── manifest.json                       web app manifest
 │   ├── lucide.min.js                       icon font/library (bundled, not a CDN dependency)
-│   ├── squashdb-logo.svg
+│   ├── cuemark-logo.svg
 │   └── icons/
 │       ├── logo-*.svg                      alternate in-app logo variants (UI use, not
 │       │                                   launcher icons)
-│       ├── squashdb-apk-icon-*.svg,         source art for 7 of the 8 non-solid-color
-│       │   squashdb-icon-*.svg,             launcher icon variants (Bento Grid, Play Stack,
-│       │   squash-db-glass-impact-icon.svg  Progress Ring, Vault, Orbit Hub, Progress Vault,
+│       ├── cuemark-apk-icon-*.svg,         source art for 7 of the 8 non-solid-color
+│       │   cuemark-icon-*.svg,             launcher icon variants (Bento Grid, Play Stack,
+│       │   cuemark-db-glass-impact-icon.svg  Progress Ring, Vault, Orbit Hub, Progress Vault,
 │       │                                   Timeline Pulse, Glass Impact) — rasterized via
 │       │                                   cairosvg into android/.../mipmap-*/ at build time,
 │       │                                   not read directly by the running app
@@ -111,7 +111,7 @@ These only exist once a backup folder has been picked (via Backups & Restore →
 
 ```
 <chosen SAF folder>/
-├── squash-db/
+├── cuemark-db/
 │   ├── <category_key>/                 e.g. series/, movie/, or a custom category key
 │   │   └── <title_slug>/               sanitized title, lowercase, spaces→_, +short-id
 │   │       │                           suffix appended only on a name collision
@@ -121,19 +121,19 @@ These only exist once a backup folder has been picked (via Backups & Restore →
 │   └── settings/
 │       └── metadata-sources.json       state.preferences.metadataSources, with every
 │                                       custom source's apiKey replaced by "***REDACTED***"
-├── squashdb_backup_<YYYY-MM-DD>.tar    full snapshot: squash-db/ tree + one extra root-level
-                                        entry squashdb_backup_<YYYY-MM-DD>.json (the same
+├── cuemark_backup_<YYYY-MM-DD>.tar    full snapshot: cuemark-db/ tree + one extra root-level
+                                        entry cuemark_backup_<YYYY-MM-DD>.json (the same
                                         payload buildBackupPayload() produces for a plain
                                         JSON export)
-└── squashdb_backup_<YYYY-MM-DD>.sqdbe  passphrase-protected AES-256-GCM backup envelope
+└── cuemark_backup_<YYYY-MM-DD>.sqdbe  passphrase-protected AES-256-GCM backup envelope
 ```
 
 Notes:
-- The mirror under `squash-db/` is **additive-only** — items deleted or recategorized in-app leave their old folder behind; nothing here is ever auto-deleted.
+- The mirror under `cuemark-db/` is **additive-only** — items deleted or recategorized in-app leave their old folder behind; nothing here is ever auto-deleted.
 - `.tar` uses no compression (plain POSIX ustar) — written and read by hand-rolled code in `BackupFolderPlugin.java`/`app.js` (`parseTarArchive()`), not a library.
 - `.sqdbe` contains encrypted JSON metadata plus ciphertext; it does not contain the passphrase, and it can also be uploaded by the optional Cloud Sync controls.
 - `.sqdb` is an Android-only, device-bound encrypted snapshot produced by WorkManager; it uses the same Keystore key and is available in the Backup Recovery Center.
-- On non-native platforms (plain desktop browser), Export instead uses `showSaveFilePicker()` if available, or falls back to a plain `<a download>` link — no `squash-db/` tree is ever created outside the native Android path.
-- On a **fresh install** with an empty item list, picking a backup folder that already has a `squash-db/` tree or a `squashdb_backup_*.tar`/`.json`/`.sqdbe` file in it triggers an offer to auto-restore from the newest one found — see [storage.md](storage.md). `.sqdb` snapshots are restored explicitly from the Recovery Center on the same device.
+- On non-native platforms (plain desktop browser), Export instead uses `showSaveFilePicker()` if available, or falls back to a plain `<a download>` link — no `cuemark-db/` tree is ever created outside the native Android path.
+- On a **fresh install** with an empty item list, picking a backup folder that already has a `cuemark-db/` tree or a `cuemark_backup_*.tar`/`.json`/`.sqdbe` file in it triggers an offer to auto-restore from the newest one found — see [storage.md](storage.md). `.sqdb` snapshots are restored explicitly from the Recovery Center on the same device.
 
-See [storage.md](storage.md) for how/when these files actually get written (sync triggers, delay setting, what's cache vs. persistent), and [metadata.md](metadata.md) for what populates `thumbnail`/the metadata-sources file. Note that `appLock` is included in the encrypted Android state and full `.tar`/`.json` backup export, but is not included in the additive `squash-db/` mirror.
+See [storage.md](storage.md) for how/when these files actually get written (sync triggers, delay setting, what's cache vs. persistent), and [metadata.md](metadata.md) for what populates `thumbnail`/the metadata-sources file. Note that `appLock` is included in the encrypted Android state and full `.tar`/`.json` backup export, but is not included in the additive `cuemark-db/` mirror.

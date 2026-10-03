@@ -1,4 +1,4 @@
-// SquashDB - App Password setup wizard (manage-app-lock.html)
+// CueMark - App Password setup wizard (manage-app-lock.html)
 // Depends on globals from app.js/applock.js: state, saveData(), normalizeAppLock(),
 // setAppLockSecret(), setSecurityQuestions(), setBiometricAppLock(),
 // renderPatternGrid(), serializePattern(), updateAppLockSettingsSummary().
@@ -109,7 +109,7 @@ function renderAppLockSetupArea() {
   if (appLockDraftMethod === "biometric") {
     setupTitle.textContent = "Biometric Unlock";
     setupArea.innerHTML = `
-      <p class="setting-desc">Uses biometrics or the device screen lock already set up in Android. SquashDB cannot enroll fingerprints or face data itself.</p>
+      <p class="setting-desc">Uses biometrics or the device screen lock already set up in Android. CueMark cannot enroll fingerprints or face data itself.</p>
       <button type="button" class="btn btn-primary" id="app-lock-enable-biometric" style="width:100%;margin-top:12px;">Enable Biometric Unlock</button>
       <p class="app-lock-error" id="app-lock-biometric-error" style="display:none;"></p>
     `;
@@ -317,7 +317,7 @@ async function enableBiometricAppLock() {
       enableButton.disabled = true;
       enableButton.textContent = "Confirm on your device…";
     }
-    const result = await biometric.authenticate({ reason: "Confirm biometric unlock for SquashDB" });
+    const result = await biometric.authenticate({ reason: "Confirm biometric unlock for CueMark" });
     if (!result?.success) {
       showError("Biometric confirmation did not succeed. App Lock has not been changed.");
       return;

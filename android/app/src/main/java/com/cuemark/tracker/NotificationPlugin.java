@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.Manifest;
 import android.app.AlarmManager;
@@ -28,8 +28,8 @@ import com.getcapacitor.annotation.PermissionCallback;
     }
 )
 public class NotificationPlugin extends Plugin {
-    public static final String CHANNEL_ID = "squashdb-reminders";
-    public static final String ACTION_NOTIFICATION = "com.squashdb.tracker.NOTIFICATION_ACTION";
+    public static final String CHANNEL_ID = "cuemark-reminders";
+    public static final String ACTION_NOTIFICATION = "com.cuemark.tracker.NOTIFICATION_ACTION";
     private static Intent pendingAction;
 
     public static void captureIntent(Intent intent) {
@@ -84,8 +84,8 @@ public class NotificationPlugin extends Plugin {
 
     @PluginMethod
     public void notify(PluginCall call) {
-        String title = call.getString("title", "SquashDB");
-        String body = call.getString("body", "You have a SquashDB reminder.");
+        String title = call.getString("title", "CueMark");
+        String body = call.getString("body", "You have a CueMark reminder.");
         String itemId = call.getString("itemId", "");
         String actionUrl = call.getString("actionUrl", "");
         int snoozeMinutes = call.getInt("snoozeMinutes", 60);
@@ -102,7 +102,7 @@ public class NotificationPlugin extends Plugin {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
-            .setSmallIcon(com.squashdb.tracker.R.mipmap.ic_launcher)
+            .setSmallIcon(com.cuemark.tracker.R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
@@ -117,8 +117,8 @@ public class NotificationPlugin extends Plugin {
     @PluginMethod
     public void schedule(PluginCall call) {
         long at = call.getLong("at", 0L);
-        String title = call.getString("title", "SquashDB");
-        String body = call.getString("body", "You have a SquashDB reminder.");
+        String title = call.getString("title", "CueMark");
+        String body = call.getString("body", "You have a CueMark reminder.");
         String itemId = call.getString("itemId", "");
         String actionUrl = call.getString("actionUrl", "");
         int snoozeMinutes = call.getInt("snoozeMinutes", 60);
@@ -179,9 +179,9 @@ public class NotificationPlugin extends Plugin {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationChannel channel = new NotificationChannel(
-            CHANNEL_ID, "SquashDB reminders", NotificationManager.IMPORTANCE_DEFAULT
+            CHANNEL_ID, "CueMark reminders", NotificationManager.IMPORTANCE_DEFAULT
         );
-        channel.setDescription("Progress and watchlist reminders from SquashDB");
+        channel.setDescription("Progress and watchlist reminders from CueMark");
         manager.createNotificationChannel(channel);
     }
 }

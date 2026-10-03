@@ -1,4 +1,4 @@
-// SquashDB navigation module.
+// CueMark navigation module.
 // Loaded before app.js; these functions intentionally remain global so the
 // existing multi-page HTML files and feature modules keep their API.
 
@@ -42,7 +42,7 @@ function normalizeAppPageHref(href) {
 
 function getAppPageStack() {
   try {
-    const raw = sessionStorage.getItem("squashdb_page_stack");
+    const raw = sessionStorage.getItem("cuemark_page_stack");
     const stack = raw ? JSON.parse(raw) : [];
     return Array.isArray(stack) ? stack : [];
   } catch (e) {
@@ -51,12 +51,12 @@ function getAppPageStack() {
 }
 
 function setAppPageStack(stack) {
-  sessionStorage.setItem("squashdb_page_stack", JSON.stringify(stack));
+  sessionStorage.setItem("cuemark_page_stack", JSON.stringify(stack));
 }
 
 function getPageScrollPositions() {
   try {
-    const value = JSON.parse(sessionStorage.getItem("squashdb_page_scroll") || "{}");
+    const value = JSON.parse(sessionStorage.getItem("cuemark_page_scroll") || "{}");
     return value && typeof value === "object" ? value : {};
   } catch (e) {
     return {};
@@ -70,7 +70,7 @@ function saveCurrentPageScroll() {
     main: main?.scrollTop || 0,
     window: window.scrollY || 0
   };
-  sessionStorage.setItem("squashdb_page_scroll", JSON.stringify(positions));
+  sessionStorage.setItem("cuemark_page_scroll", JSON.stringify(positions));
 }
 
 function restoreCurrentPageScroll() {
@@ -100,8 +100,8 @@ function recordCurrentPage() {
     stack[stack.length - 1] = currentWithQuery;
     setAppPageStack(stack);
   }
-  if (history.state?.squashdbPage !== currentWithQuery) {
-    history.replaceState({ squashdbPage: currentWithQuery }, "", currentWithQuery);
+  if (history.state?.cuemarkPage !== currentWithQuery) {
+    history.replaceState({ cuemarkPage: currentWithQuery }, "", currentWithQuery);
   }
 }
 

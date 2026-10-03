@@ -459,7 +459,7 @@
     });
   }
 
-  window.addEventListener("squashdb-app-ready", () => {
+  window.addEventListener("cuemark-app-ready", () => {
     try { init(); } catch (error) { console.warn("Import list initialization failed", error); }
   }, { once: true });
 })();

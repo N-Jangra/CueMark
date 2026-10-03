@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;

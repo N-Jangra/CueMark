@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SquashDB</title>
+  <title>CueMark</title>
   <style>
     html,body{margin:0;width:100%;height:100%;background:#030712;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif;overflow:hidden}
     main{height:100%;display:grid;place-items:center;text-align:center}
@@ -14,11 +14,11 @@
   </style>
 </head>
 <body>
-  <main aria-label="Loading SquashDB"><section class="boot"><img src="squashdb-logo.svg" alt=""><h1>SquashDB</h1><p>Loading your dashboard</p><div class="dots">•••</div></section></main>
+  <main aria-label="Loading CueMark"><section class="boot"><img src="cuemark-logo.svg" alt=""><h1>CueMark</h1><p>Loading your dashboard</p><div class="dots">•••</div></section></main>
   <script>
     let multiplier = 1;
     try {
-      const prefs = JSON.parse(localStorage.getItem("squashdb_prefs") || "{}");
+      const prefs = JSON.parse(localStorage.getItem("cuemark_prefs") || "{}");
       multiplier = { off: .001, fast: .5, normal: 1, slow: 1.75 }[prefs.animationSpeed] || 1;
     } catch (e) {}
     setTimeout(() => location.replace("static/pages/main/dashboard.html"), 1500 * multiplier);

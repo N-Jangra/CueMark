@@ -3,9 +3,9 @@
   const root = document.documentElement;
   const speed = { off: 0.001, fast: 0.5, normal: 1, slow: 1.75 };
   try {
-    const preferences = JSON.parse(localStorage.getItem("squashdb_prefs") || "{}");
-    const theme = localStorage.getItem("squashdb_ui_theme") || preferences.uiTheme || localStorage.getItem("squashdb_theme") || "dark";
-    const accent = localStorage.getItem("squashdb_main_color") || preferences.mainColor || "normal";
+    const preferences = JSON.parse(localStorage.getItem("cuemark_prefs") || "{}");
+    const theme = localStorage.getItem("cuemark_ui_theme") || preferences.uiTheme || localStorage.getItem("cuemark_theme") || "dark";
+    const accent = localStorage.getItem("cuemark_main_color") || preferences.mainColor || "normal";
     root.setAttribute("data-theme", theme);
     root.setAttribute("data-accent", accent);
     root.setAttribute("data-contrast", preferences.highContrast ? "high" : "normal");

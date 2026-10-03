@@ -1,4 +1,4 @@
-// SquashDB - Sources: a browsable list of every built-in metadata source
+// CueMark - Sources: a browsable list of every built-in metadata source
 // (static/pages/main/sources.html), plus a per-source search page (source-search.html?source=X)
 // that queries just that one source across the categories it covers.
 // Depends on globals from metadata.js (BUILTIN_METADATA_SOURCES,

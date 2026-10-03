@@ -1,14 +1,14 @@
-// SquashDB - Custom fonts: lets the user change the whole app's font, either
+// CueMark - Custom fonts: lets the user change the whole app's font, either
 // from system-safe stacks that need no network, or from a small set of
 // Google Fonts fetched once and cached via the Cache Storage API so later
 // launches (including fully offline ones) don't need to hit the network
 // again. If a backup folder is configured (Settings → Backups), the font
-// file is also mirrored there as squash-db/fonts/<file>.woff2, matching how
+// file is also mirrored there as cuemark-db/fonts/<file>.woff2, matching how
 // poster thumbnails are mirrored — a plain file the user can back up.
 // Depends on globals from app.js: state, saveData(), backupFolderPluginAvailable(),
 // getOrPickBackupFolderUri().
 
-const FONT_CACHE_NAME = "squashdb-fonts-v1";
+const FONT_CACHE_NAME = "cuemark-fonts-v1";
 
 // System stacks need no download and always render immediately. Google Fonts
 // entries are fetched on first use (or read from the fonts cache after that);
@@ -31,7 +31,7 @@ const FONT_CHOICES = {
 };
 
 function fontIsOnline() {
-  return typeof squashDbIsOffline !== "function" || !squashDbIsOffline();
+  return typeof cueMarkIsOffline !== "function" || !cueMarkIsOffline();
 }
 
 // Applies the currently saved font immediately for system fonts, or
@@ -65,11 +65,11 @@ async function applyUiFont() {
 // network fetch of Google's CSS2 API + the woff2 file it points to. Each
 // font is only ever injected into the document once per page load.
 async function ensureGoogleFontLoaded(key, choice) {
-  const styleId = `squashdb-font-face-${key}`;
+  const styleId = `cuemark-font-face-${key}`;
   if (document.getElementById(styleId)) return; // already injected this page load
 
   const cache = await caches.open(FONT_CACHE_NAME);
-  const woffCacheUrl = `https://squashdb-fonts.local/${key}.woff2`;
+  const woffCacheUrl = `https://cuemark-fonts.local/${key}.woff2`;
 
   let woffBlob = await (await cache.match(woffCacheUrl))?.blob();
 
@@ -102,7 +102,7 @@ async function ensureGoogleFontLoaded(key, choice) {
   document.head.appendChild(style);
 }
 
-// Mirrors a downloaded font file into squash-db/fonts/<key>.woff2 on the
+// Mirrors a downloaded font file into cuemark-db/fonts/<key>.woff2 on the
 // user's chosen backup folder, same as poster thumbnails — best-effort only,
 // never blocks font loading itself if no folder is configured or the write fails.
 // Only runs if a folder is ALREADY configured — picking a font must never
@@ -110,7 +110,7 @@ async function ensureGoogleFontLoaded(key, choice) {
 async function mirrorFontToBackupFolder(key, blob) {
   if (typeof backupFolderPluginAvailable !== "function" || !backupFolderPluginAvailable()) return;
 
-  const folderUri = localStorage.getItem("squashdb_backup_folder_uri");
+  const folderUri = localStorage.getItem("cuemark_backup_folder_uri");
   if (!folderUri) return;
 
   const plugin = window.Capacitor.Plugins.BackupFolder;
@@ -132,7 +132,7 @@ async function mirrorFontToBackupFolder(key, blob) {
 
   await plugin.writeNestedBinaryFile({
     uri: folderUri,
-    dirPath: ["squash-db", "fonts"],
+    dirPath: ["cuemark-db", "fonts"],
     fileName: `${key}.woff2`,
     base64Content: base64
   });

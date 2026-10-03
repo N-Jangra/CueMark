@@ -99,7 +99,7 @@ Grid of 12 launcher icon choices: **Classic**, **Turquoise** (**default**), **Or
 
 ## manage-app-name.html
 
-List of 16 launcher name presets (Backlog, Binge Log, Checklist, ListKeeper, My Files, My Lists, My Watchlist, Notes, Reminders, Splash, SquashDB, Squid, ToWatch, Tracker, Vault, Watchlist), crossed with all 12 icon variants.
+List of 16 launcher name presets (Backlog, Binge Log, Checklist, ListKeeper, My Files, My Lists, My Watchlist, Notes, Reminders, Splash, CueMark, Squid, ToWatch, Tracker, Vault, Watchlist), crossed with all 12 icon variants.
 
 ## manage-app-lock.html — App Password
 
@@ -115,7 +115,7 @@ See [app-lock.md](app-lock.md) for the full lock/rate-limit/recovery mechanics.
 - **Folder status notice** — shown if the saved backup folder is missing/invalid; startup also asks the user to select a replacement folder.
 - **Export Data** — syncs the folder tree, then writes a full `.tar` backup (native) or falls back to a `.json` download (browser/non-native).
 - **Import Data** — accepts `.json` or `.tar`; always merges by item ID, never overwrites existing items.
-- **Change Backup Folder** — opens the native SAF folder picker. If the app currently has no tracked items and the picked folder already contains a `squash-db/` tree or a dated backup file, a follow-up confirm dialog offers to auto-restore from the newest one found (see [storage.md](storage.md)).
+- **Change Backup Folder** — opens the native SAF folder picker. If the app currently has no tracked items and the picked folder already contains a `cuemark-db/` tree or a dated backup file, a follow-up confirm dialog offers to auto-restore from the newest one found (see [storage.md](storage.md)).
 - **Sync to Folder Tree** — manually triggers a sync pass now, with a result alert (synced/skipped/error counts).
 - **Wipe All Data** — confirms, then clears all items (preferences are untouched).
 

@@ -4,7 +4,7 @@ There is no SQL database in this app. On Android, the main state is stored as an
 
 `state` (defined in `www/app.js`) is the in-memory object serialized into the encrypted Android store on native builds, or `localStorage` on web, and reloaded on every page load via `loadData()`.
 
-## `squashdb_items` → `state.items: Item[]`
+## `cuemark_items` → `state.items: Item[]`
 
 ```
 Item {
@@ -51,7 +51,7 @@ Notes:
 - Games and custom categories carry no extra fields beyond the universal set.
 - `rating` is always stored 0–5 internally; `ratingFormat` in preferences only controls *display* conversion (`formatRatingValue()`/`ratingToStoredValue()` in `app.js`).
 
-## `squashdb_prefs` → `state.preferences`
+## `cuemark_prefs` → `state.preferences`
 
 ```
 preferences {
@@ -143,25 +143,25 @@ Not nested under items/prefs — small standalone values, mostly UI/session stat
 
 | Key | Purpose |
 |---|---|
-| `squashdb_theme` | Legacy/duplicate theme value (superseded by `preferences.uiTheme`, kept for back-compat) |
-| `squashdb_ui_theme` | Same, written/read alongside `preferences.uiTheme` |
-| `squashdb_main_color` | Same pattern for accent color |
-| `squashdb_rating_format` | Same pattern for rating format |
-| `squashdb_sort` | Current dashboard sort order |
-| `squashdb_category_chip` | Last-active category chip (fallback source used by Timeline/Statistics) |
-| `squashdb_timeline_filter` | Quick filter: `"all"` \| `"week"` \| `"month"` |
-| `squashdb_last_entry_category` | Category pre-selected next time the Add modal opens |
-| `squashdb_last_tab` | Last visited bottom-nav tab, used to restore on relaunch if `defaultStartPage` is `"remember-last"` |
-| `squashdb_backup_folder_uri` | SAF `content://` tree URI for the chosen backup folder (Android only) |
-| `squashdb_backup_folder_invalid` | `"true"`/`"false"` flag set by the startup storage check; drives the notice on the Backups & Restore page |
-| `squashdb_synced_item_hashes` | `{ [itemId]: JSON.stringify(item) }` — per-item hash cache so `squash-db/` folder-tree sync only rewrites items that actually changed |
-| `squashdb_lock_failed_attempts` | Count of consecutive wrong app-lock attempts (persists across restarts — this is what makes rate limiting/the "Forgot password" reveal survive an app kill) |
+| `cuemark_theme` | Legacy/duplicate theme value (superseded by `preferences.uiTheme`, kept for back-compat) |
+| `cuemark_ui_theme` | Same, written/read alongside `preferences.uiTheme` |
+| `cuemark_main_color` | Same pattern for accent color |
+| `cuemark_rating_format` | Same pattern for rating format |
+| `cuemark_sort` | Current dashboard sort order |
+| `cuemark_category_chip` | Last-active category chip (fallback source used by Timeline/Statistics) |
+| `cuemark_timeline_filter` | Quick filter: `"all"` \| `"week"` \| `"month"` |
+| `cuemark_last_entry_category` | Category pre-selected next time the Add modal opens |
+| `cuemark_last_tab` | Last visited bottom-nav tab, used to restore on relaunch if `defaultStartPage` is `"remember-last"` |
+| `cuemark_backup_folder_uri` | SAF `content://` tree URI for the chosen backup folder (Android only) |
+| `cuemark_backup_folder_invalid` | `"true"`/`"false"` flag set by the startup storage check; drives the notice on the Backups & Restore page |
+| `cuemark_synced_item_hashes` | `{ [itemId]: JSON.stringify(item) }` — per-item hash cache so `cuemark-db/` folder-tree sync only rewrites items that actually changed |
+| `cuemark_lock_failed_attempts` | Count of consecutive wrong app-lock attempts (persists across restarts — this is what makes rate limiting/the "Forgot password" reveal survive an app kill) |
 
 ## `sessionStorage` keys (cleared when the app process is killed, not just on navigation)
 
 | Key | Purpose |
 |---|---|
-| `squashdb_lock_unlocked` | `"true"` once the correct app-lock secret has been entered this session. Intentionally *not* `localStorage` — the lock must re-trigger every time the app is actually reopened, not just on page navigation within one session. See [app-lock.md](app-lock.md). |
+| `cuemark_lock_unlocked` | `"true"` once the correct app-lock secret has been entered this session. Intentionally *not* `localStorage` — the lock must re-trigger every time the app is actually reopened, not just on page navigation within one session. See [app-lock.md](app-lock.md). |
 
 ## Schema evolution / defaults
 

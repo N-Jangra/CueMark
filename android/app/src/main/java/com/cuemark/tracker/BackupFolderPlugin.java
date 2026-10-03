@@ -1,4 +1,4 @@
-package com.squashdb.tracker;
+package com.cuemark.tracker;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -25,7 +25,7 @@ import android.util.Base64;
 import com.getcapacitor.JSArray;
 
 // Lets the user pick a folder (via Android's Storage Access Framework tree picker)
-// to store SquashDB backups in, and persists access to it across app restarts so
+// to store CueMark backups in, and persists access to it across app restarts so
 // exports/imports never need to re-prompt once a folder has been chosen.
 @CapacitorPlugin(name = "BackupFolder")
 public class BackupFolderPlugin extends Plugin {
@@ -33,7 +33,7 @@ public class BackupFolderPlugin extends Plugin {
     // file work serialized on one background thread so the WebView and Android
     // main thread remain responsive while preserving operation ordering.
     private final ExecutorService storageExecutor = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "SquashDB-Storage");
+        Thread thread = new Thread(runnable, "CueMark-Storage");
         thread.setDaemon(true);
         return thread;
     });
@@ -256,7 +256,7 @@ public class BackupFolderPlugin extends Plugin {
 
     // Deletes a single file by its own document URI. Used only for rotating old
     // auto-backup archives — never called on a folder, so this can't cascade into
-    // deleting squash-db/ or any of its contents.
+    // deleting cuemark-db/ or any of its contents.
     @PluginMethod
     public void deleteFile(PluginCall call) {
         storageExecutor.execute(() -> doDeleteFile(call));
@@ -292,7 +292,7 @@ public class BackupFolderPlugin extends Plugin {
             call.reject("Missing folder URI");
             return;
         }
-        getContext().getSharedPreferences("squashdb_backup_location", android.content.Context.MODE_PRIVATE)
+        getContext().getSharedPreferences("cuemark_backup_location", android.content.Context.MODE_PRIVATE)
             .edit().putString("uri", uri).apply();
         call.resolve(new JSObject().put("success", true));
     }
@@ -373,7 +373,7 @@ public class BackupFolderPlugin extends Plugin {
         return found;
     }
 
-    // Resolves dirPath (e.g. ["squash-db", "series", "cobra_kai"]) under the tree root,
+    // Resolves dirPath (e.g. ["cuemark-db", "series", "cobra_kai"]) under the tree root,
     // creating any missing folder along the way. Each segment requires its own SAF
     // round-trip since there is no path-based lookup or recursive mkdir in DocumentsContract.
     private Uri getOrCreateDir(Uri treeUri, String[] pathSegments) throws Exception {
@@ -420,7 +420,7 @@ public class BackupFolderPlugin extends Plugin {
     }
 
     // Writes textContent to <root>/<dirPath...>/<fileName>, creating any missing folders.
-    // Used by the squash-db/ category/item folder-tree mirror.
+    // Used by the cuemark-db/ category/item folder-tree mirror.
     @PluginMethod
     public void writeNestedFile(PluginCall call) {
         storageExecutor.execute(() -> doWriteNestedFile(call));
@@ -462,7 +462,7 @@ public class BackupFolderPlugin extends Plugin {
     }
 
     // Writes base64Content (decoded to raw bytes) to <root>/<dirPath...>/<fileName>.
-    // Used for .thumbnail files in the squash-db/ folder-tree mirror.
+    // Used for .thumbnail files in the cuemark-db/ folder-tree mirror.
     @PluginMethod
     public void writeNestedBinaryFile(PluginCall call) {
         storageExecutor.execute(() -> doWriteNestedBinaryFile(call));
@@ -514,7 +514,7 @@ public class BackupFolderPlugin extends Plugin {
         return out;
     }
 
-    // Recursively archives everything under <root>/<sourceDirPath...> (i.e. squash-db/)
+    // Recursively archives everything under <root>/<sourceDirPath...> (i.e. cuemark-db/)
     // into a POSIX tar, and writes it as <root>/<tarFileName> — a sibling of the
     // source folder, not inside it. Walking + tarring natively avoids round-tripping
     // every file's bytes through the JS bridge twice (once to read, once to re-write).
@@ -616,7 +616,7 @@ public class BackupFolderPlugin extends Plugin {
     // Minimal POSIX (ustar) tar writer: 512-byte header per entry, content padded
     // to a 512-byte boundary, and a 1024-byte zero-block trailer. No compression —
     // gzip would need a native Deflater wrapper, and plain tar is enough here since
-    // the squash-db/ files (JSON + WebP) are already small and mostly incompressible.
+    // the cuemark-db/ files (JSON + WebP) are already small and mostly incompressible.
     private static class TarWriter {
         private final OutputStream out;
 

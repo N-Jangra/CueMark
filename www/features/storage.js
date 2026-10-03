@@ -18,11 +18,11 @@
 
   async function backupBytes() {
     const plugin = window.Capacitor?.Plugins?.BackupFolder;
-    const uri = localStorage.getItem("squashdb_backup_folder_uri");
+    const uri = localStorage.getItem("cuemark_backup_folder_uri");
     if (!plugin?.listFiles || !uri) return 0;
     try {
       const result = await plugin.listFiles({ uri });
-      return (result?.files || []).filter(file => /^squashdb_/.test(file.name || "")).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+      return (result?.files || []).filter(file => /^cuemark_/.test(file.name || "")).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
     } catch (error) {
       console.warn("Could not measure backup storage", error);
       return 0;
@@ -38,7 +38,7 @@
     const library = bytesOf(state.items || []);
     const history = bytesOf(state.watchLog || []);
     const preferences = bytesOf(state.preferences || {});
-    const cache = window.SquashDBCache?.stats ? await window.SquashDBCache.stats() : {};
+    const cache = window.CueMarkCache?.stats ? await window.CueMarkCache.stats() : {};
     const metadata = Number(cache.metadataBytes) || 0;
     const thumbnails = Number(cache.imageBytes) || 0;
     const backups = await backupBytes();
@@ -77,14 +77,14 @@
 
   async function refresh() {
     try { render(await measure()); }
-    catch (error) { console.warn("Could not measure SquashDB storage", error); }
+    catch (error) { console.warn("Could not measure CueMark storage", error); }
   }
 
   async function clearCache(type, message) {
-    if (!window.SquashDBCache) return;
-    if (type === "metadata") await window.SquashDBCache.clearMetadata();
-    else if (type === "images") await window.SquashDBCache.clearImages();
-    else await window.SquashDBCache.clearTemporary();
+    if (!window.CueMarkCache) return;
+    if (type === "metadata") await window.CueMarkCache.clearMetadata();
+    else if (type === "images") await window.CueMarkCache.clearImages();
+    else await window.CueMarkCache.clearTemporary();
     if (typeof showToast === "function") showToast(message, "success");
     refresh();
   }
@@ -94,11 +94,11 @@
     document.getElementById("storage-clear-metadata")?.addEventListener("click", () => clearCache("metadata", "Metadata cache cleared."));
     document.getElementById("storage-clear-images")?.addEventListener("click", () => clearCache("images", "Thumbnail cache cleared."));
     document.getElementById("storage-clear-temporary")?.addEventListener("click", () => clearCache("temporary", "Temporary caches cleared."));
-    document.getElementById("storage-clear-data")?.addEventListener("click", () => window.clearSquashDbData?.());
-    document.getElementById("storage-factory-reset")?.addEventListener("click", () => window.clearSquashDbData?.({ factoryReset: true }));
+    document.getElementById("storage-clear-data")?.addEventListener("click", () => window.clearCueMarkData?.());
+    document.getElementById("storage-factory-reset")?.addEventListener("click", () => window.clearCueMarkData?.({ factoryReset: true }));
     refresh();
     if (window.lucide) lucide.createIcons();
   }
 
-  window.addEventListener("squashdb-app-ready", init, { once: true });
+  window.addEventListener("cuemark-app-ready", init, { once: true });
 })();

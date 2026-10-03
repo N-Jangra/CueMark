@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6366f1">
-  <link rel="icon" href="squashdb-logo.svg" type="image/svg+xml">
-  <title>SquashDB</title>
+  <link rel="icon" href="cuemark-logo.svg" type="image/svg+xml">
+  <title>CueMark</title>
   <script src="core/logcat.js"></script>
   <style>
     :root {
@@ -126,7 +126,7 @@
     const ANIMATION_SPEED_MULTIPLIERS = { off: 0.001, fast: 0.5, normal: 1, slow: 1.75 };
     let animSpeedMultiplier = 1;
     try {
-      const savedPrefs = JSON.parse(localStorage.getItem("squashdb_prefs") || "{}");
+      const savedPrefs = JSON.parse(localStorage.getItem("cuemark_prefs") || "{}");
       animSpeedMultiplier = ANIMATION_SPEED_MULTIPLIERS[savedPrefs.animationSpeed] ?? 1;
     } catch (e) {
       animSpeedMultiplier = 1;
@@ -141,12 +141,12 @@
   </script>
 </head>
 <body>
-  <main class="boot" aria-label="Loading SquashDB">
+  <main class="boot" aria-label="Loading CueMark">
     <section class="boot-inner">
       <div class="logo" aria-hidden="true">
-        <img src="squashdb-logo.svg" alt="" aria-hidden="true">
+        <img src="cuemark-logo.svg" alt="" aria-hidden="true">
       </div>
-      <h1>SquashDB</h1>
+      <h1>CueMark</h1>
       <p>Loading your dashboard</p>
       <div class="dots" aria-hidden="true">
         <span></span><span></span><span></span>
