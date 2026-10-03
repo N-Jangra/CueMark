@@ -4,6 +4,29 @@ All notable changes to SquashDB are documented in this file.
 
 ## [0.0.7]
 
+### UI and navigation
+- Refreshed the Dashboard layout with improved collection cards, category controls, search, filters, insights, loading states, and empty states.
+- Renewed the top and bottom navigation bars with improved spacing, active-state styling, solid/translucent backgrounds, and better mobile behavior.
+- Added draggable mobile ordering for bottom navigation items and navigation settings improvements; Dashboard and Settings remain available.
+- Improved page headers, back navigation, popup behavior, alignment, responsive layouts, and theme-aware styling across the app.
+- Added pull-to-refresh feedback on the Dashboard and ensured Android Back closes an open popup before navigating away.
+
+### Settings and personalization
+- Expanded Appearance settings with accessibility presets, reduced motion, text size, font, theme, main color, animation speed, bottom-bar styling, transparency, and scrollbar visibility controls.
+- Refined Settings subpages and moved network behavior controls into Privacy & Network.
+- Added or improved controls for Dashboard & Navigation, Metadata, Backup & Sync, Data, Notifications, Security, and About.
+- Removed obsolete Advanced and Information settings pages and consolidated their useful destinations into the main Settings page.
+- Improved theme consistency, contrast, modal surfaces, switches, icons, and mobile drag-and-drop interactions.
+
+### Detail pages and metadata
+- Improved show-detail artwork backgrounds using thumbnail colors and refined episode presentation, rating controls, and circular episode checkboxes.
+- Fixed saved show metadata so all seasons, episodes, and thumbnails are retained instead of only Season 1.
+- Improved metadata source and Explore page title alignment and source navigation.
+
+### Icons and Android resources
+- Removed obsolete alternate app icons and their unused Android resources.
+- Improved the remaining app icon/name configuration and related settings presentation.
+
 ### Import and export
 - Added dedicated Settings pages for importing and exporting lists instead of using a popup workflow.
 - Added CSV, TSV, and TXT import support with category-aware status handling, duplicate policies, previews, and configurable metadata sources.
