@@ -2273,12 +2273,17 @@ const SETTINGS_PICKERS = {
       { value: "serif", label: "Serif" },
       { value: "monospace", label: "Monospace" },
       { value: "rounded", label: "Rounded" },
-      { value: "poppins", label: "Poppins (online)" },
-      { value: "roboto", label: "Roboto (online)" },
-      { value: "nunito", label: "Nunito (online)" },
-      { value: "lato", label: "Lato (online)" },
-      { value: "merriweather", label: "Merriweather (online)" },
-      { value: "jetbrains-mono", label: "JetBrains Mono (online)" }
+      { value: "poppins", label: "Poppins" },
+      { value: "roboto", label: "Roboto" },
+      { value: "nunito", label: "Nunito" },
+      { value: "lato", label: "Lato" },
+      { value: "merriweather", label: "Merriweather" },
+      { value: "jetbrains-mono", label: "JetBrains Mono" },
+      { value: "open-sans", label: "Open Sans" }, { value: "montserrat", label: "Montserrat" },
+      { value: "oswald", label: "Oswald" }, { value: "raleway", label: "Raleway" },
+      { value: "ubuntu", label: "Ubuntu" }, { value: "playfair-display", label: "Playfair Display" },
+      { value: "fira-sans", label: "Fira Sans" }, { value: "rubik", label: "Rubik" },
+      { value: "quicksand", label: "Quicksand" }, { value: "caveat", label: "Caveat" }
     ]
   },
   bottomBarActiveStyle: {
@@ -2657,7 +2662,10 @@ const FONT_PREVIEW_FAMILIES = {
   system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", inter: "Inter, sans-serif",
   outfit: "Outfit, sans-serif", serif: "Georgia, 'Times New Roman', serif", monospace: "ui-monospace, monospace",
   rounded: "ui-rounded, 'Segoe UI Rounded', sans-serif", poppins: "Poppins, sans-serif", roboto: "Roboto, sans-serif",
-  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace"
+  nunito: "Nunito, sans-serif", lato: "Lato, sans-serif", merriweather: "Merriweather, serif", "jetbrains-mono": "'JetBrains Mono', monospace",
+  "open-sans": "'Open Sans', sans-serif", montserrat: "Montserrat, sans-serif", oswald: "Oswald, sans-serif", raleway: "Raleway, sans-serif",
+  ubuntu: "Ubuntu, sans-serif", "playfair-display": "'Playfair Display', serif", "fira-sans": "'Fira Sans', sans-serif",
+  rubik: "Rubik, sans-serif", quicksand: "Quicksand, sans-serif", caveat: "Caveat, cursive"
 };
 
 function getSettingsPickerPresentation(pref, option) {
@@ -2806,7 +2814,11 @@ function getSettingsPickerPresentation(pref, option) {
       serif: "Traditional letterforms for a bookish feel.", monospace: "Even-width characters with a technical feel.", rounded: "Soft, friendly rounded letterforms.",
       poppins: "Geometric sans serif with a warm feel.", roboto: "Compact, familiar Android-style lettering.", nunito: "Soft shapes with highly readable text.",
       lato: "Open, balanced letterforms for longer reading.", merriweather: "Serif lettering tuned for comfortable reading.",
-      "jetbrains-mono": "Clear monospaced lettering for detail."
+      "jetbrains-mono": "Clear monospaced lettering for detail.", "open-sans": "Open, friendly lettering for everyday reading.",
+      montserrat: "Bold geometric lettering with a modern feel.", oswald: "Tall, condensed lettering for strong headings.",
+      raleway: "Elegant, light geometric sans serif lettering.", ubuntu: "Warm, humanist lettering with a distinct character.",
+      "playfair-display": "High-contrast serif lettering for a refined feel.", "fira-sans": "Readable humanist lettering designed for screens.",
+      rubik: "Rounded, clean lettering with a modern shape.", quicksand: "Rounded, light lettering with a relaxed feel.", caveat: "Casual handwritten lettering with a personal feel."
     };
     return { kind: "font", description: description[option.value], family: FONT_PREVIEW_FAMILIES[option.value] };
   }
@@ -3015,6 +3027,10 @@ function openSettingsPicker(pref, title) {
     const presentation = getSettingsPickerPresentation(pref, opt);
     if (presentation) {
       btn.classList.add("rich-picker-option");
+      if (pref === "uiFont" && presentation.family) {
+        // Preview the complete choice in its own typeface, not only the Aa tile.
+        btn.style.fontFamily = presentation.family;
+      }
       if (pref === "uiTheme") {
         btn.classList.add("theme-picker-option");
         btn.dataset.themeOption = opt.value;
@@ -3036,6 +3052,19 @@ function openSettingsPicker(pref, title) {
         const description = document.createElement("small");
         description.textContent = presentation.description;
         copy.appendChild(description);
+      }
+      if (pref === "uiFont" && presentation.family) {
+        [btn, preview, copy, name, ...copy.querySelectorAll("small")].forEach(element => {
+          element.style.setProperty("font-family", presentation.family, "important");
+        });
+        const fontChoice = typeof FONT_CHOICES !== "undefined" ? FONT_CHOICES[opt.value] : null;
+        if (fontChoice?.kind === "google" && typeof ensureGoogleFontLoaded === "function") {
+          ensureGoogleFontLoaded(opt.value, fontChoice).then(() => {
+            [btn, preview, copy, name, ...copy.querySelectorAll("small")].forEach(element => {
+              element.style.setProperty("font-family", presentation.family, "important");
+            });
+          }).catch(() => {});
+        }
       }
       btn.append(radio, preview, copy);
     } else {

@@ -27,7 +27,17 @@ const FONT_CHOICES = {
   nunito: { label: "Nunito", cssFamily: "'Nunito', sans-serif", kind: "google", googleFamily: "Nunito", weights: "400;600;700;800" },
   lato: { label: "Lato", cssFamily: "'Lato', sans-serif", kind: "google", googleFamily: "Lato", weights: "400;700;900" },
   merriweather: { label: "Merriweather", cssFamily: "'Merriweather', serif", kind: "google", googleFamily: "Merriweather", weights: "400;700" },
-  "jetbrains-mono": { label: "JetBrains Mono", cssFamily: "'JetBrains Mono', monospace", kind: "google", googleFamily: "JetBrains+Mono", weights: "400;500;700" }
+  "jetbrains-mono": { label: "JetBrains Mono", cssFamily: "'JetBrains Mono', monospace", kind: "google", googleFamily: "JetBrains+Mono", weights: "400;500;700" },
+  "open-sans": { label: "Open Sans", cssFamily: "'Open Sans', sans-serif", kind: "google", googleFamily: "Open+Sans", weights: "400;600;700" },
+  montserrat: { label: "Montserrat", cssFamily: "Montserrat, sans-serif", kind: "google", googleFamily: "Montserrat", weights: "400;500;600;700" },
+  oswald: { label: "Oswald", cssFamily: "Oswald, sans-serif", kind: "google", googleFamily: "Oswald", weights: "400;500;600;700" },
+  raleway: { label: "Raleway", cssFamily: "Raleway, sans-serif", kind: "google", googleFamily: "Raleway", weights: "400;500;600;700" },
+  ubuntu: { label: "Ubuntu", cssFamily: "Ubuntu, sans-serif", kind: "google", googleFamily: "Ubuntu", weights: "400;500;700" },
+  "playfair-display": { label: "Playfair Display", cssFamily: "'Playfair Display', serif", kind: "google", googleFamily: "Playfair+Display", weights: "400;500;600;700" },
+  "fira-sans": { label: "Fira Sans", cssFamily: "'Fira Sans', sans-serif", kind: "google", googleFamily: "Fira+Sans", weights: "400;500;600;700" },
+  rubik: { label: "Rubik", cssFamily: "Rubik, sans-serif", kind: "google", googleFamily: "Rubik", weights: "400;500;600;700" },
+  quicksand: { label: "Quicksand", cssFamily: "Quicksand, sans-serif", kind: "google", googleFamily: "Quicksand", weights: "400;500;600;700" },
+  caveat: { label: "Caveat", cssFamily: "Caveat, cursive", kind: "google", googleFamily: "Caveat", weights: "400;500;600;700" }
 };
 
 function fontIsOnline() {
