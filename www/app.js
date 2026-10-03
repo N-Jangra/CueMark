@@ -294,7 +294,7 @@ let state = {
     dashboardShowThumbnails: true,
     dashboardShowRatings: true,
     dashboardShowProgress: true,
-    dashboardGroupBy: "none",
+    dashboardGroupBy: "status",
     oneHandedMode: "off",
     tabletTwoColumn: true,
     compactMode: false,
@@ -675,7 +675,13 @@ async function loadData() {
   if (typeof state.preferences.dashboardShowThumbnails !== "boolean") state.preferences.dashboardShowThumbnails = true;
   if (typeof state.preferences.dashboardShowRatings !== "boolean") state.preferences.dashboardShowRatings = true;
   if (typeof state.preferences.dashboardShowProgress !== "boolean") state.preferences.dashboardShowProgress = true;
-  if (!["none", "status", "category", "release"].includes(state.preferences.dashboardGroupBy)) state.preferences.dashboardGroupBy = "none";
+  if (localStorage.getItem("squashdb_dashboard_status_groups_v2") !== "true") {
+    const migratedGrouping = ["none", "category"].includes(state.preferences.dashboardGroupBy);
+    if (migratedGrouping) state.preferences.dashboardGroupBy = "status";
+    localStorage.setItem("squashdb_dashboard_status_groups_v2", "true");
+    if (migratedGrouping) saveData();
+  }
+  if (!["none", "status", "release"].includes(state.preferences.dashboardGroupBy)) state.preferences.dashboardGroupBy = "status";
   if (!CATEGORIES[state.preferences.importDefaultCategory]) state.preferences.importDefaultCategory = "anime";
   if (!["skip", "update", "create"].includes(state.preferences.importDuplicatePolicy)) state.preferences.importDuplicatePolicy = "skip";
   if (!["csv", "tsv", "txt"].includes(state.preferences.exportDefaultFormat)) state.preferences.exportDefaultFormat = "csv";
@@ -1215,7 +1221,7 @@ function setupEventListeners() {
       const confirmed = await requestInAppConfirmation("Reset Dashboard preferences?", "This restores the Dashboard layout, grouping, sorting, density, and display options.", "Reset Dashboard");
       if (!confirmed) return;
       Object.assign(state.preferences, {
-        dashboardView: "list", dashboardDensity: "comfortable", dashboardGroupBy: "none",
+        dashboardView: "list", dashboardDensity: "comfortable", dashboardGroupBy: "status",
         dashboardShowThumbnails: true, dashboardShowRatings: true, dashboardShowProgress: true
       });
       state.currentSort = "alphabetical-asc";
@@ -1230,10 +1236,18 @@ function setupEventListeners() {
   // Global Search
   const globalSearch = document.getElementById("global-search");
   if (globalSearch) {
+    const clearButton = document.getElementById("dashboard-search-clear");
+    if (clearButton) clearButton.hidden = !globalSearch.value;
     let searchRenderTimer = null;
     globalSearch.addEventListener("input", (e) => {
       state.searchQuery = e.target.value.toLowerCase().trim();
-      renderSearchHistory();
+      const clearButton = document.getElementById("dashboard-search-clear");
+      if (clearButton) clearButton.hidden = !e.target.value;
+      if (!e.target.value) renderSearchHistory();
+      else {
+        const history = document.getElementById("dashboard-search-history");
+        if (history) history.style.display = "none";
+      }
       clearTimeout(searchRenderTimer);
       searchRenderTimer = setTimeout(() => renderDashboard(), 200);
     });
@@ -1252,13 +1266,19 @@ function setupEventListeners() {
   // Status filter button next to the search box
   const filterBtn = document.getElementById("dashboard-filter-btn");
   if (filterBtn) {
-    filterBtn.addEventListener("click", openDashboardStatusFilter);
+    filterBtn.addEventListener("click", openDashboardRefineSheet);
     updateDashboardFilterButton();
   }
-  const sortBtn = document.getElementById("dashboard-sort-btn");
-  if (sortBtn) sortBtn.addEventListener("click", openDashboardSortFilter);
-  const formatBtn = document.getElementById("dashboard-format-btn");
-  if (formatBtn) formatBtn.addEventListener("click", openDashboardFormatOptions);
+  const clearSearch = document.getElementById("dashboard-search-clear");
+  clearSearch?.addEventListener("click", () => {
+    if (!globalSearch) return;
+    globalSearch.value = "";
+    state.searchQuery = "";
+    clearSearch.hidden = true;
+    renderSearchHistory();
+    renderDashboard();
+    globalSearch.focus();
+  });
 
   // Floating cross-links between Timeline and Statistics (each page carries
   // a FAB to the other, since only one of the two sits in the bottom bar)
@@ -2325,11 +2345,10 @@ const SETTINGS_PICKERS = {
     options: [{ value: "none", label: "None" }, { value: "review", label: "Review" }, { value: "journal", label: "Journal" }]
   },
   dashboardGroupBy: {
-    default: "none",
+    default: "status",
     options: [
       { value: "none", label: "No grouping" },
       { value: "status", label: "Status" },
-      { value: "category", label: "Category" },
       { value: "release", label: "Release date" }
     ]
   },
@@ -3079,9 +3098,11 @@ function renderCategoryChips() {
   // Render enabled chips
   getOrderedCategories().forEach(key => {
     if (state.preferences[key]) {
-      const chip = document.createElement("div");
+      const chip = document.createElement("button");
+      chip.type = "button";
       chip.className = `chip ${state.activeCategoryChip === key ? "active" : ""}`;
       chip.dataset.category = key;
+      chip.setAttribute("aria-pressed", String(state.activeCategoryChip === key));
       chip.style.setProperty("--theme-color", CATEGORIES[key].color);
       chip.innerHTML = `<i data-lucide="${CATEGORIES[key].icon}"></i> ${CATEGORIES[key].label}`;
       chip.addEventListener("click", () => {
@@ -3104,6 +3125,7 @@ function updateActiveChipUI() {
   const chips = document.querySelectorAll("#category-chips .chip");
   chips.forEach(chip => {
     chip.classList.toggle("active", chip.dataset.category === state.activeCategoryChip);
+    chip.setAttribute("aria-pressed", String(chip.dataset.category === state.activeCategoryChip));
   });
 }
 
@@ -3287,7 +3309,18 @@ function dashboardStatusFilterActive() {
 function updateDashboardFilterButton() {
   const btn = document.getElementById("dashboard-filter-btn");
   if (!btn) return;
-  btn.classList.toggle("active", dashboardStatusFilterActive() || dashboardFiltersActive());
+  const count = Number(Boolean(dashboardStatusFilterActive()))
+    + Number(Boolean(state.dashboardFilters?.status))
+    + Number(Boolean(state.dashboardFilters?.unwatched))
+    + Number(Boolean(state.dashboardFilters?.recentlyAdded))
+    + Number(Boolean(state.dashboardFilters?.rated));
+  btn.classList.toggle("active", count > 0);
+  const badge = document.getElementById("dashboard-filter-count");
+  if (badge) {
+    badge.textContent = String(count);
+    badge.hidden = count === 0;
+  }
+  btn.setAttribute("aria-label", count ? `Sort and filter your library, ${count} active` : "Sort and filter your library");
 }
 
 function dashboardFiltersActive() {
@@ -3329,6 +3362,8 @@ function renderSearchHistory() {
   root.querySelectorAll("[data-search-history]").forEach(button => button.addEventListener("click", () => {
     input.value = button.dataset.searchHistory;
     state.searchQuery = input.value.toLowerCase().trim();
+    const clearButton = document.getElementById("dashboard-search-clear");
+    if (clearButton) clearButton.hidden = !input.value;
     root.style.display = "none";
     renderDashboard();
   }));
@@ -3356,154 +3391,302 @@ function dashboardHasUnwatched(item) {
   return total > done || ["In Progress", "Playing", "Reading"].includes(item.status);
 }
 
-function dashboardFilterChips() {
-  return [
-    ["in-progress", "In Progress"], ["completed", "Completed"],
-    ["unwatched", "Unwatched episodes"], ["recentlyAdded", "Recently added"], ["rated", "Rating"]
-  ];
+function dashboardGroupKey(item, groupBy = state.preferences.dashboardGroupBy) {
+  if (groupBy === "status") return item.status || "Uncategorized";
+  if (groupBy === "category") return CATEGORIES[item.category]?.label || item.category || "Uncategorized";
+  if (groupBy === "release") {
+    const release = dashboardReleaseTime(item);
+    return release
+      ? new Date(release).toLocaleDateString(undefined, { year: "numeric", month: "long" })
+      : "No release date";
+  }
+  return "All items";
+}
+
+function dashboardStatusGroupRank(status) {
+  if (["In Progress", "Playing", "Reading"].includes(status)) return 0;
+  if (["Watchlist", "Backlog", "Playlist", "Plan to Read", "Plan to Watch", "Want to Play"].includes(status)) return 1;
+  if (status === "On Hold") return 2;
+  if (status === "Dropped") return 3;
+  if (status === "Completed") return 4;
+  return 5;
+}
+
+function compareDashboardGroups(a, b, groupBy) {
+  const aKey = dashboardGroupKey(a, groupBy);
+  const bKey = dashboardGroupKey(b, groupBy);
+  if (aKey === bKey) return 0;
+  if (groupBy === "status") {
+    const rank = dashboardStatusGroupRank(aKey) - dashboardStatusGroupRank(bKey);
+    return rank || aKey.localeCompare(bKey);
+  }
+  if (groupBy === "release") {
+    const releaseOrder = dashboardReleaseTime(b) - dashboardReleaseTime(a);
+    return releaseOrder || aKey.localeCompare(bKey);
+  }
+  return aKey.localeCompare(bKey);
+}
+
+function compareDashboardItemsBySort(a, b) {
+  if (state.currentSort === "alphabetical-asc") return a.title.localeCompare(b.title);
+  if (state.currentSort === "alphabetical-desc") return b.title.localeCompare(a.title);
+  if (state.currentSort === "created-desc" || state.currentSort === "updated-desc") {
+    return (Number(b.updated || b.lastUpdated || b.created) || 0) - (Number(a.updated || a.lastUpdated || a.created) || 0);
+  }
+  if (state.currentSort === "created-asc") return (Number(a.created) || 0) - (Number(b.created) || 0);
+  if (state.currentSort === "progress-desc") return calculateProgress(b) - calculateProgress(a);
+  if (state.currentSort === "progress-asc") return calculateProgress(a) - calculateProgress(b);
+  if (state.currentSort === "rating-desc") return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+  if (state.currentSort === "release-desc") return dashboardReleaseTime(b) - dashboardReleaseTime(a);
+  return 0;
 }
 
 function renderDashboardFilterChips() {
   const root = document.getElementById("dashboard-filter-chips");
   if (!root) return;
-  root.innerHTML = dashboardFilterChips().map(([key, label]) => {
-    const active = key === "in-progress" || key === "completed"
-      ? state.dashboardFilters.status === key : Boolean(state.dashboardFilters[key]);
-    return `<button type="button" class="dashboard-filter-chip${active ? " active" : ""}" data-dashboard-filter="${key}">${label}</button>`;
-  }).join("");
-  root.querySelectorAll("[data-dashboard-filter]").forEach(button => button.addEventListener("click", () => {
-    const key = button.dataset.dashboardFilter;
-    if (key === "in-progress" || key === "completed") {
-      state.dashboardFilters.status = state.dashboardFilters.status === key ? "" : key;
-    } else {
-      state.dashboardFilters[key] = !state.dashboardFilters[key];
-    }
+  const active = [];
+  const statusLabels = { "in-progress": "In progress", completed: "Completed" };
+  if (state.dashboardFilters.status) active.push([state.dashboardFilters.status, statusLabels[state.dashboardFilters.status]]);
+  if (state.dashboardFilters.unwatched) active.push(["unwatched", "Unfinished"]);
+  if (state.dashboardFilters.recentlyAdded) active.push(["recentlyAdded", "Recently added"]);
+  if (state.dashboardFilters.rated) active.push(["rated", "Rated"]);
+  if (dashboardStatusFilterActive()) active.push(["category-status", state.statusFilter]);
+  root.innerHTML = active.map(([key, label]) => `<button type="button" class="dashboard-filter-chip" data-remove-dashboard-filter="${key}" aria-label="Remove ${label} filter">${label}<i data-lucide="x"></i></button>`).join("");
+  root.querySelectorAll("[data-remove-dashboard-filter]").forEach(button => button.addEventListener("click", () => {
+    const key = button.dataset.removeDashboardFilter;
+    if (key === "category-status") state.statusFilter = "all";
+    else if (key === "in-progress" || key === "completed") state.dashboardFilters.status = "";
+    else state.dashboardFilters[key] = false;
     saveDashboardViewState();
     renderDashboard();
   }));
+  if (window.lucide) lucide.createIcons();
 }
 
-function openDashboardSortFilter() {
+function openDashboardRefineSheet(openSection = "") {
   const modal = document.getElementById("picker-modal");
   const list = document.getElementById("picker-options-list");
   const titleEl = document.getElementById("picker-modal-title");
   if (!modal || !list) return;
-  if (titleEl) titleEl.textContent = "Sort dashboard";
-  const options = [
-    ["updated-desc", "Last updated"], ["progress-desc", "Progress"],
-    ["rating-desc", "Rating"], ["release-desc", "Release date"], ["alphabetical-asc", "Alphabetical"]
+  const savedScrollTop = modal.classList.contains("active") ? list.scrollTop : 0;
+  if (titleEl) titleEl.textContent = "Refine collection";
+  const close = document.getElementById("picker-modal-close");
+  if (close) close.innerHTML = '<i data-lucide="x"></i>';
+  const sortOptions = [
+    ["updated-desc", "Recently updated"], ["progress-desc", "Most progress"],
+    ["rating-desc", "Highest rated"], ["release-desc", "Newest release"], ["alphabetical-asc", "Title A–Z"]
   ];
-  list.innerHTML = options.map(([value, label]) => `<button type="button" class="picker-option${state.currentSort === value ? " active" : ""}" data-sort-value="${value}"><span class="choice-radio"></span><span>${label}</span></button>`).join("");
-  list.querySelectorAll("[data-sort-value]").forEach(button => button.addEventListener("click", () => {
+  const sortSection = document.createElement("div");
+  sortSection.className = "picker-section-label";
+  sortSection.textContent = "Sort by";
+  list.replaceChildren(sortSection);
+  const sortRow = document.createElement("div");
+  sortRow.className = "dashboard-sort-options";
+  sortRow.innerHTML = sortOptions.map(([value, label]) => `<button type="button" class="dashboard-sort-option${state.currentSort === value ? " active" : ""}" data-sort-value="${value}" aria-pressed="${state.currentSort === value}">${label}</button>`).join("");
+  list.appendChild(sortRow);
+  sortRow.querySelectorAll("[data-sort-value]").forEach(button => button.addEventListener("click", () => {
     state.currentSort = button.dataset.sortValue;
     saveDashboardViewState();
-    closeSettingsPicker();
     renderDashboard();
+    openDashboardRefineSheet();
   }));
-  modal.classList.add("active");
-}
-
-function openDashboardStatusFilter() {
-  const modal = document.getElementById("picker-modal");
-  const list = document.getElementById("picker-options-list");
-  const titleEl = document.getElementById("picker-modal-title");
-  if (!modal || !list) return;
-
-  if (titleEl) titleEl.textContent = "Filter dashboard";
+  const filterSection = document.createElement("div");
+  filterSection.className = "picker-section-label";
+  filterSection.textContent = "Show me";
+  list.appendChild(filterSection);
+  [["in-progress", "In progress"], ["completed", "Completed"], ["unwatched", "Unfinished"], ["recentlyAdded", "Recently added"], ["rated", "Rated"]].forEach(([key, label]) => {
+    const active = key === "in-progress" || key === "completed"
+      ? state.dashboardFilters.status === key : Boolean(state.dashboardFilters[key]);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `dashboard-refine-toggle${active ? " active" : ""}`;
+    button.setAttribute("aria-pressed", String(active));
+    button.innerHTML = `<span>${label}</span><span class="dashboard-refine-check"><i data-lucide="check"></i></span>`;
+    button.addEventListener("click", () => {
+      if (key === "in-progress" || key === "completed") {
+        state.dashboardFilters.status = state.dashboardFilters.status === key ? "" : key;
+        state.statusFilter = "all";
+      }
+      else state.dashboardFilters[key] = !state.dashboardFilters[key];
+      saveDashboardViewState();
+      renderDashboard();
+      openDashboardRefineSheet();
+    });
+    list.appendChild(button);
+  });
   const statuses = CATEGORIES[state.activeCategoryChip]?.statuses || [];
-  const current = dashboardStatusFilterActive() ? state.statusFilter : "all";
-
-  list.innerHTML = '<div class="picker-section-label">Layout</div>';
-  [
-    ["list", "List"],
-    ["compact-list", "Compact List"],
-    ["grid", "Poster Grid"],
-    ["compact-grid", "Compact Grid"],
-    ["detailed-grid", "Detailed Grid"],
-    ["table", "Table"],
-    ["minimal-list", "Minimal List"],
-    ["large-grid", "Large Poster Grid"],
-    ["kanban", "Kanban Board"],
-    ["timeline", "Timeline"]
-  ].forEach(([value, label]) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `picker-option${state.preferences.dashboardView === value ? " active" : ""}`;
-    btn.innerHTML = `<span class="choice-radio"></span><span>${label}</span>`;
-    btn.addEventListener("click", () => {
-      state.preferences.dashboardView = value;
-      saveData();
-      closeSettingsPicker();
-      renderDashboard();
-    });
-    list.appendChild(btn);
-  });
-
-  const statusLabel = document.createElement("div");
-  statusLabel.className = "picker-section-label";
-  statusLabel.textContent = "Status";
-  list.appendChild(statusLabel);
-  ["all", ...statuses].forEach(value => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `picker-option${current === value ? " active" : ""}`;
-    btn.innerHTML = `<span class="choice-radio"></span><span>${value === "all" ? "All statuses" : value}</span>`;
-    btn.addEventListener("click", () => {
-      state.statusFilter = value;
-      closeSettingsPicker();
-      updateDashboardFilterButton();
-      renderDashboard();
-    });
-    list.appendChild(btn);
-  });
-
-  modal.classList.add("active");
-}
-
-function openDashboardFormatOptions() {
-  const modal = document.getElementById("picker-modal");
-  const list = document.getElementById("picker-options-list");
-  const titleEl = document.getElementById("picker-modal-title");
-  if (!modal || !list) return;
-  if (titleEl) titleEl.textContent = "View options";
-
-  const choose = (section, options, current, onChange) => {
+  if (statuses.length) {
     const label = document.createElement("div");
     label.className = "picker-section-label";
-    label.textContent = section;
+    label.textContent = "Category status";
     list.appendChild(label);
-    options.forEach(([value, text]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `picker-option${current === value ? " active" : ""}`;
-      button.innerHTML = `<span class="choice-radio"></span><span>${text}</span>`;
-      button.addEventListener("click", () => {
-        onChange(value);
-        saveData();
-        closeSettingsPicker();
-        renderDashboard();
-      });
-      list.appendChild(button);
+    const select = document.createElement("select");
+    select.className = "dashboard-status-select";
+    select.setAttribute("aria-label", "Filter by category status");
+    const specificStatuses = statuses.filter(status => !["Completed", "In Progress", "Playing", "Reading"].includes(status)
+      || (dashboardStatusFilterActive() && status === state.statusFilter));
+    select.innerHTML = `<option value="all">All statuses</option>` + specificStatuses.map(status => `<option value="${status.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")}">${status.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</option>`).join("");
+    select.value = dashboardStatusFilterActive() ? state.statusFilter : "all";
+    select.addEventListener("change", () => {
+      state.statusFilter = select.value;
+      state.dashboardFilters.status = "";
+      renderDashboard();
+      openDashboardRefineSheet();
     });
-  };
+    list.appendChild(select);
+  }
 
-  list.innerHTML = "";
-  choose("Density", [["comfortable", "Comfortable"], ["compact", "Compact"]], state.preferences.dashboardDensity, value => {
+  if (dashboardFiltersActive() || dashboardStatusFilterActive()) {
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "dashboard-refine-clear";
+    clear.textContent = "Clear all filters";
+    clear.addEventListener("click", () => {
+      state.dashboardFilters = { status: "", unwatched: false, recentlyAdded: false, rated: false };
+      state.statusFilter = "all";
+      saveDashboardViewState();
+      renderDashboard();
+      openDashboardRefineSheet();
+    });
+    list.appendChild(clear);
+  }
+
+  const viewLabels = {
+    list: "List", "compact-list": "Compact list", grid: "Poster grid",
+    "compact-grid": "Compact grid", "detailed-grid": "Detailed grid", table: "Table",
+    "minimal-list": "Minimal list", "large-grid": "Large poster grid",
+    kanban: "Kanban board", timeline: "Timeline"
+  };
+  const viewDescriptions = {
+    list: "Cover, title and progress", "compact-list": "Short rows with the essentials",
+    grid: "Browse your collection by poster", "detailed-grid": "Poster, full title and item details",
+    "compact-grid": "More posters in each row", table: "Compare status, rating and progress",
+    "minimal-list": "A clean, text-first list", "large-grid": "Bigger artwork with more detail",
+    kanban: "Move between status columns", timeline: "Browse by release date"
+  };
+  const viewIcons = {
+    list: "list", "compact-list": "list-filter", grid: "layout-grid",
+    "detailed-grid": "gallery-vertical-end", "compact-grid": "grid-2x2",
+    table: "table-2", "minimal-list": "align-left", "large-grid": "images",
+    kanban: "columns-3", timeline: "calendar-range"
+  };
+  const viewDetails = document.createElement("details");
+  viewDetails.className = "dashboard-refine-group";
+  viewDetails.open = openSection === "view";
+  viewDetails.innerHTML = `<summary><span>View &amp; layout</span><small>${viewLabels[state.preferences.dashboardView] || "List"}</small></summary>`;
+  const viewBody = document.createElement("div");
+  viewBody.className = "dashboard-refine-group-body";
+  const commonViews = [["list", "List"], ["compact-list", "Compact list"], ["grid", "Poster grid"], ["detailed-grid", "Detailed grid"]];
+  const addViewChoice = ([value, label], parent) => {
+    const button = document.createElement("button");
+    const selected = state.preferences.dashboardView === value;
+    button.type = "button";
+    button.className = `dashboard-view-choice${selected ? " active" : ""}`;
+    button.setAttribute("aria-pressed", String(selected));
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const description = document.createElement("small");
+    description.textContent = viewDescriptions[value];
+    const icon = document.createElement("i");
+    icon.dataset.lucide = viewIcons[value] || "layout-grid";
+    button.append(icon, Object.assign(document.createElement("span"), { className: "dashboard-view-copy" }));
+    button.querySelector(".dashboard-view-copy").append(title, description);
+    const check = document.createElement("span");
+    check.className = "dashboard-view-check";
+    check.innerHTML = '<i data-lucide="check"></i>';
+    button.appendChild(check);
+    button.addEventListener("click", () => {
+      state.preferences.dashboardView = value;
+      saveData();
+      renderDashboard();
+      openDashboardRefineSheet("view");
+    });
+    parent.appendChild(button);
+  };
+  const commonGrid = document.createElement("div");
+  commonGrid.className = "dashboard-view-grid";
+  commonViews.forEach(option => addViewChoice(option, commonGrid));
+  viewBody.appendChild(commonGrid);
+  const advancedViews = [["compact-grid", "Compact grid"], ["table", "Table"], ["minimal-list", "Minimal list"], ["large-grid", "Large poster grid"], ["kanban", "Kanban board"], ["timeline", "Timeline"]];
+  const moreViews = document.createElement("details");
+  moreViews.className = "dashboard-more-layouts";
+  moreViews.open = ["compact-grid", "table", "minimal-list", "large-grid", "kanban", "timeline"].includes(state.preferences.dashboardView);
+  moreViews.innerHTML = `<summary><span>More layouts</span><small>Table, board &amp; more</small></summary>`;
+  const moreGrid = document.createElement("div");
+  moreGrid.className = "dashboard-view-grid";
+  advancedViews.forEach(option => addViewChoice(option, moreGrid));
+  moreViews.appendChild(moreGrid);
+  viewBody.appendChild(moreViews);
+  viewDetails.appendChild(viewBody);
+  list.appendChild(viewDetails);
+
+  const themeLabels = { light: "Light", dark: "Dark", grey: "Grey", amoled: "AMOLED", flashbang: "Flashbang", "material-you": "Material You" };
+  const appearanceDetails = document.createElement("details");
+  appearanceDetails.className = "dashboard-refine-group";
+  appearanceDetails.open = openSection === "appearance";
+  appearanceDetails.innerHTML = `<summary><span>Appearance &amp; display</span><small>${themeLabels[state.preferences.uiTheme] || "Dark"}</small></summary>`;
+  const appearanceBody = document.createElement("div");
+  appearanceBody.className = "dashboard-refine-group-body dashboard-appearance-options";
+  const addSelectSetting = (label, value, options, onChange) => {
+    const row = document.createElement("label");
+    row.className = "dashboard-refine-setting";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const setting = document.createElement("select");
+    setting.setAttribute("aria-label", label);
+    options.forEach(([optionValue, optionLabel]) => {
+      const option = document.createElement("option");
+      option.value = optionValue;
+      option.textContent = optionLabel;
+      setting.appendChild(option);
+    });
+    setting.value = value;
+    setting.addEventListener("change", () => onChange(setting.value));
+    row.append(name, setting);
+    appearanceBody.appendChild(row);
+  };
+  addSelectSetting("Theme", state.preferences.uiTheme || "dark", Object.entries(themeLabels), value => {
+    state.preferences.uiTheme = value;
+    state.theme = value;
+    saveData();
+    applyTheme();
+    applyPreferenceAttributes();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
+  });
+  addSelectSetting("Density", state.preferences.dashboardDensity, [["comfortable", "Comfortable"], ["compact", "Compact"]], value => {
     state.preferences.dashboardDensity = value;
+    saveData();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
   });
-  choose("Group items by", [["none", "No grouping"], ["status", "Status"], ["category", "Category"], ["release", "Release date"]], state.preferences.dashboardGroupBy, value => {
+  addSelectSetting("Group by", state.preferences.dashboardGroupBy, [["none", "No grouping"], ["status", "Status"], ["release", "Release date"]], value => {
     state.preferences.dashboardGroupBy = value;
+    saveData();
+    renderDashboard();
+    openDashboardRefineSheet("appearance");
   });
-  choose("Ratings", [["shown", "Show ratings"], ["hidden", "Hide ratings"]], state.preferences.dashboardShowRatings ? "shown" : "hidden", value => {
-    state.preferences.dashboardShowRatings = value === "shown";
+  [["dashboardShowRatings", "Show ratings"], ["dashboardShowProgress", "Show progress"], ["dashboardShowThumbnails", "Show thumbnails"]].forEach(([key, label]) => {
+    const row = document.createElement("button");
+    const enabled = Boolean(state.preferences[key]);
+    row.type = "button";
+    row.className = `dashboard-refine-toggle dashboard-display-toggle${enabled ? " active" : ""}`;
+    row.setAttribute("aria-pressed", String(enabled));
+    row.innerHTML = `<span>${label}</span><span class="dashboard-refine-check"><i data-lucide="check"></i></span>`;
+    row.addEventListener("click", () => {
+      state.preferences[key] = !state.preferences[key];
+      saveData();
+      renderDashboard();
+      openDashboardRefineSheet("appearance");
+    });
+    appearanceBody.appendChild(row);
   });
-  choose("Progress", [["shown", "Show progress"], ["hidden", "Hide progress"]], state.preferences.dashboardShowProgress ? "shown" : "hidden", value => {
-    state.preferences.dashboardShowProgress = value === "shown";
-  });
-  choose("Thumbnails", [["shown", "Show thumbnails"], ["hidden", "Hide thumbnails"]], state.preferences.dashboardShowThumbnails ? "shown" : "hidden", value => {
-    state.preferences.dashboardShowThumbnails = value === "shown";
-  });
+  appearanceDetails.appendChild(appearanceBody);
+  list.appendChild(appearanceDetails);
+
   modal.classList.add("active");
+  list.scrollTop = Math.min(savedScrollTop, Math.max(0, list.scrollHeight - list.clientHeight));
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderDashboardSkeleton() {
@@ -3570,6 +3753,11 @@ function dashboardInsightCard(item, label, extra = "") {
 function renderDashboardInsights() {
   const root = document.getElementById("dashboard-insights");
   if (!root) return;
+  if (document.body.classList.contains("dashboard-screen")) {
+    root.innerHTML = "";
+    root.style.display = "none";
+    return;
+  }
   root.dataset.view = dashboardUsesGridView() ? "grid" : "list";
   root.dataset.layout = state.preferences.dashboardView;
   root.dataset.density = state.preferences.dashboardDensity;
@@ -3740,7 +3928,7 @@ function renderDashboard() {
   // 1. Filter items based on active preferences, quick filter chip, and search query
   const dashboardCacheKey = JSON.stringify([dashboardDataVersion, state.activeCategoryChip,
     state.searchQuery, state.statusFilter, state.dashboardFilters, state.currentSort,
-    state.preferences.dashboardView, [...insightItemIds].sort()]);
+    state.preferences.dashboardView, state.preferences.dashboardGroupBy, [...insightItemIds].sort()]);
   let filtered;
   if (renderDashboard._cache?.key === dashboardCacheKey) {
     filtered = renderDashboard._cache.items;
@@ -3778,32 +3966,18 @@ function renderDashboard() {
       return true;
     });
 
-  // 2. Sort items
+  // Keep status/category sections stable while applying the selected sort
+  // within each section.
     filtered.sort((a, b) => {
-    if (state.currentSort === "alphabetical-asc") {
-      return a.title.localeCompare(b.title);
-    } else if (state.currentSort === "alphabetical-desc") {
-      return b.title.localeCompare(a.title);
-    } else if (state.currentSort === "created-desc" || state.currentSort === "updated-desc") {
-      return (Number(b.updated || b.lastUpdated || b.created) || 0) - (Number(a.updated || a.lastUpdated || a.created) || 0);
-    } else if (state.currentSort === "created-asc") {
-      return a.created - b.created;
-    } else if (state.currentSort === "progress-desc") {
-      return calculateProgress(b) - calculateProgress(a);
-    } else if (state.currentSort === "progress-asc") {
-      return calculateProgress(a) - calculateProgress(b);
-    } else if (state.currentSort === "rating-desc") {
-      return (Number(b.rating) || 0) - (Number(a.rating) || 0);
-    } else if (state.currentSort === "release-desc") {
-      return dashboardReleaseTime(b) - dashboardReleaseTime(a);
-    }
-    return 0;
+      const groupBy = state.preferences.dashboardGroupBy;
+      return (groupBy !== "none" ? compareDashboardGroups(a, b, groupBy) : 0)
+        || compareDashboardItemsBySort(a, b);
     });
     renderDashboard._cache = { key: dashboardCacheKey, items: filtered };
   }
 
-  // 3. Render note elements incrementally: only a first batch is built up front,
-  // more are appended as the user scrolls near the bottom (see setupDashboardLazyLoad).
+  // 3. Grouped layouts render complete status sections; ungrouped layouts use
+  // the bounded scroll window in setupDashboardLazyLoad.
   if (filtered.length === 0) {
     if (insightsAreActive) {
       emptyState.style.display = "none";
@@ -3825,6 +3999,7 @@ function renderDashboard() {
     container.classList.toggle("notes-compact-grid-view", state.preferences.dashboardView === "compact-grid");
     container.classList.toggle("notes-large-grid-view", state.preferences.dashboardView === "large-grid");
     container.classList.toggle("notes-table-view", state.preferences.dashboardView === "table");
+    container.classList.toggle("notes-minimal-view", state.preferences.dashboardView === "minimal-list");
     container.classList.remove("dashboard-special-view");
     container.classList.toggle("dashboard-density-compact", state.preferences.dashboardDensity === "compact");
     container.dataset.rowActions = state.preferences.dashboardRowActions || "menu";
@@ -3834,6 +4009,8 @@ function renderDashboard() {
     updateGridSelectionBar();
     if (["kanban", "timeline"].includes(state.preferences.dashboardView)) {
       setupDashboardSpecialView(container, filtered);
+    } else if (state.preferences.dashboardGroupBy !== "none") {
+      setupDashboardGroupedView(container, filtered);
     } else {
       setupDashboardLazyLoad(container, filtered);
     }
@@ -3886,21 +4063,30 @@ function setupDashboardSpecialView(container, filtered) {
   const view = state.preferences.dashboardView;
   container.className = `notes-container dashboard-special-view ${view === "kanban" ? "dashboard-kanban-view" : "dashboard-timeline-view"}`;
   const groupBy = state.preferences.dashboardGroupBy;
+  const effectiveGroupBy = groupBy === "none" ? (view === "kanban" ? "status" : view === "timeline" ? "release" : "none") : groupBy;
+  container.setAttribute("role", "region");
+  container.setAttribute("aria-label", view === "kanban"
+    ? "Kanban board, scroll horizontally between statuses"
+    : "Timeline grouped by release date");
   const groups = new Map();
   filtered.forEach(item => {
-    const timestamp = Number(item.updated || item.created) || 0;
-    const release = dashboardReleaseTime(item);
-    const key = groupBy === "status" || (groupBy === "none" && view === "kanban")
-      ? (item.status || "Uncategorized")
-      : groupBy === "category"
-        ? (CATEGORIES[item.category]?.label || item.category || "Uncategorized")
-        : groupBy === "release" || (groupBy === "none" && view === "timeline")
-          ? (release ? new Date(release).toLocaleDateString(undefined, { year: "numeric", month: "long" }) : "No release date")
-          : "All items";
+    const key = effectiveGroupBy === "none" ? "All items" : dashboardGroupKey(item, effectiveGroupBy);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(item);
   });
-  groups.forEach((items, title) => {
+  let orderedGroups = Array.from(groups.entries());
+  if (view === "kanban" && effectiveGroupBy === "status") {
+    orderedGroups.sort(([a], [b]) => {
+      return dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b);
+    });
+  } else if (view === "timeline" && effectiveGroupBy === "release") {
+    orderedGroups.sort(([a], [b]) => {
+      if (a === "No release date") return 1;
+      if (b === "No release date") return -1;
+      return (Date.parse(b) || 0) - (Date.parse(a) || 0);
+    });
+  }
+  orderedGroups.forEach(([title, items]) => {
     const group = document.createElement("section");
     group.className = `dashboard-special-group ${view === "kanban" ? "dashboard-kanban-column" : "dashboard-timeline-group"}`;
     group.innerHTML = `<h3>${title}<span>${items.length}</span></h3><div class="dashboard-special-items"></div>`;
@@ -3908,6 +4094,70 @@ function setupDashboardSpecialView(container, filtered) {
     items.forEach(item => list.appendChild(buildNoteCard(item)));
     container.appendChild(group);
   });
+  attachCardEvents();
+  if (window.lucide) lucide.createIcons(container);
+}
+
+function buildDashboardCardForCurrentView(item) {
+  if (["grid", "compact-grid", "large-grid"].includes(state.preferences.dashboardView)) return buildGridCard(item);
+  if (state.preferences.dashboardView === "detailed-grid") return buildDetailedGridCard(item);
+  if (state.preferences.dashboardView === "table") return buildTableCard(item);
+  const card = buildNoteCard(item);
+  if (state.preferences.dashboardView === "compact-list") card.classList.add("compact-list-card");
+  return card;
+}
+
+function setupDashboardGroupedView(container, filtered) {
+  teardownDashboardLazyLoad();
+  container.innerHTML = "";
+  const groupBy = state.preferences.dashboardGroupBy;
+  const groups = new Map();
+  if (groupBy === "status") {
+    const statuses = [...(CATEGORIES[state.activeCategoryChip]?.statuses || [])];
+    statuses.sort((a, b) => dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b));
+    statuses.forEach(status => groups.set(status, []));
+  }
+  filtered.forEach(item => {
+    const key = dashboardGroupKey(item, groupBy);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+
+  const filtersNarrowResults = Boolean(state.searchQuery || dashboardFiltersActive() || dashboardStatusFilterActive());
+  const entries = [...groups.entries()].filter(([, items]) => items.length || !filtersNarrowResults);
+  if (groupBy === "status") {
+    entries.sort(([a], [b]) => dashboardStatusGroupRank(a) - dashboardStatusGroupRank(b) || a.localeCompare(b));
+  }
+
+  if (state.preferences.dashboardView === "table") {
+    const header = document.createElement("div");
+    header.className = "dashboard-main-table-header";
+    header.innerHTML = "<span></span><span>Title</span><span>Status</span><span>Rating</span><span>Progress</span>";
+    container.appendChild(header);
+  }
+
+  entries.forEach(([groupKey, items]) => {
+    const section = document.createElement("details");
+    section.className = "dashboard-group-section";
+    section.dataset.groupKey = groupKey;
+    section.open = true;
+
+    const heading = document.createElement("summary");
+    heading.className = "dashboard-group-heading";
+    const label = document.createElement("span");
+    label.textContent = groupKey;
+    const count = document.createElement("span");
+    count.className = "dashboard-group-count";
+    count.textContent = String(items.length);
+    heading.append(label, count);
+
+    const itemList = document.createElement("div");
+    itemList.className = "dashboard-group-items";
+    items.forEach(item => itemList.appendChild(buildDashboardCardForCurrentView(item)));
+    section.append(heading, itemList);
+    container.appendChild(section);
+  });
+
   attachCardEvents();
   if (window.lucide) lucide.createIcons(container);
 }
@@ -4063,16 +4313,7 @@ function setupDashboardLazyLoad(container, filtered) {
     // Grid needs the wrapper to participate in the grid; use display:contents
     // so batch wrappers don't break the CSS grid/flex layout of the cards.
     wrapper.style.display = "contents";
-    items.forEach(item => {
-      if (["grid", "compact-grid", "large-grid"].includes(state.preferences.dashboardView)) wrapper.appendChild(buildGridCard(item));
-      else if (state.preferences.dashboardView === "detailed-grid") wrapper.appendChild(buildDetailedGridCard(item));
-      else if (state.preferences.dashboardView === "table") wrapper.appendChild(buildTableCard(item));
-      else {
-        const card = buildNoteCard(item);
-        if (state.preferences.dashboardView === "compact-list") card.classList.add("compact-list-card");
-        wrapper.appendChild(card);
-      }
-    });
+    items.forEach(item => wrapper.appendChild(buildDashboardCardForCurrentView(item)));
     return wrapper;
   };
 
@@ -4155,7 +4396,7 @@ function setupDashboardLazyLoad(container, filtered) {
         if (entry.target === win.bottomSentinel) appendBottomBatch();
         else if (entry.target === win.topSentinel) prependTopBatch();
       });
-    }, { root: null, rootMargin: "600px" });
+    }, { root: container.closest("main"), rootMargin: "600px" });
     dashboardLazyLoadObserver.observe(win.bottomSentinel);
     dashboardLazyLoadObserver.observe(win.topSentinel);
   }
