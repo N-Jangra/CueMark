@@ -22,7 +22,8 @@ const appFeatureModulesReady = Promise.resolve();
 // Full-page detail screens load their own scripts while this app bootstrap is
 // still restoring encrypted/local data. Expose the restore promise so those
 // screens never inspect an empty state and redirect back to Dashboard.
-window.cueMarkAppReady = Promise.resolve();
+let resolveAppReady;
+window.cueMarkAppReady = new Promise(resolve => { resolveAppReady = resolve; });
 
 function nativePlugin(name) {
   return window.Capacitor?.Plugins?.[name] || null;
@@ -511,8 +512,9 @@ function itemSourceName(item) {
 document.addEventListener("DOMContentLoaded", async () => {
   await appFeatureModulesReady;
   renderDashboardSkeleton();
-  window.cueMarkAppReady = loadData();
-  await window.cueMarkAppReady;
+  const dataReady = loadData();
+  resolveAppReady(dataReady);
+  await dataReady;
 
   // If a lock method is set and this session hasn't been unlocked yet, block all
   // further rendering until a correct PIN/pattern/password (or a security-question

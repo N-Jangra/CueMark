@@ -2276,7 +2276,7 @@ function ensureLocalItem(extraFields) {
 function bootShowDetailWhenReady() {
   if (document.getElementById("show-detail-topbar-title")) {
     const waitForState = () => {
-      if (typeof state === "undefined") {
+      if (typeof state === "undefined" || !window.cueMarkAppReady) {
         setTimeout(waitForState, 10);
       } else {
         // app.js declares state before restoring the encrypted/local database.
