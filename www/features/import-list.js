@@ -137,20 +137,20 @@
   const sourceNames = {
     tvmaze: "TVmaze", anilist: "AniList", jikan: "MyAnimeList (Jikan)", kitsu: "Kitsu",
     mangadex: "MangaDex", openlibrary: "Open Library", googlebooks: "Google Books",
-    wikidata: "Wikidata", tmdb: "TMDB", omdb: "OMDb", steamdb: "Steam + SteamDB",
+    wikidata: "Wikidata", tmdb: "TMDB", omdb: "OMDb", steamdb: "Steam + SteamDB", howlongtobeat: "HowLongToBeat", howlongtoread: "HowLongToRead", viz: "VIZ",
     freetogame: "FreeToGame", rawg: "RAWG"
   };
 
   function metadataSourcesForCategory(category) {
     const byCategory = {
-      game: ["steamdb", "freetogame"],
+      game: ["steamdb", "howlongtobeat", "freetogame"],
+      novel: ["howlongtoread", "openlibrary", "googlebooks"],
+      manga: ["viz", "howlongtoread", "mangadex", "anilist", "openlibrary"],
       anime: ["anilist", "tvmaze"],
-      manga: ["anilist", "openlibrary"],
       movie: ["wikidata"],
       series: ["tvmaze"],
       kdrama: ["tvmaze"],
       cdrama: ["tvmaze"],
-      novel: ["openlibrary"]
     };
     return byCategory[category] || ["auto"];
   }

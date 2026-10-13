@@ -55,11 +55,45 @@ function safeJoin(base, target) {
   return resolved.startsWith(base) ? resolved : null;
 }
 
-async function proxyRequest(targetUrl, res) {
+async function proxyRequest(targetUrl, req, res) {
+  const targetHost = new URL(targetUrl).hostname;
+  let userAgent = null;
+  if (targetHost === "api.tvmaze.com") userAgent = "CueMark/1.0 (TVmaze metadata client)";
+  else if (targetHost === "openlibrary.org" || targetHost.endsWith(".openlibrary.org")) userAgent = "CueMark/1.0 (Open Library client)";
+  else if (targetHost === "api.mangadex.org") userAgent = "CueMark/1.0 (MangaDex client)";
+  else if (targetHost === "howlongtobeat.com" || targetHost.endsWith(".howlongtobeat.com")) userAgent = req.headers["user-agent"] || "CueMark/1.0 (HowLongToBeat search client)";
+  else if (targetHost === "howlongtoread.com" || targetHost.endsWith(".howlongtoread.com")) userAgent = "Mozilla/5.0";
+  else if (targetHost === "viz.com" || targetHost.endsWith(".viz.com")) userAgent = "Mozilla/5.0";
+  else if (targetHost === "www.freetogame.com") userAgent = "Mozilla/5.0";
+  const requestBody = req.method === "POST" || req.method === "PUT" || req.method === "PATCH"
+    ? await new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on("data", chunk => chunks.push(chunk));
+        req.on("end", () => resolve(Buffer.concat(chunks)));
+        req.on("error", reject);
+      })
+    : undefined;
+  const requestHeaders = {
+    Accept: "application/json,text/plain,*/*",
+    ...(userAgent ? { "User-Agent": userAgent } : {})
+  };
+  ["content-type", "origin", "referer", "x-auth-token", "x-hp-key", "x-hp-val"].forEach(name => {
+    if (req.headers[name]) requestHeaders[name] = req.headers[name];
+  });
+  if (targetHost === "www.freetogame.com") {
+    requestHeaders.origin = "https://www.freetogame.com";
+    requestHeaders.referer = "https://www.freetogame.com/";
+  }
+  if (targetHost === "howlongtobeat.com" || targetHost.endsWith(".howlongtobeat.com")) {
+    requestHeaders.origin = "https://howlongtobeat.com";
+    requestHeaders.referer = "https://howlongtobeat.com/";
+  }
   const upstream = await fetch(targetUrl, {
+    method: req.method === "GET" ? "GET" : req.method,
     headers: {
-      Accept: "application/json,text/plain,*/*"
-    }
+      ...requestHeaders
+    },
+    body: requestBody
   });
   const contentType = upstream.headers.get("content-type") || "application/octet-stream";
   const body = Buffer.from(await upstream.arrayBuffer());
@@ -81,7 +115,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      await proxyRequest(target, res);
+      await proxyRequest(target, req, res);
     } catch (err) {
       sendJson(res, 502, { error: "Proxy request failed", details: err.message });
     }

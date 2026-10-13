@@ -365,8 +365,8 @@ let state = {
     exportDefaultFormat: "csv",
     exportIncludeMetadata: true,
     metadataSources: {
-      builtinOrder: ["tvmaze", "wikidata", "openlibrary"],
-      builtinEnabled: { tvmaze: true, wikidata: true, openlibrary: true },
+      builtinOrder: ["tvmaze", "wikidata", "openlibrary", "howlongtobeat", "howlongtoread", "viz"],
+      builtinEnabled: { tvmaze: true, wikidata: true, openlibrary: true, howlongtobeat: true, howlongtoread: true, viz: true },
       custom: []
     },
     navIcons: {
@@ -5298,7 +5298,7 @@ function renderStats() {
 }
 
 // Top genres leaderboard, scoped to whatever category chip is active. Genres
-// are only captured going forward (see show-detail.js), so older tracked
+// are only captured going forward (see show-detail.js compatibility loader and show-detail-controller.js), so older tracked
 // items may simply have no genres array yet.
 function renderStatsGenres(activeItems) {
   const card = document.getElementById("stats-genres-card");

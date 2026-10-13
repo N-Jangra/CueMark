@@ -11,6 +11,30 @@
 let discoverResults = [];
 let discoverCategory = null;
 let discoverRequestId = 0;
+let howLongToBeatToken = null;
+
+async function fetchTextPortable(url, init = {}) {
+  const directFetch = window.cuemarkNativeFetch || fetch.bind(window);
+  const candidates = [url];
+  if (window.location?.origin && window.location.origin !== "null") {
+    const proxy = new URL("/proxy", window.location.origin);
+    proxy.searchParams.set("url", url);
+    candidates.push(proxy.toString());
+  } else if (window.location?.protocol === "file:") {
+    const proxy = new URL("http://127.0.0.1:3000/proxy");
+    proxy.searchParams.set("url", url);
+    candidates.push(proxy.toString());
+  }
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const response = await directFetch(candidate, { ...init, headers: { Accept: "text/html,application/xhtml+xml", ...(init.headers || {}) } });
+      if (response.ok) return response.text();
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) { lastError = error; }
+  }
+  throw lastError || new Error("Network request failed");
+}
 
 // Per-category source filter — a narrower scope on top of the permanent
 // Settings → Metadata Sources enable/disable list, saved with the rest of
@@ -49,41 +73,69 @@ function getNativeHttpPlugin() {
 
 async function fetchJsonPortable(url, init = {}) {
   let lastError = null;
+  const nativeHttp = getNativeHttpPlugin();
+  const directFetch = window.cuemarkNativeFetch || fetch.bind(window);
+  const proxyUrls = [];
+  if (typeof window !== "undefined" && window.location?.protocol !== "file:" && window.location?.origin && window.location.origin !== "null") {
+    const proxyUrl = new URL("/proxy", window.location.origin);
+    proxyUrl.searchParams.set("url", url);
+    proxyUrls.push(proxyUrl.toString());
+  } else if (typeof window !== "undefined" && window.location?.protocol === "file:") {
+    const proxyUrl = new URL("http://127.0.0.1:3000/proxy");
+    proxyUrl.searchParams.set("url", url);
+    proxyUrls.push(proxyUrl.toString());
+  }
+
   for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const plugin = getNativeHttpPlugin();
-      if (plugin?.get && (init.method || "GET").toUpperCase() === "GET") {
-        const response = await plugin.get({ url, headers: init.headers || {} });
-        return parsePortableJson(response?.data);
+    if (nativeHttp) {
+      try {
+        const response = nativeHttp.get && (init.method || "GET").toUpperCase() === "GET"
+          ? await nativeHttp.get({ url, headers: init.headers || {} })
+          : await nativeHttp.request({
+              url,
+              method: init.method || "GET",
+              headers: init.headers || {},
+              data: init.body || null,
+              responseType: "json"
+            });
+        const payload = parsePortableJson(response?.data);
+        const status = Number(response?.status || 0);
+        if (!status || status < 400) return payload;
+        lastError = new Error(`HTTP ${status}`);
+        lastError.status = status;
+      } catch (error) {
+        lastError = error;
       }
-      if (plugin?.request) {
-        const response = await plugin.request({
-          url,
-          method: init.method || "GET",
-          headers: init.headers || {},
-          data: init.body || null,
-          responseType: "json"
-        });
-        return parsePortableJson(response?.data);
-      }
-
-      if (typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null") {
-        const proxyUrl = new URL("/proxy", window.location.origin);
-        proxyUrl.searchParams.set("url", url);
-        const proxyResponse = await fetch(proxyUrl.toString(), init);
-        if (proxyResponse.ok) return proxyResponse.json();
-        // Static hosting (for example `python -m http.server`) has no /proxy
-        // route. Try the provider directly so CORS-enabled APIs still work.
-        if (proxyResponse.status !== 404) throw new Error(`Proxy HTTP ${proxyResponse.status}`);
-      }
-
-      const response = await fetch(url, init);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    } catch (err) {
-      lastError = err;
-      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
     }
+
+    try {
+      const response = await directFetch(url, init);
+      if (response.ok) return await response.json();
+      lastError = new Error(`HTTP ${response.status}`);
+      lastError.status = response.status;
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (!lastError?.status || lastError.status === 403 || lastError.status === 429 || lastError.status >= 500) {
+      for (const proxyUrl of proxyUrls) {
+        try {
+          const response = await directFetch(proxyUrl, init);
+          if (response.ok) return await response.json();
+          const proxyError = new Error(`Proxy HTTP ${response.status}`);
+          proxyError.status = response.status;
+          if (!lastError?.status || lastError.name === "TypeError") lastError = proxyError;
+        } catch (error) {
+          if (!lastError || lastError.name === "TypeError") {
+            lastError = new Error(`Proxy request failed: ${error?.message || "network request failed"}`);
+          }
+        }
+      }
+    }
+
+    const retryable = !lastError?.status || lastError.status === 429 || lastError.status >= 500;
+    if (!retryable || attempt === 2) throw lastError || new Error("Network request failed");
+    await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
   }
   throw lastError || new Error("Network request failed");
 }
@@ -99,6 +151,144 @@ async function searchSteamDb(query) {
     thumbnail: game.tiny_image || "",
     rating: null
   }));
+}
+
+function howLongToBeatPayload(terms, token, page = 1, size = 15) {
+  const options = {
+    games: { userId: 0, platform: "", sortCategory: "popular", rangeCategory: "main", rangeTime: { min: null, max: null }, gameplay: { perspective: "", flow: "", genre: "", difficulty: "" }, rangeYear: { min: "", max: "" }, modifier: "" },
+    users: { sortCategory: "postcount" }, lists: { sortCategory: "follows" }, filter: "", sort: 0, randomizer: 0
+  };
+  const payload = { searchType: "games", searchTerms: terms.trim().split(/\s+/).filter(Boolean), searchPage: page, size, searchOptions: options, useCache: true };
+  if (token.hpKey && token.hpVal != null) payload[token.hpKey] = token.hpVal;
+  return payload;
+}
+
+async function fetchHowLongToBeatJson(url, init = {}) {
+  // Use the same server-side request path for token minting and search so the
+  // provider sees one User-Agent fingerprint for both requests.
+  const proxyUrl = window.location?.protocol === "file:"
+    ? "http://127.0.0.1:3000/proxy"
+    : window.location?.origin && window.location.origin !== "null" ? new URL("/proxy", window.location.origin).toString() : "";
+  if (proxyUrl) {
+    const target = new URL(proxyUrl);
+    target.searchParams.set("url", url);
+    try {
+      const response = await (window.cuemarkNativeFetch || fetch.bind(window))(target.toString(), init);
+      if (response.ok) return response.json();
+      if (response.status !== 404 && response.status !== 405) {
+        console.warn(`HowLongToBeat proxy returned HTTP ${response.status}; retrying through the portable request path`);
+      }
+    } catch { /* Retry through the normal native/direct/proxy transport below. */ }
+  }
+  return fetchJsonPortable(url, init);
+}
+
+async function fetchHowLongToBeatToken() {
+  if (howLongToBeatToken && Date.now() - howLongToBeatToken.fetchedAt < 10 * 60 * 1000) return howLongToBeatToken;
+  const token = await fetchHowLongToBeatJson(`https://howlongtobeat.com/api/search/site/init?t=${Date.now()}`, { headers: { Accept: "application/json", Referer: "https://howlongtobeat.com/" } });
+  if (!token?.token) throw new Error("HowLongToBeat session unavailable");
+  howLongToBeatToken = { ...token, fetchedAt: Date.now() };
+  return howLongToBeatToken;
+}
+
+function hltbHours(seconds) {
+  const value = Number(seconds);
+  return value > 0 ? Math.round(value / 360) / 10 : null;
+}
+
+function howLongToBeatResult(game) {
+  return {
+    source: "howlongtobeat", category: "game", id: String(game.game_id), title: game.game_name || "Untitled",
+    subtitle: [game.release_world, game.comp_main ? `${hltbHours(game.comp_main)}h main` : "", game.comp_plus ? `${hltbHours(game.comp_plus)}h +extras` : ""].filter(Boolean).join(" · "),
+    thumbnail: game.game_image ? `https://howlongtobeat.com/games/${game.game_image}` : "",
+    rating: Number(game.review_score) ? Number(game.review_score) / 10 : null,
+    howLongToBeat: { main: hltbHours(game.comp_main), mainPlus: hltbHours(game.comp_plus), completionist: hltbHours(game.comp_100), platforms: game.profile_platform || "", type: game.game_type || "game" }
+  };
+}
+
+async function searchHowLongToBeat(query) {
+  const token = await fetchHowLongToBeatToken();
+  const headers = { Accept: "application/json", "Content-Type": "application/json", Origin: "https://howlongtobeat.com", Referer: "https://howlongtobeat.com/", "x-auth-token": token.token };
+  if (token.hpKey && token.hpVal != null) {
+    headers["x-hp-key"] = token.hpKey;
+    headers["x-hp-val"] = token.hpVal;
+  }
+  const json = await fetchHowLongToBeatJson("https://howlongtobeat.com/api/search/site", { method: "POST", headers, body: JSON.stringify(howLongToBeatPayload(query, token)) });
+  return (Array.isArray(json?.data) ? json.data : []).filter(game => game.game_type === "game").map(howLongToBeatResult);
+}
+
+function howLongToReadResult(book) {
+  return {
+    source: "howlongtoread", category: book.category || "novel", id: book.url || String(book.id), title: book.title,
+    subtitle: [book.author, book.readingTime].filter(Boolean).join(" · "), thumbnail: book.thumbnail || "", rating: null,
+    howLongToRead: { author: book.author || "", readingTime: book.readingTime || "", pages: book.pages || "", words: book.words || "" }, url: book.url
+  };
+}
+
+function extractHowLongToReadResults(html, query, category = "novel") {
+  const results = [];
+  const seen = new Set();
+  const pattern = /href=["'](\/books\/(\d+)(?:\/[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+  while ((match = pattern.exec(html || ""))) {
+    const id = match[2];
+    if (seen.has(id)) continue;
+    const title = match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!title || title.length < 2 || /^(image|read more|details)$/i.test(title)) continue;
+    seen.add(id);
+    results.push(howLongToReadResult({ id, title, category, url: `https://howlongtoread.com${match[1]}` }));
+  }
+  return results.slice(0, 25);
+}
+
+async function searchHowLongToRead(query, category = "novel", allowCatalogFallback = false) {
+  const encoded = encodeURIComponent(query.trim());
+  let lastError = null;
+  for (const url of [`https://howlongtoread.com/search?q=${encoded}`, `https://howlongtoread.com/search?query=${encoded}`, `https://howlongtoread.com/?q=${encoded}`]) {
+    try {
+      const html = await fetchTextPortable(url);
+      const results = extractHowLongToReadResults(html, query, category);
+      if (results.length) return results;
+      if (/enable javascript to run this app/i.test(html)) {
+        lastError = new Error("HowLongToRead search requires its interactive site and returned no server-rendered results");
+      }
+    } catch (error) { lastError = error; }
+  }
+  if (allowCatalogFallback) {
+    const fallback = await searchGoogleBooks(query, category);
+    return fallback.map(result => ({
+      ...result,
+      subtitle: ["Reading time unavailable", result.subtitle].filter(Boolean).join(" · ")
+    }));
+  }
+  if (lastError) throw lastError;
+  return [];
+}
+
+function vizResult(item) {
+  return {
+    source: "viz", category: "manga", id: item.url, title: item.title,
+    subtitle: item.subtitle || "Manga", thumbnail: item.thumbnail || "", rating: null, url: item.url
+  };
+}
+
+function extractVizResults(html) {
+  const results = [], seen = new Set();
+  const pattern = /href=["'](https?:\/\/www\.viz\.com)?(\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+  while ((match = pattern.exec(html || ""))) {
+    const path = match[2];
+    if (!/(^\/[^/]+$|\/manga-books\/manga\/)/i.test(path) || /\/search|\/login|\/home|\/subscribe/i.test(path)) continue;
+    const title = match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!title || title.length < 2 || seen.has(path)) continue;
+    seen.add(path);
+    results.push(vizResult({ url: `https://www.viz.com${path}`, title, subtitle: "Manga" }));
+  }
+  return results.slice(0, 30);
+}
+
+async function searchViz(query) {
+  return extractVizResults(await fetchTextPortable(`https://www.viz.com/search?search=${encodeURIComponent(query.trim())}`));
 }
 
 function parsePortableJson(value) {
@@ -129,7 +319,11 @@ const OPEN_LIBRARY_SUBJECT = { manga: "manga", novel: "fiction" };
 const EPISODE_CATEGORIES_DISCOVER = ["series", "kdrama", "cdrama", "anime"];
 const BOOK_CATEGORIES_DISCOVER = ["manga", "novel"];
 
-function rawgKey() { return state.preferences.metadataSources.builtinApiKeys?.rawg || ""; }
+function rawgKey() {
+  return window.CUEMARK_LOCAL_API_KEYS?.rawg
+    || state.preferences.metadataSources.builtinApiKeys?.rawg
+    || "";
+}
 function omdbKey() { return state.preferences.metadataSources.builtinApiKeys?.omdb || ""; }
 function tmdbKey() { return state.preferences.metadataSources.builtinApiKeys?.tmdb || ""; }
 function rawgAvailable() { return builtinSourceEnabled("rawg") && Boolean(rawgKey()); }
@@ -143,6 +337,13 @@ function tmdbAvailable() { return builtinSourceEnabled("tmdb") && Boolean(tmdbKe
 // {source, category, id, title, subtitle, thumbnail, rating} objects.
 function getDiscoverProviders(category) {
   const providers = [];
+
+  if ((category === "novel" || category === "manga") && builtinSourceEnabled("howlongtoread")) {
+    providers.push({ key: "howlongtoread", suggest: () => Promise.resolve([]), search: query => searchHowLongToRead(query, category) });
+  }
+  if (category === "manga" && builtinSourceEnabled("viz")) {
+    providers.push({ key: "viz", suggest: () => Promise.resolve([]), search: searchViz });
+  }
 
   if (category === "game" && builtinSourceEnabled("freetogame")) {
     providers.push({ key: "freetogame", suggest: fetchFreeToGameTopRated, search: searchFreeToGame });
@@ -222,6 +423,9 @@ function getDiscoverProviders(category) {
     if (builtinSourceEnabled("steamdb")) {
       providers.push({ key: "steamdb", suggest: () => Promise.resolve([]), search: searchSteamDb });
     }
+    if (builtinSourceEnabled("howlongtobeat")) {
+      providers.push({ key: "howlongtobeat", suggest: () => Promise.resolve([]), search: searchHowLongToBeat });
+    }
     if (rawgAvailable()) {
       providers.push({ key: "rawg", suggest: fetchRawgTopRated, search: searchRawg });
     }
@@ -231,9 +435,6 @@ function getDiscoverProviders(category) {
   }
 
   if (category === "anime" || category === "manga") {
-    if (builtinSourceEnabled("shikimori")) {
-      providers.push({ key: "shikimori", suggest: () => Promise.resolve([]), search: (q) => searchShikimori(q, category) });
-    }
   }
 
   const filter = getDiscoverSourceFilter();
@@ -625,9 +826,7 @@ async function fetchOpenLibraryTopRated(category) {
 }
 
 async function searchOpenLibrary(query, category) {
-  const res = await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,cover_i&limit=15`);
-  if (!res.ok) return [];
-  const json = await res.json();
+  const json = await fetchJsonPortable(`https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&fields=key,title,author_name,first_publish_year,cover_i&limit=15`);
   return (Array.isArray(json.docs) ? json.docs : []).slice(0, 15).map(doc => {
     const key = (doc.key || "").replace("/works/", "");
     if (!key) return null;
@@ -642,9 +841,14 @@ async function searchOpenLibrary(query, category) {
 
 // ---- Google Books (novel + manga) ----
 async function searchGoogleBooks(query, category) {
-  const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=15`);
-  if (!res.ok) return [];
-  const json = await res.json();
+  let json;
+  try {
+    json = await fetchJsonPortable(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=15`);
+  } catch (error) {
+    if (error?.status !== 429 && !/\b429\b|rate.?limit/i.test(String(error?.message || error))) throw error;
+    const fallback = await searchOpenLibrary(query, category);
+    return fallback.map(result => ({ ...result, subtitle: ["Google Books rate limited · Open Library fallback", result.subtitle].filter(Boolean).join(" · ") }));
+  }
   return (Array.isArray(json.items) ? json.items : []).map(item => {
     const info = item.volumeInfo || {};
     return {
@@ -694,12 +898,13 @@ function freeToGameGameToResult(entry) {
     title: entry.title || "",
     subtitle: [entry.genre, entry.release_date || "", entry.developer || ""].filter(Boolean).join(" · "),
     thumbnail: entry.thumbnail || "",
+    providerUrl: entry.freetogame_profile_url || "",
     rating: null
   };
 }
 
 async function fetchFreeToGameTopRated() {
-  const json = await fetchJsonPortable("https://www.freetogame.com/api/games");
+  const json = await fetchJsonPortable("https://www.freetogame.com/api/games?sort-by=popularity");
   return (Array.isArray(json) ? json : []).slice(0, 15).map(freeToGameGameToResult);
 }
 
@@ -745,31 +950,14 @@ async function searchMangaDex(query) {
   return entries.filter(entry => entry?.id).map(mangaDexMangaToResult);
 }
 
-function shikimoriToResult(entry, category) {
-  const id = entry.id;
-  return {
-    source: "shikimori",
-    category,
-    id,
-    title: entry.russian || entry.name || entry.title || "",
-    subtitle: [entry.kind || "", entry.year || "", entry.score ? `★ ${entry.score}` : ""].filter(Boolean).join(" · "),
-    thumbnail: entry.image?.original || entry.image?.preview || (category === "manga"
-      ? `https://shikimori.one/system/mangas/original/${id}.jpg`
-      : `https://shikimori.one/system/animes/original/${id}.jpg`),
-    rating: entry.score || null
-  };
-}
-
-async function searchShikimori(query, category) {
-  const endpoint = category === "manga" ? "mangas" : "animes";
-  const params = new URLSearchParams({ search: query.trim(), limit: "15" });
-  const json = await fetchJsonPortable(`https://shikimori.one/api/${endpoint}?${params.toString()}`);
-  const entries = Array.isArray(json) ? json : (
-    Array.isArray(json?.data) ? json.data :
-      (Array.isArray(json?.[endpoint]) ? json[endpoint] : [])
-  );
-  return entries.filter(entry => entry?.id && (entry.russian || entry.name || entry.title))
-    .map(entry => shikimoriToResult(entry, category));
+async function fetchMangaDexTopRated() {
+  const params = new URLSearchParams({ limit: "15", "order[followedCount]": "desc" });
+  params.append("includes[]", "cover_art");
+  params.append("contentRating[]", "safe");
+  params.append("availableTranslatedLanguage[]", "en");
+  const json = await fetchJsonPortable(`https://api.mangadex.org/manga?${params.toString()}`);
+  const entries = Array.isArray(json?.data) ? json.data : [];
+  return entries.filter(entry => entry?.id).map(mangaDexMangaToResult);
 }
 
 // ---- AniList (anime + manga; also used as a supplemental source for
@@ -811,6 +999,41 @@ async function searchAnilist(searchTerm, type, category) {
 }
 
 // ---- Jikan (MyAnimeList wrapper; anime + manga) ----
+async function fetchJikanJson(url) {
+  const directFetch = window.cuemarkNativeFetch || fetch.bind(window);
+  const proxyUrl = window.location?.protocol === "file:"
+    ? "http://127.0.0.1:3000/proxy"
+    : window.location?.origin && window.location.origin !== "null" ? new URL("/proxy", window.location.origin).toString() : "";
+  if (proxyUrl) {
+    const target = new URL(proxyUrl);
+    target.searchParams.set("url", url);
+    const proxyController = new AbortController();
+    const proxyTimeout = setTimeout(() => proxyController.abort(), 8000);
+    try {
+      const response = await directFetch(target.toString(), { headers: { Accept: "application/json" }, signal: proxyController.signal });
+      if (response.ok) return await response.json();
+      if (response.status === 429) throw new Error("Jikan HTTP 429");
+    } catch (error) {
+      if (error?.message === "Jikan HTTP 429") throw error;
+    } finally {
+      clearTimeout(proxyTimeout);
+    }
+  }
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 25000);
+  try {
+    const response = await directFetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+    if (!response.ok) throw new Error(`Jikan HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (timedOut) throw new Error("Jikan request timed out after 25 seconds");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function jikanEntryToResult(entry, category) {
   return {
     source: "jikan",
@@ -824,16 +1047,12 @@ function jikanEntryToResult(entry, category) {
 }
 
 async function fetchJikanTopRated(kind) {
-  const res = await fetch(`https://api.jikan.moe/v4/top/${kind}?limit=15`);
-  if (!res.ok) return [];
-  const json = await res.json();
+  const json = await fetchJikanJson(`https://api.jikan.moe/v4/top/${kind}?limit=15`);
   return (Array.isArray(json.data) ? json.data : []).map(e => jikanEntryToResult(e, kind === "anime" ? "anime" : "manga"));
 }
 
 async function searchJikan(query, kind) {
-  const res = await fetch(`https://api.jikan.moe/v4/${kind}?q=${encodeURIComponent(query)}&limit=15`);
-  if (!res.ok) return [];
-  const json = await res.json();
+  const json = await fetchJikanJson(`https://api.jikan.moe/v4/${kind}?q=${encodeURIComponent(query)}&limit=15`);
   return (Array.isArray(json.data) ? json.data : []).map(e => jikanEntryToResult(e, kind === "anime" ? "anime" : "manga"));
 }
 
@@ -955,6 +1174,7 @@ function renderDiscoverResults() {
         category: result.category,
         title: result.title
       });
+      if (result.source === "freetogame" && result.providerUrl) params.set("providerUrl", result.providerUrl);
       window.location.href = `static/pages/main/show-detail.html?${params.toString()}`;
     });
   });
