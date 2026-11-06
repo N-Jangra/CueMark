@@ -40,3 +40,6 @@ examples/
 # Local planning notes
 suggestions.md
 suggestions2.md
+
+# Local browser-only API keys
+www/local-config.js

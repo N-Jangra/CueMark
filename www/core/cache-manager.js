@@ -9,11 +9,14 @@ const CUEMARK_METADATA_CACHE_TTL = 6 * 60 * 60 * 1000;
 const CUEMARK_IMAGE_CACHE_MAX_ENTRIES = 250;
 
 const nativeFetch = window.fetch.bind(window);
+// Provider-specific callers can bypass the transparent cache wrapper when
+// an upstream API is sensitive to request handling or cache interception.
+window.cuemarkNativeFetch = nativeFetch;
 const metadataHosts = [
   "api.tvmaze.com", "wikidata.org", "openlibrary.org", "covers.openlibrary.org",
   "api.jikan.moe", "kitsu.io", "graphql.anilist.co", "api.rawg.io",
   "googleapis.com", "omdbapi.com", "themoviedb.org", "mangadex.org",
-  "shikimori.one", "freetogame.com", "wikipedia.org"
+  "freetogame.com", "wikipedia.org", "howlongtobeat.com", "howlongtoread.com", "viz.com"
 ];
 
 function cacheUrlString(input) {

@@ -4628,6 +4628,115 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .show-detail-related-thumb { width: 100%; height: 120px; border-radius: 7px; object-fit: cover; }
 .show-detail-related-card span { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .show-detail-related-card small { color: var(--text-muted); font-size: 11px; }
+.tvmaze-extra-section { display: grid; gap: 14px; margin: 0 0 24px; }
+.tvmaze-detail-block { min-width: 0; padding: 16px; border: 1px solid var(--card-border); border-radius: 14px; background: var(--card-bg); }
+.tvmaze-detail-block h2, .tvmaze-detail-block summary { margin: 0 0 12px; color: var(--text-primary); font-size: 16px; font-weight: 700; }
+.tvmaze-detail-block h2 small, .tvmaze-detail-block summary small { margin-left: 5px; color: var(--text-muted); font-size: 12px; font-weight: 500; }
+.tvmaze-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 11px 16px; margin: 0; }
+.tvmaze-info-grid div { min-width: 0; }
+.tvmaze-info-grid dt { margin-bottom: 3px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.tvmaze-info-grid dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; }
+.tvmaze-info-grid a { color: var(--primary); }
+.tvmaze-api-note, .tvmaze-data-footnote { margin: 12px 0 0; color: var(--text-muted); font-size: 11px; }
+.tvmaze-people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 9px; }
+.tvmaze-person-card { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 7px; border-radius: 10px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.tvmaze-person-card img, .tvmaze-person-placeholder { flex: 0 0 42px; width: 42px; height: 52px; border-radius: 7px; object-fit: cover; }
+.tvmaze-person-placeholder { display: grid; place-items: center; color: var(--text-muted); background: color-mix(in srgb, var(--card-bg) 75%, var(--text-primary)); font-size: 17px; }
+.tvmaze-person-card div { display: grid; gap: 3px; min-width: 0; }
+.tvmaze-person-card strong, .tvmaze-person-card span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tvmaze-person-card strong { font-size: 12px; }
+.tvmaze-person-card span, .tvmaze-crew-list, .tvmaze-season-grid span, .tvmaze-season-grid small { color: var(--text-muted); font-size: 11px; }
+.tvmaze-featured-episodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 9px; }
+.tvmaze-featured-episodes article { display: grid; gap: 5px; padding: 10px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.tvmaze-featured-episodes small, .tvmaze-featured-episodes span { color: var(--text-muted); font-size: 11px; }
+.tvmaze-featured-episodes strong { font-size: 13px; }
+.tvmaze-featured-episodes p { margin: 3px 0 0; font-size: 12px; line-height: 1.45; }
+.tvmaze-crew-list { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.tvmaze-crew-list strong { color: var(--text-primary); }
+.tvmaze-season-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 9px; }
+.tvmaze-season-grid article { display: grid; gap: 5px; padding: 10px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.tvmaze-season-grid article strong { font-size: 12px; }
+.tvmaze-season-grid article p { margin: 3px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.45; }
+.tvmaze-detail-block[open] summary { margin-bottom: 12px; }
+.tvmaze-alias-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.tvmaze-alias-list span { padding: 5px 8px; border-radius: 8px; background: color-mix(in srgb, var(--card-bg) 84%, var(--text-primary)); font-size: 12px; }
+.tvmaze-alias-list small { color: var(--text-muted); }
+.tvmaze-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 9px; }
+.tvmaze-image-grid a { display: grid; gap: 4px; min-width: 0; color: var(--text-muted); font-size: 10px; text-decoration: none; }
+.tvmaze-image-grid img { width: 100%; height: 105px; border-radius: 8px; object-fit: cover; }
+.anilist-banner { width: 100%; max-height: 220px; margin: 0 0 14px; border-radius: 10px; object-fit: cover; }
+.anilist-link-row, .anilist-chip-list, .anilist-tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.anilist-link-row a, .anilist-chip, .anilist-tag-list span { padding: 6px 9px; border: 1px solid var(--card-border); border-radius: 9px; color: var(--primary); font-size: 12px; text-decoration: none; }
+.anilist-airing-highlight { margin: 0; font-size: 14px; }
+.anilist-review-list { display: grid; gap: 10px; }
+.anilist-review-list article { min-width: 0; padding: 11px; border-radius: 10px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.anilist-review-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+.anilist-review-head img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.anilist-review-head span, .anilist-review-list article small { color: var(--text-muted); }
+.anilist-review-list h3 { margin: 9px 0 5px; font-size: 14px; }
+.anilist-review-link { color: var(--primary); font-size: 11px; }
+.anilist-review-list article p { max-height: 240px; margin: 7px 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.anilist-person-bio summary { margin: 5px 0 0; color: var(--primary); font-size: 10px; cursor: pointer; }
+.anilist-person-bio p { max-height: 130px; margin: 5px 0 0; overflow: auto; white-space: pre-wrap; font-size: 10px; line-height: 1.4; }
+.anilist-related-list, .anilist-schedule-list, .anilist-link-list { display: grid; gap: 8px; }
+.anilist-related-list a, .anilist-schedule-list span, .anilist-link-list a { display: grid; gap: 4px; padding: 9px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); font-size: 12px; text-decoration: none; }
+.anilist-related-list a { color: var(--text-primary); }
+.anilist-related-list span, .anilist-schedule-list span, .anilist-link-list a { color: var(--text-muted); font-size: 11px; }
+.anilist-link-list a { color: var(--primary); }
+.jikan-long-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
+.jikan-score-list { display: grid; gap: 6px; margin-top: 12px; }
+.jikan-score-list > div { display: grid; grid-template-columns: 42px minmax(70px, 1fr) 115px; align-items: center; gap: 8px; font-size: 11px; }
+.jikan-score-list small { color: var(--text-muted); text-align: right; }
+.jikan-score-track { display: block; height: 7px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--card-bg) 75%, var(--text-primary)); }
+.jikan-score-track i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.jikan-review-list { display: grid; gap: 8px; }
+.jikan-review-list details { padding: 10px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.jikan-review-list summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
+.jikan-review-list summary span, .jikan-review-list summary small { color: var(--text-muted); }
+.jikan-review-list p { max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.jikan-review-list a { color: var(--primary); font-size: 11px; }
+.kitsu-provider-more { display: inline-block; margin-top: 9px; color: var(--primary); font-size: 11px; }
+.freetogame-description { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
+.freetogame-attribution { margin: .75rem 0 1rem; font-size: 11px; text-align: right; }
+.freetogame-attribution a { color: var(--primary); }
+.jikan-long-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
+.jikan-score-list { display: grid; gap: 6px; margin-top: 12px; }
+.jikan-score-list > div { display: grid; grid-template-columns: 42px minmax(70px, 1fr) 115px; align-items: center; gap: 8px; font-size: 11px; }
+.jikan-score-list small { color: var(--text-muted); text-align: right; }
+.jikan-score-track { display: block; height: 7px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--card-bg) 75%, var(--text-primary)); }
+.jikan-score-track i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.jikan-review-list { display: grid; gap: 8px; }
+.jikan-review-list details { padding: 10px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.jikan-review-list summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
+.jikan-review-list summary span, .jikan-review-list summary small { color: var(--text-muted); }
+.jikan-review-list p { max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.jikan-review-list a { color: var(--primary); font-size: 11px; }
+.wikidata-claims-list { display: grid; gap: 8px; }
+.wikidata-claims-list div { display: grid; grid-template-columns: minmax(120px, .5fr) 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--card-border); font-size: 12px; }
+.wikidata-claims-list div:last-child { border-bottom: 0; }
+.wikidata-claims-list span { color: var(--text-muted); overflow-wrap: anywhere; }
+.wikidata-claims-list small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 10px; }
+.wikidata-claims-list small a { color: var(--primary); }
+.wikidata-person-link { color: var(--primary); font-size: 10px; }
+.openlibrary-rating-summary { display: flex; align-items: baseline; gap: 8px; }
+.openlibrary-rating-summary strong { font-size: 26px; }
+.openlibrary-rating-summary small, .openlibrary-rating-summary span { color: var(--text-muted); font-size: 11px; }
+.openlibrary-rating-distribution { display: grid; gap: 5px; margin-top: 10px; }
+.openlibrary-rating-distribution > div { display: grid; grid-template-columns: 70px 1fr 36px; align-items: center; gap: 8px; color: var(--text-muted); font-size: 11px; }
+.openlibrary-rating-track { height: 7px; overflow: hidden; border-radius: 99px; background: var(--card-border); }
+.openlibrary-rating-track i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.openlibrary-excerpts { display: grid; gap: 9px; }
+.openlibrary-excerpts blockquote { margin: 0; padding: 10px 12px; border-left: 3px solid var(--primary); background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); font-size: 12px; line-height: 1.5; }
+.openlibrary-excerpts cite { display: block; margin-top: 6px; color: var(--text-muted); font-size: 10px; font-style: normal; }
+.openlibrary-editions { display: grid; gap: 8px; }
+.openlibrary-load-more { margin-top: 10px; }
+.openlibrary-editions article { display: flex; gap: 10px; padding: 8px; border-radius: 9px; background: color-mix(in srgb, var(--card-bg) 86%, var(--text-primary)); }
+.openlibrary-editions article > img { flex: 0 0 42px; width: 42px; height: 60px; border-radius: 5px; object-fit: cover; }
+.openlibrary-editions article > div { display: grid; align-content: center; gap: 4px; min-width: 0; }
+.openlibrary-editions strong { font-size: 12px; }
+.openlibrary-editions span, .openlibrary-editions small, .openlibrary-subject-detail span, .openlibrary-subject-detail small { color: var(--text-muted); font-size: 10px; overflow-wrap: anywhere; }
+.openlibrary-subject-detail { display: grid; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+.openlibrary-subject-detail:last-child { border-bottom: 0; }
 
 /* Discover View */
 .discover-results-grid {

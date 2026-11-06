@@ -68,7 +68,9 @@ const BUILTIN_METADATA_SOURCES = {
   jikan: { name: "MyAnimeList (Jikan)", icon: "list-video", categories: ["anime", "manga"] },
   kitsu: { name: "Kitsu", icon: "cat", categories: ["anime", "manga"] },
   mangadex: { name: "MangaDex", icon: "book-open-check", categories: ["manga"] },
-  shikimori: { name: "Shikimori", icon: "sparkles", categories: ["anime", "manga"] },
+  howlongtobeat: { name: "HowLongToBeat", icon: "timer", categories: ["game"] },
+  howlongtoread: { name: "HowLongToRead", icon: "book-open", categories: ["novel", "manga"] },
+  viz: { name: "VIZ", icon: "book-open-check", categories: ["manga"] },
   googlebooks: { name: "Google Books", icon: "book", categories: ["novel", "manga"] },
   omdb: { name: "OMDb", icon: "film", categories: ["movie", "series", "kdrama", "cdrama", "anime"], needsApiKey: true, apiKeyUrl: "https://www.omdbapi.com/apikey.aspx" },
   tmdb: { name: "TMDB", icon: "video", categories: ["movie", "series", "kdrama", "cdrama", "anime"], needsApiKey: true, apiKeyUrl: "https://www.themoviedb.org/settings/api" }
@@ -87,10 +89,10 @@ function metadataSourcesWithKeyProvidersLast(order) {
 
 function normalizeMetadataSources() {
   const defaults = {
-    builtinOrder: ["tvmaze", "wikidata", "openlibrary", "freetogame", "steamdb", "anilist", "jikan", "kitsu", "mangadex", "shikimori", "googlebooks", "rawg", "omdb", "tmdb"],
+    builtinOrder: ["tvmaze", "wikidata", "openlibrary", "freetogame", "steamdb", "howlongtobeat", "howlongtoread", "viz", "anilist", "jikan", "kitsu", "mangadex", "googlebooks", "rawg", "omdb", "tmdb"],
     builtinEnabled: {
       tvmaze: true, wikidata: true, openlibrary: true, rawg: false,
-      freetogame: true, steamdb: true, anilist: true, jikan: true, kitsu: true, mangadex: true, shikimori: true, googlebooks: true, omdb: false, tmdb: false
+      freetogame: true, steamdb: true, howlongtobeat: true, howlongtoread: true, viz: true, anilist: true, jikan: true, kitsu: true, mangadex: true, googlebooks: true, omdb: false, tmdb: false
     },
     builtinApiKeys: {},
     custom: [],
@@ -100,6 +102,12 @@ function normalizeMetadataSources() {
   const current = state.preferences.metadataSources;
   if (!current || typeof current !== "object") {
     state.preferences.metadataSources = defaults;
+    const localRawgKey = window.CUEMARK_LOCAL_API_KEYS?.rawg;
+    if (typeof localRawgKey === "string" && localRawgKey.trim()) {
+      defaults.builtinApiKeys.rawg = localRawgKey.trim();
+      defaults.builtinEnabled.rawg = true;
+      if (typeof saveData === "function") saveData();
+    }
     return;
   }
 
@@ -128,6 +136,18 @@ function normalizeMetadataSources() {
     if (typeof current.builtinApiKeys[key] !== "string") current.builtinApiKeys[key] = "";
   });
 
+  const localRawgKey = window.CUEMARK_LOCAL_API_KEYS?.rawg;
+  let localKeyAdded = false;
+  if (typeof localRawgKey === "string" && localRawgKey.trim()) {
+    const normalizedLocalRawgKey = localRawgKey.trim();
+    if (current.builtinApiKeys.rawg !== normalizedLocalRawgKey) {
+      current.builtinApiKeys.rawg = normalizedLocalRawgKey;
+      localKeyAdded = true;
+    }
+    if (!current.builtinEnabled.rawg) localKeyAdded = true;
+    current.builtinEnabled.rawg = true;
+  }
+
   if (!current.discoverSourceFilter || typeof current.discoverSourceFilter !== "object") {
     current.discoverSourceFilter = {};
   }
@@ -147,6 +167,7 @@ function normalizeMetadataSources() {
   });
 
   state.preferences.metadataSources = current;
+  if (localKeyAdded && typeof saveData === "function") saveData();
 }
 
 function createCustomMetadataSource({ name, categories }) {

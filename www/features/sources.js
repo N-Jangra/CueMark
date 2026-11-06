@@ -70,7 +70,8 @@ let sourceSearchState = {
   key: null,
   category: null,
   requestId: 0,
-  results: []
+  results: [],
+  error: null
 };
 
 // Top-rated/popular picks for a source before the user types anything.
@@ -79,11 +80,15 @@ let sourceSearchState = {
 function suggestSingleSource(key, category) {
   switch (key) {
     case "steamdb": return Promise.resolve([]);
+    case "howlongtobeat": return Promise.resolve([]);
+    case "howlongtoread": return Promise.resolve([]);
+    case "viz": return Promise.resolve([]);
     case "freetogame": return fetchFreeToGameTopRated();
     case "tvmaze": return fetchTvmazeTopRated(category);
     case "anilist": return fetchAnilistTopRated(category === "manga" ? "MANGA" : "ANIME");
     case "jikan": return fetchJikanTopRated(category === "manga" ? "manga" : "anime");
     case "kitsu": return fetchKitsuTopRated(category === "manga" ? "manga" : "anime");
+    case "mangadex": return fetchMangaDexTopRated();
     case "openlibrary": return fetchOpenLibraryTopRated(category);
     case "googlebooks": return searchGoogleBooks(category === "manga" ? "subject:comics" : "subject:fiction", category);
     case "wikidata": return category === "game" ? Promise.resolve([]) : fetchWikidataPopularMovies();
@@ -99,8 +104,10 @@ function suggestSingleSource(key, category) {
 function searchSingleSource(key, category, query) {
   switch (key) {
     case "steamdb": return searchSteamDb(query);
+    case "howlongtobeat": return searchHowLongToBeat(query);
+    case "howlongtoread": return searchHowLongToRead(query, category, true);
+    case "viz": return searchViz(query);
     case "freetogame": return searchFreeToGame(query);
-    case "shikimori": return searchShikimori(query, category);
     case "tvmaze": return searchTvmaze(query, category);
     case "anilist": return searchAnilist(query, category === "manga" ? "MANGA" : "ANIME", category);
     case "jikan": return searchJikan(query, category === "manga" ? "manga" : "anime");
@@ -130,9 +137,8 @@ function initSourceSearchPage() {
   }
 
   sourceSearchState.key = key;
-  // MangaDex and Shikimori are being opened from the manga/manhwa/manhua
-  // source flow, so start on manga instead of silently querying anime.
-  sourceSearchState.category = ["mangadex", "shikimori"].includes(key) && info.categories.includes("manga")
+  // MangaDex is opened from the manga source flow, so start on manga.
+  sourceSearchState.category = key === "mangadex" && info.categories.includes("manga")
     ? "manga"
     : info.categories[0];
   titleEl.textContent = info.name;
@@ -172,10 +178,21 @@ async function loadSourceSuggestions() {
 
   const requestId = ++sourceSearchState.requestId;
   let results = [];
+  sourceSearchState.error = null;
+  let suggestionsError = null;
+  let suggestionTimeout;
   try {
-    results = await suggestSingleSource(sourceSearchState.key, sourceSearchState.category);
+    results = await Promise.race([
+      suggestSingleSource(sourceSearchState.key, sourceSearchState.category),
+      new Promise((_, reject) => {
+        suggestionTimeout = setTimeout(() => reject(new Error("Top-picks request timed out")), 15000);
+      })
+    ]);
   } catch (err) {
+    suggestionsError = err;
     console.warn(`${sourceSearchState.key} suggestions failed`, err);
+  } finally {
+    clearTimeout(suggestionTimeout);
   }
   if (requestId !== sourceSearchState.requestId) return;
 
@@ -183,8 +200,10 @@ async function loadSourceSuggestions() {
   if (sourceSearchState.results.length === 0) {
     resultsEl.innerHTML = "";
     emptyEl.style.display = "flex";
-    emptyEl.querySelector("h3").textContent = "Search This Source";
-    emptyEl.querySelector("p").textContent = "Type a title to search only this metadata source.";
+    emptyEl.querySelector("h3").textContent = suggestionsError ? "Top picks couldn't load" : "Search This Source";
+    emptyEl.querySelector("p").textContent = suggestionsError
+      ? `${String(suggestionsError.message || "Request failed").replace(/\s+/g, " ").slice(0, 120)}. You can search this source by title.`
+      : "Type a title to search only this metadata source.";
     return;
   }
   renderSourceSearchResults();
@@ -238,12 +257,14 @@ async function runSourceSearch(query) {
 
   const requestId = ++sourceSearchState.requestId;
   let results = [];
+  sourceSearchState.error = null;
   try {
     results = await searchSingleSource(sourceSearchState.key, sourceSearchState.category, trimmed);
   } catch (err) {
     console.warn(`${sourceSearchState.key} source search failed`, err);
+    sourceSearchState.error = err;
     if (notice) {
-      notice.textContent = `${sourceSearchState.key} could not be reached: ${err?.message || "network request failed"}.`;
+      notice.textContent = `${sourceSearchState.key} search failed: ${err?.message || "network request failed"}.`;
       notice.style.display = "block";
     }
   }
@@ -261,8 +282,10 @@ function renderSourceSearchResults() {
   if (sourceSearchState.results.length === 0) {
     resultsEl.innerHTML = "";
     emptyEl.style.display = "flex";
-    emptyEl.querySelector("h3").textContent = "No Results";
-    emptyEl.querySelector("p").textContent = "Try a different title or check your spelling.";
+    emptyEl.querySelector("h3").textContent = sourceSearchState.error ? "Search failed" : "No Results";
+    emptyEl.querySelector("p").textContent = sourceSearchState.error
+      ? "Check the message above, then try again later."
+      : "Try a different title or check your spelling.";
     return;
   }
 
@@ -289,6 +312,7 @@ function renderSourceSearchResults() {
         category: result.category,
         title: result.title
       });
+      if (result.source === "freetogame" && result.providerUrl) urlParams.set("providerUrl", result.providerUrl);
       window.location.href = `static/pages/main/show-detail.html?${urlParams.toString()}`;
     });
   });
