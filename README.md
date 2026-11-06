@@ -4,6 +4,17 @@
 
 CueMark is a personal watchlist and media progress tracker for games, movies, TV series, anime, manga, and novels. The name combines a viewing or reading *cue* with a *mark* that remembers your place, so you can return to exactly where you left off. It is packaged as an Android app with [Capacitor](https://capacitorjs.com/).
 
+## Now two apps
+
+CueMark has been split into two focused apps, each with its own repository:
+
+| App | Tracks | Repository |
+| --- | --- | --- |
+| **SavePoint** | Games: backlog, playtime, ratings, merged metadata from several sources | [N-Jangra/SavePoint](https://github.com/N-Jangra/SavePoint) |
+| **ScreenMark** | Movies, TV series, anime, manga and novels | [N-Jangra/ScreenMark](https://github.com/N-Jangra/ScreenMark) |
+
+This repository keeps the original combined CueMark app (version 0.1.1). New features and fixes land in SavePoint and ScreenMark.
+
 ## Features
 
 - Track progress per category (episodes/seasons, chapters/volumes, playtime) with custom statuses per list
